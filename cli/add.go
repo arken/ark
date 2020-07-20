@@ -8,6 +8,8 @@ import (
     "path/filepath"
 )
 
+const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
+
 //Similar to "git add", this function adds files that match a given list of
 //file matching patterns (can include *, ? wildcards) to a file. Currently this
 //file is in .ait/added_files, and it contains paths relative to the program's
@@ -22,15 +24,14 @@ func Add(args []string) error {
     if len(args) == 0 {
         return errors.New("no files specified, nothing was done")
     }
-    const PATH string = ".ait/added_files" //can later be put somewhere more central
-    file, err := os.OpenFile(PATH, os.O_CREATE | os.O_RDONLY, 0644)
+    file, err := os.OpenFile(AddedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
     if err != nil { //open it for reading its contents
         return err
     }
     contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
     fillMap(contents, file)
     file.Close()
-    file, err = os.OpenFile(PATH, os.O_TRUNC | os.O_WRONLY, 0644)
+    file, err = os.OpenFile(AddedFilesPath, os.O_TRUNC | os.O_WRONLY, 0644)
     //completely truncate the file to avoid duplicated filenames
     if err != nil {
         return err
@@ -56,9 +57,8 @@ func fillMap(contents map[string]struct{}, file *os.File) {
     scanner := bufio.NewScanner(file)
     scanner.Split(bufio.ScanLines)
     for scanner.Scan() {
-        line := scanner.Text()
-        if len(line) > 0 {
-            contents[line] = struct{}{}
+        if len(scanner.Text()) > 0 {
+            contents[scanner.Text()] = struct{}{}
         }
     }
 }

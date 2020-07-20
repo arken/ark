@@ -20,5 +20,10 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+	case "status":
+		err := cli.Status()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
