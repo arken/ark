@@ -26,7 +26,7 @@ type InitArgs struct {
 func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
-		err := os.Mkdir(".ait", os.ModeDir)
+		err := os.Mkdir(".ait", os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
