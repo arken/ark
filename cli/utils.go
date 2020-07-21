@@ -6,18 +6,18 @@ import (
 	"github.com/minio/minio/pkg/wildcard"
 )
 
-// isAITRepo is a trivial check to see if the program's working dir is an ait repo.
-func isAITRepo() bool {
-	return fileExists(".ait")
+// IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
+func IsAITRepo() bool {
+	return FileExists(".ait")
 }
 
-// fileExists is a test to check the existance of a file.
-func fileExists(filename string) bool {
+// FileExists is a test to check the existence of a file.
+func FileExists(filename string) bool {
 	_, statErr := os.Stat(filename)
 	return !os.IsNotExist(statErr)
 }
 
-func getFileSize(filename string) int64 {
+func GetFileSize(filename string) int64 {
 	info, err := os.Stat(filename)
 	if err != nil {
 		return 0
