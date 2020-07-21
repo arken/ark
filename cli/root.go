@@ -1,24 +1,24 @@
 package cli
 
 import (
-	"os"
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
-//trivial check to see if the program's working dir is an ait repo.
-func IsAITRepo() bool {
-	return FileExists(".ait")
-}
+//GlobalFlags contains the flags for commands.
+type GlobalFlags struct{}
 
-func FileExists(filename string) bool {
-	_, statErr := os.Stat(filename)
-	return !os.IsNotExist(statErr)
-}
+// Root is the main command.
+var Root *cmd.RootCMD
 
-func GetFileSize(filename string) int64 {
-	info, err := os.Stat(filename)
-	if err != nil {
-		return 0
-	} else {
-		return info.Size()
+// init creates the command interface and registers the possible commands.
+func init() {
+	Root = &cmd.RootCMD{
+		Name:  "ait",
+		Short: "Arken Import Tool",
+		Flags: &GlobalFlags{},
 	}
+	Root.RegisterCMD(&cmd.Help)
+	Root.RegisterCMD(&Add)
+	Root.RegisterCMD(&Init)
+	Root.RegisterCMD(&Remove)
 }
