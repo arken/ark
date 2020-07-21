@@ -25,7 +25,7 @@ func Add(args []string) error {
         return err
     }
     contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
-    FillMap(contents, file)
+    fillMap(contents, file)
     file.Close()
     file, err = os.OpenFile(AddedFilesPath, os.O_TRUNC | os.O_WRONLY, 0644)
     //completely truncate the file to avoid duplicated filenames
@@ -42,11 +42,11 @@ func Add(args []string) error {
         })
     }
     //dump the map's keys, which have to be unique, into the file.
-    return DumpMap(contents, file)
+    return dumpMap(contents, file)
 }
 
 //Splits the given file by newline and adds each line to the given map.
-func FillMap(contents map[string]struct{}, file *os.File) {
+func fillMap(contents map[string]struct{}, file *os.File) {
     scanner := bufio.NewScanner(file)
     scanner.Split(bufio.ScanLines)
     for scanner.Scan() {
@@ -57,7 +57,7 @@ func FillMap(contents map[string]struct{}, file *os.File) {
 }
 
 //Dumps all keys in the given map to the given file, separated by a newline.
-func DumpMap(contents map[string]struct{}, file *os.File) error {
+func dumpMap(contents map[string]struct{}, file *os.File) error {
     for line := range contents {
         _, err := file.WriteString(line + "\n")
         if err != nil {
