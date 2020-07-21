@@ -66,4 +66,3 @@ func dumpMap(contents map[string]struct{}, file *os.File) error {
     }
     return nil
 }
-
