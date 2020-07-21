@@ -26,6 +26,8 @@ func main() {
 		cli.Status()
 	case "remove":
 		err = cli.Remove(args[1:])
+	case "init":
+		err = cli.Init()
 	}
 	if err != nil {
 		fmt.Println( err.Error())
