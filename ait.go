@@ -14,16 +14,20 @@ func main() {
 		fmt.Println("Usage: ait [command]") //eventually add a real usage printout
 		return
 	}
+	if !cli.IsAITRepo() && args[0] != "init" {
+		fmt.Println("this isn't an ait repository. Run \"ait init\"" +
+			" before taking further action")
+	}
+	var err error
 	switch args[0] {
 	case "add":
-		err := cli.Add(args[1:])
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+		err = cli.Add(args[1:])
 	case "status":
-		err := cli.Status()
-		if err != nil {
-			fmt.Println(err)
-		}
+		cli.Status()
+	case "remove":
+		err = cli.Remove(args[1:])
+	}
+	if err != nil {
+		fmt.Println( err.Error())
 	}
 }

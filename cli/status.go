@@ -2,19 +2,13 @@ package cli
 
 import (
     "bufio"
-    "errors"
     "fmt"
     "os"
     "sort"
 )
 
-//Simply prints out what files are currently staged for submission. Will return
-//an error if the working directory is not an ait repo.
-func Status() error {
-    if !IsAITRepo() {
-        return errors.New("this isn't an ait repository. Run \"ait init\"" +
-            " before taking further action")
-    }
+//Simply prints out what files are currently staged for submission.
+func Status() {
     file, err := os.OpenFile(AddedFilesPath, os.O_RDONLY, 0644)
     if err == nil {
         defer file.Close()
@@ -37,5 +31,4 @@ func Status() error {
     } else {
         fmt.Println("No files are currently staged for submission.")
     }
-    return nil
 }
