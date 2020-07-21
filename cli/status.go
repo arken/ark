@@ -23,7 +23,7 @@ type StatusArgs struct {
 }
 
 // StatusRun executes the status function.
-func StatusRun(r *cmd.RootCMD, c *cmd.CMD) {
+func StatusRun(*cmd.RootCMD, *cmd.CMD) {
 	file, err := os.OpenFile(addedFilesPath, os.O_RDONLY, 0644)
 	if err == nil {
 		defer file.Close()
