@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"github.com/arkenproject/ait/cli"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	// Build the command line interface for AIT
+	cli.Root.Run()
 }
