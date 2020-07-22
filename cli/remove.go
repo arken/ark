@@ -1,14 +1,11 @@
 package cli
 
 import (
-	"bufio"
 	"errors"
+	"github.com/DataDrake/cli-ng/cmd"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
-
-	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Remove is the reverse of the add method. Given a set of file patterns, it
@@ -38,7 +35,6 @@ type RemoveFlags struct {
 }
 
 // RemoveRun executes the remove function.
-//TODO: rewrite this function so that it actually works
 func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoveFlags)
 	args := c.Args.(*RemoveArgs)
@@ -54,38 +50,27 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		file.Close()
 		return
 	}
-	addedFiles, err := os.OpenFile(addedFilesPath, os.O_RDONLY, 0644)
+	file, err := os.OpenFile(addedFilesPath, os.O_RDONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	tempFile, err := os.OpenFile(".ait/temp", os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	scanner := bufio.NewScanner(addedFiles)
-	scanner.Split(bufio.ScanLines)
 	contents := make(map[string]struct{})
-	for scanner.Scan() {
-		for _, pattern := range args.Patterns {
+	fillMap(contents, file)
+	for _, pattern := range args.Patterns {
+		for path := range contents {
 			pattern = filepath.Clean(pattern)
-			m, _ := path.Match(pattern, scanner.Text())
-			_, contains := contents[scanner.Text()]
-			if !(m || contains) {
-				contents[scanner.Text()] = struct{}{}
-				_, err := tempFile.WriteString(scanner.Text() + "\n")
-				if err != nil {
-					log.Fatal(err)
-				}
+			if match, _ := filepath.Match(pattern, path); match {
+				delete(contents, path)
 			}
 		}
 	}
-	tempFile.Close()
-	addedFiles.Close()
-	err = os.Remove(addedFilesPath)
+	file.Close()
+	file, err = os.OpenFile(addedFilesPath, os.O_WRONLY | os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Rename(".ait/temp", addedFilesPath)
+	defer file.Close()
+	err = dumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}
