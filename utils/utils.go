@@ -1,4 +1,4 @@
-package cli
+package utils
 
 import (
 	"bufio"
@@ -62,4 +62,15 @@ func DumpMap(contents map[string]struct{}, file *os.File) error {
 		}
 	}
 	return nil
+}
+
+//GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
+//name was found, the empty string is returned.
+func GetRepoName(url string) string {
+	index := strings.LastIndex(url, "/") + 1
+	if index < 0 || len(url) - 4 < 0 || index > len(url) - 4 {
+		return ""
+	} else {
+		return url[index:len(url) - 4]
+	}
 }

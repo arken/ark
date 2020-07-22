@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,7 +38,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		log.Fatal(err)
 	}
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
-	FillMap(contents, file)
+	utils.FillMap(contents, file)
 	file.Close()
 	file, err = os.OpenFile(addedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	//completely truncate the file to avoid duplicated filenames
@@ -58,14 +59,14 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			//more specific with you arguments. Otherwise, let the shell do the work.
 		}
 		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && PathMatch(pattern, path) {
+			if !info.IsDir() && utils.PathMatch(pattern, path) {
 				contents[path] = struct{}{}
 			}
 			return nil
 		})
 	}
 	//dump the map's keys, which have to be unique, into the file.
-	err = DumpMap(contents, file)
+	err = utils.DumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}
