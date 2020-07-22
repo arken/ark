@@ -30,7 +30,7 @@ func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else if info.IsDir() { //TODO: should this re-initialize the way git does?
+	} else if info.IsDir() {
 		log.Fatal(errors.New("a directory called \".ait\" already exists here, " +
 			"suggesting that this is already an ait repo"))
 	} else {
