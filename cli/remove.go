@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path"
+	"path/filepath"
 
 	"github.com/DataDrake/cli-ng/cmd"
 )
@@ -36,6 +38,7 @@ type RemoveFlags struct {
 }
 
 // RemoveRun executes the remove function.
+//TODO: rewrite this function so that it actually works
 func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoveFlags)
 	args := c.Args.(*RemoveArgs)
@@ -61,9 +64,14 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	scanner := bufio.NewScanner(addedFiles)
 	scanner.Split(bufio.ScanLines)
+	contents := make(map[string]struct{})
 	for scanner.Scan() {
 		for _, pattern := range args.Patterns {
-			if !PathMatch(pattern, scanner.Text()) {
+			pattern = filepath.Clean(pattern)
+			m, _ := path.Match(pattern, scanner.Text())
+			_, contains := contents[scanner.Text()]
+			if !(m || contains) {
+				contents[scanner.Text()] = struct{}{}
 				_, err := tempFile.WriteString(scanner.Text() + "\n")
 				if err != nil {
 					log.Fatal(err)
