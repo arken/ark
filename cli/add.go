@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,7 +21,7 @@ var Add = cmd.CMD{
 
 // AddArgs handles the specific arguments for the add command.
 type AddArgs struct {
-	Path string
+	Patterns []string
 }
 
 const addedFilesPath string = ".ait/added_files" //can later be put somewhere more central
@@ -32,10 +33,10 @@ const addedFilesPath string = ".ait/added_files" //can later be put somewhere mo
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 // TODO: prevent addition of files outside of the repo
-func AddRun(r *cmd.RootCMD, c *cmd.CMD) {
+func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
 
-	file, err := os.OpenFile(addedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
+	file, err := os.OpenFile(addedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
 	if err != nil { //open it for reading its contents
 		log.Fatal(err)
 	}
@@ -48,9 +49,10 @@ func AddRun(r *cmd.RootCMD, c *cmd.CMD) {
 		log.Fatal(err)
 	}
 	defer file.Close()
-	for _, pattern := range args.Path {
+	for _, pattern := range args.Patterns {
+		fmt.Println(args.Patterns)
 		_ = filepath.Walk(".", func(fPath string, info os.FileInfo, err error) error {
-			if PathMatch(string(pattern), fPath) {
+			if PathMatch(pattern, fPath) {
 				contents[fPath] = struct{}{}
 			}
 			return nil
