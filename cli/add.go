@@ -5,7 +5,6 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -49,9 +48,9 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	defer file.Close()
 	for _, pattern := range args.Patterns {
 		pattern = filepath.Clean(pattern)
-		_ = filepath.Walk(".", func(fPath string, info os.FileInfo, err error) error {
-			if m, _ := path.Match(pattern, fPath); m {
-				contents[fPath] = struct{}{}
+		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+			if m, _ := filepath.Match(pattern, path); m {
+				contents[path] = struct{}{}
 			}
 			return nil
 		})
