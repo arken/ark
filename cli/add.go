@@ -2,12 +2,11 @@ package cli
 
 import (
 	"bufio"
-	"fmt"
+	"github.com/DataDrake/cli-ng/cmd"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
-
-	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Add imports a file or directory to AIT's local staging file.
@@ -32,7 +31,6 @@ const addedFilesPath string = ".ait/added_files" //can later be put somewhere mo
 // working directory. Along the way, the filenames are put in a hashmap, so the
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
-// TODO: prevent addition of files outside of the repo
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
 
@@ -50,9 +48,9 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	defer file.Close()
 	for _, pattern := range args.Patterns {
-		fmt.Println(args.Patterns)
+		pattern = filepath.Clean(pattern)
 		_ = filepath.Walk(".", func(fPath string, info os.FileInfo, err error) error {
-			if PathMatch(pattern, fPath) {
+			if m, _ := path.Match(pattern, fPath); m {
 				contents[fPath] = struct{}{}
 			}
 			return nil
