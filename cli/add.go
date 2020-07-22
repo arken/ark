@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"github.com/DataDrake/cli-ng/cmd"
 	"log"
 	"os"
@@ -38,7 +37,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		log.Fatal(err)
 	}
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
-	fillMap(contents, file)
+	FillMap(contents, file)
 	file.Close()
 	file, err = os.OpenFile(addedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	//completely truncate the file to avoid duplicated filenames
@@ -48,38 +47,26 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	defer file.Close()
 	for _, pattern := range args.Patterns {
 		pattern = filepath.Clean(pattern)
+		if pattern == "*" {
+			pattern = "."
+			//You would never get here if you wrote "ait rm *" in a shell because
+			//the shell should expand that. You'll only get here if you can get
+			//the args to this program without going through a shell, like with
+			//an IDE. This will have different behavior to going through a shell,
+			//namely that hidden files won't be omitted, as they are by some
+			//shells (like bash). If not going through a shell, it's best to be
+			//more specific with you arguments. Otherwise, let the shell do the work.
+		}
 		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-			if m, _ := filepath.Match(pattern, path); m {
+			if !info.IsDir() && PathMatch(pattern, path) {
 				contents[path] = struct{}{}
 			}
 			return nil
 		})
 	}
 	//dump the map's keys, which have to be unique, into the file.
-	err = dumpMap(contents, file)
+	err = DumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-//Splits the given file by newline and adds each line to the given map.
-func fillMap(contents map[string]struct{}, file *os.File) {
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		if len(scanner.Text()) > 0 {
-			contents[scanner.Text()] = struct{}{}
-		}
-	}
-}
-
-//Dumps all keys in the given map to the given file, separated by a newline.
-func dumpMap(contents map[string]struct{}, file *os.File) error {
-	for line := range contents {
-		_, err := file.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
