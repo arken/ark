@@ -22,8 +22,6 @@ type AddArgs struct {
 	Patterns []string
 }
 
-const addedFilesPath string = ".ait/added_files" //can later be put somewhere more central
-
 // AddRun Similar to "git add", this function adds files that match a given list of
 // file matching patterns (can include *, ? wildcards) to a file. Currently this
 // file is in .ait/added_files, and it contains paths relative to the program's
@@ -33,18 +31,12 @@ const addedFilesPath string = ".ait/added_files" //can later be put somewhere mo
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
 
-	file, err := os.OpenFile(addedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
-	if err != nil { //open it for reading its contents
-		log.Fatal(err)
-	}
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
+	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
-	file, err = os.OpenFile(addedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	//completely truncate the file to avoid duplicated filenames
-	if err != nil {
-		log.Fatal(err)
-	}
+	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	defer file.Close()
 	for _, pattern := range args.Patterns {
 		pattern = filepath.Clean(pattern)
@@ -66,7 +58,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		})
 	}
 	//dump the map's keys, which have to be unique, into the file.
-	err = utils.DumpMap(contents, file)
+	err := utils.DumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}

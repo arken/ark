@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/utils"
 	"os"
 	"sort"
 
@@ -24,7 +25,7 @@ type StatusArgs struct {
 
 // StatusRun executes the status function.
 func StatusRun(*cmd.RootCMD, *cmd.CMD) {
-	file, err := os.OpenFile(addedFilesPath, os.O_RDONLY, 0644)
+	file, err := os.OpenFile(utils.AddedFilesPath, os.O_RDONLY, 0644)
 	if err == nil {
 		defer file.Close()
 	}

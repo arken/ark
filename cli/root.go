@@ -24,4 +24,5 @@ func init() {
 	Root.RegisterCMD(&Remove)
 	Root.RegisterCMD(&Status)
 	Root.RegisterCMD(&gitlib.Clone)
+	Root.RegisterCMD(&gitlib.Submit)
 }

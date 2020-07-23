@@ -13,17 +13,16 @@ import (
 
 var Clone = cmd.CMD{
     Name:  "clone",
-    Alias: "c",
     Short: "Download a Git repo of Keysets.",
     Args:  &CloneArgs{},
-    Run:   PullRun,
+    Run:   CloneRun,
 }
 
 type CloneArgs struct {
     Args []string
 }
 
-func PullRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func CloneRun(_ *cmd.RootCMD, c *cmd.CMD) {
     args := c.Args.(*CloneArgs).Args
     if len(args) == 0 {
         log.Fatal("No Git repo url provided")
@@ -48,11 +47,21 @@ func PullRun(_ *cmd.RootCMD, c *cmd.CMD) {
     }
     _, err := git.PlainClone(target, false, opt)
     if err != nil {
-        if err.Error() == "authentication required" {
-            fmt.Printf(`You do not have access to the repo %v
+        handleCloneError(err, url, len(args))
+        _ = os.Remove(target)
+    }
+}
+
+func handleCloneError(err error, url string, argc int) {
+    if err.Error() == "authentication required" {
+        if argc == 1 {
+            fmt.Printf(
+`You do not have access to the repo %v
 Try including your GitHub username and password as arguments to attempt to access the repo:
     "ait clone <url> <username> <password>"`, url)
+        } else if argc > 2 {
+            fmt.Printf("The given username and password did not grant" +
+                " you access to repo %v", url)
         }
-        _ = os.Remove(target)
     }
 }
