@@ -17,7 +17,7 @@ NODE_VOL_02.pdf QmRRhKLebvXztobrhJifNLVgQJA4TDfv1tQV9RsVoLnsS4
 Using AIT a user should **never** directly deal with a Keyset file or repository. All files should be generated automatically and handled in the background
 of a publish command run. Researchers/Users should only care about their data and not have to also deal with keyset files.
 
-### Project Structure
+## Project Structure
 ```plain
 /cli     --> cli library that defines the application's publicly availble commands.
 /config  --> config library that defines defaults and engine for reading and generating ait's global configuration.
@@ -25,7 +25,7 @@ of a publish command run. Researchers/Users should only care about their data an
 /keysets --> keysets library providing functions for adding, removing, pulling, and pushing keyset repositories. 
 ```
 
-### Project Convensions
+## Project Convensions
 - Code should be formatted using Go standard conventions. Use `go fmt -s` for linting.
 - Minimize the number of public functions that do not need to be public.
 - Write tests for all added functions to test expected functionality.
