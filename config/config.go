@@ -13,6 +13,7 @@ import (
 type Config struct {
 	General general
 	Git     git
+	IPFS    ipfs
 }
 
 // general defines the substruct about general application settings.
@@ -20,10 +21,15 @@ type general struct {
 	Version string
 }
 
-// database defines database specific config settings.
+// git defines git specific config settings.
 type git struct {
 	Name  string
 	Email string
+}
+
+// ipfs defines the IPFS centric ait settings.
+type ipfs struct {
+	Path string
 }
 
 var (
