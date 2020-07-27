@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"bufio"
-	"fmt"
+	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/utils"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Add imports a file or directory to AIT's local staging file.
@@ -24,65 +22,44 @@ type AddArgs struct {
 	Patterns []string
 }
 
-const addedFilesPath string = ".ait/added_files" //can later be put somewhere more central
-
 // AddRun Similar to "git add", this function adds files that match a given list of
 // file matching patterns (can include *, ? wildcards) to a file. Currently this
 // file is in .ait/added_files, and it contains paths relative to the program's
 // working directory. Along the way, the filenames are put in a hashmap, so the
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
-// TODO: prevent addition of files outside of the repo
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
 
-	file, err := os.OpenFile(addedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
-	if err != nil { //open it for reading its contents
-		log.Fatal(err)
-	}
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
-	fillMap(contents, file)
+	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
+	utils.FillMap(contents, file)
 	file.Close()
-	file, err = os.OpenFile(addedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	//completely truncate the file to avoid duplicated filenames
-	if err != nil {
-		log.Fatal(err)
-	}
+	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	defer file.Close()
 	for _, pattern := range args.Patterns {
-		fmt.Println(args.Patterns)
-		_ = filepath.Walk(".", func(fPath string, info os.FileInfo, err error) error {
-			if PathMatch(pattern, fPath) {
-				contents[fPath] = struct{}{}
+		pattern = filepath.Clean(pattern)
+		if pattern == "*" {
+			pattern = "."
+			//You would never get here if you wrote "ait rm *" in a shell because
+			//the shell should expand that. You'll only get here if you can get
+			//the args to this program without going through a shell, like with
+			//an IDE. This will have different behavior to going through a shell,
+			//namely that hidden files won't be omitted, as they are by some
+			//shells (like bash). If not going through a shell, it's best to be
+			//more specific with you arguments. Otherwise, let the shell do the work.
+		}
+		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+			if !info.IsDir() && utils.PathMatch(pattern, path) {
+				contents[path] = struct{}{}
 			}
 			return nil
 		})
 	}
 	//dump the map's keys, which have to be unique, into the file.
-	err = dumpMap(contents, file)
+	err := utils.DumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-//Splits the given file by newline and adds each line to the given map.
-func fillMap(contents map[string]struct{}, file *os.File) {
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		if len(scanner.Text()) > 0 {
-			contents[scanner.Text()] = struct{}{}
-		}
-	}
-}
-
-//Dumps all keys in the given map to the given file, separated by a newline.
-func dumpMap(contents map[string]struct{}, file *os.File) error {
-	for line := range contents {
-		_, err := file.WriteString(line + "\n")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
