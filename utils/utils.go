@@ -1,11 +1,14 @@
-package cli
+package utils
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
 func IsAITRepo() bool {
@@ -62,4 +65,24 @@ func DumpMap(contents map[string]struct{}, file *os.File) error {
 		}
 	}
 	return nil
+}
+
+//GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
+//name was found, the empty string is returned.
+func GetRepoName(url string) string {
+	index := strings.LastIndex(url, "/") + 1
+	if index < 0 || len(url) - 4 < 0 || index > len(url) - 4 {
+		return ""
+	} else {
+		return url[index:len(url) - 4]
+	}
+}
+
+//BasicFileOpen just opens a file and log.Fatal's any error that arises
+func BasicFileOpen(path string, flag int, bits os.FileMode) *os.File {
+	file, err := os.OpenFile(path, flag, bits)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return file
 }

@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -38,42 +39,33 @@ type RemoveFlags struct {
 func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoveFlags)
 	args := c.Args.(*RemoveArgs)
-	size, _ := GetFileSize(addedFilesPath)
-	if !FileExists(addedFilesPath) || size == 0 {
+	size, _ := utils.GetFileSize(utils.AddedFilesPath)
+	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
 		log.Fatal(errors.New("no files currently staged, nothing was done"))
 	}
 	if flags.All {
-		file, err := os.OpenFile(addedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
+		file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 		file.Close()
 		return
 	}
-	file, err := os.OpenFile(addedFilesPath, os.O_RDONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
 	contents := make(map[string]struct{})
-	FillMap(contents, file)
+	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_RDONLY, 0644)
+	utils.FillMap(contents, file)
+	file.Close()
 	for _, pattern := range args.Patterns {
 		if pattern == "*" {
 			pattern = "." //see AddRun for a description of why this is done
 		}
 		for path := range contents {
 			pattern = filepath.Clean(pattern)
-			if PathMatch(pattern, path) {
+			if utils.PathMatch(pattern, path) {
 				delete(contents, path)
 			}
 		}
 	}
+	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY | os.O_TRUNC, 0644)
 	file.Close()
-	file, err = os.OpenFile(addedFilesPath, os.O_WRONLY | os.O_TRUNC, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	err = DumpMap(contents, file)
+	err := utils.DumpMap(contents, file)
 	if err != nil {
 		log.Fatal(err)
 	}
