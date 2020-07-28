@@ -1,6 +1,8 @@
 package keysets
 
 import (
+    "fmt"
+    "github.com/arkenproject/ait/ipfs"
     "github.com/arkenproject/ait/utils"
     "os"
     "path/filepath"
@@ -15,20 +17,31 @@ func Generate(path string) error {
     if err != nil {
         return err
     }
-    defer keySetFile.Close()
     addedFiles, err := os.OpenFile(utils.AddedFilesPath, os.O_RDONLY, 0644)
     if err != nil {
         return err
     }
-    defer addedFiles.Close()
     contents := make(map[string]struct{})
     utils.FillMap(contents, addedFiles)
+    addedFiles.Close()
     for filePath := range contents {
-        line := filepath.Base(filePath) /* TODO: + IPFS cid */ + "\n"
+        cid, err := ipfs.Add(filePath)
+        if err != nil {
+            cleanup(keySetFile)
+            return err
+        }
+        line := fmt.Sprintf("%v %v\n", filepath.Base(filePath), cid)
         _, err = keySetFile.WriteString(line)
         if err != nil {
+            cleanup(keySetFile)
             return err
         }
     }
-    return nil
+    return keySetFile.Close()
+}
+
+func cleanup(file *os.File) {
+    path := file.Name()
+    file.Close()
+    _ = os.Remove(path)
 }

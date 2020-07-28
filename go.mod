@@ -12,6 +12,5 @@ require (
 	github.com/ipfs/interface-go-ipfs-core v0.3.0
 	github.com/libp2p/go-libp2p-core v0.6.0
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
-	github.com/minio/minio v0.0.0-20200721013122-ec06089eda25
 	github.com/multiformats/go-multiaddr v0.2.2
 )
