@@ -4,9 +4,11 @@ import (
     "bufio"
     "fmt"
     "github.com/DataDrake/cli-ng/cmd"
+    "github.com/arkenproject/ait/keysets"
     "github.com/arkenproject/ait/utils"
     "github.com/go-git/go-git/v5"
     "github.com/go-git/go-git/v5/plumbing/object"
+    "github.com/go-git/go-git/v5/plumbing/transport/http"
     "log"
     "os"
     "path/filepath"
@@ -26,30 +28,31 @@ type SubmitArgs struct {
 
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
     args := c.Args.(*SubmitArgs).Args
-    if len(args) < 2 {
-        log.Fatal("Not enough arguments, expected repository name and path to Keyset")
+    if len(args) < 1 {
+        log.Fatal("Not enough arguments, expected repository url")
     }
-    repoName, keysetPath := args[0], args[1]
-    repo := add(repoName, keysetPath)
-    commit(repo)
-    push(repo)
-}
-
-func add(repoName, keysetPath string) *git.Repository {
-    //vvvv TODO: move this stuff into SubmitRun vvvvv
-    target := filepath.Join(".ait", "sources", repoName)
+    url := args[0]
+    target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
     if !utils.FileExists(target) {
-        log.Fatal("Specified repo does not exist")
-    } else if !utils.FileExists(filepath.Join(target, keysetPath)) {
-        log.Fatal("Specified Keyset file does not exist")
+        keysets.Clone(url)
     }
     repo, err := git.PlainOpen(target)
     if err != nil {
         log.Fatal(err)
     }
-    //                  ^^^^^^^
-    var tree *git.Worktree
-    tree, err = repo.Worktree()
+    keysetPath := "test.ks"
+    err = keysets.Generate(filepath.Join(target, keysetPath))
+    if err != nil {
+        log.Fatal(err)
+    }
+    add(repo, keysetPath)
+    commit(repo)
+    push(repo)
+    //somewhere in here I'm going to have to add pull request support
+}
+
+func add(repo *git.Repository, keysetPath string) {
+    tree, err := repo.Worktree()
     if err != nil {
         log.Fatal(err)
     }
@@ -57,7 +60,6 @@ func add(repoName, keysetPath string) *git.Repository {
     if err != nil {
         log.Fatal(err)
     }
-    return repo
 }
 
 //TODO: check for outstanding commits before asking for a new one
@@ -66,10 +68,7 @@ func commit(repo *git.Repository) {
     if err != nil {
         log.Fatal(err)
     }
-    //Eventually launch an editor with a template
-    fmt.Println("Enter a message explaining why this submission is important:")
-    reader := bufio.NewReader(os.Stdin)
-    msg, _ := reader.ReadString('\n')
+    msg := CollectCommit()
     opt := &git.CommitOptions{
         Author: &object.Signature{
             Name: "name", //get from config whenever that's ready
@@ -85,8 +84,17 @@ func commit(repo *git.Repository) {
 }
 
 func push(repo *git.Repository) {
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("Enter your GitHub username: ")
+    uname, _ := reader.ReadString('\n')
+    fmt.Print("Enter your GitHub password: ")
+    password, _ := reader.ReadString('\n')
     opt := &git.PushOptions{
         Progress: os.Stdout,
+        Auth: &http.BasicAuth{
+            Username: uname[:len(uname) - 1], //remove newline
+            Password: password[:len(password) - 1],
+        },
     }
     err := repo.Push(opt)
     if err != nil {

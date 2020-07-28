@@ -2,7 +2,6 @@ package keysets
 
 import (
     "fmt"
-    "github.com/arkenproject/ait/ipfs"
     "github.com/arkenproject/ait/utils"
     "os"
     "path/filepath"
@@ -25,7 +24,7 @@ func Generate(path string) error {
     utils.FillMap(contents, addedFiles)
     addedFiles.Close()
     for filePath := range contents {
-        cid, err := ipfs.Add(filePath)
+        cid := "IPFSCIDHERE" //temporary while IPFS package undergoes maintenance
         if err != nil {
             cleanup(keySetFile)
             return err
