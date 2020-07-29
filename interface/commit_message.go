@@ -1,4 +1,4 @@
-package cli
+package _interface
 
 import (
     "bufio"
@@ -10,11 +10,12 @@ import (
     "strings"
 )
 
-var commitPrompt = //temporary
+const commitPrompt = //temporary
 `# Describe the files you're submitting below (preferably <50 characters).
 
 
 # Describe the files in more detail below. Note: lines starting with '#' are excluded.
+# Leave the message empty to abort the submission.
 
 `
 

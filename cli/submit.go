@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/interface"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 	"github.com/go-git/go-git/v5"
@@ -100,11 +102,15 @@ func commit(repo *git.Repository, repoPath string) {
 		cleanup(repoPath)
 		log.Fatal(err)
 	}
-	msg := CollectCommit()
+	msg := _interface.CollectCommit()
+	if strings.TrimSpace(msg) == "" {
+		cleanup(repoPath)
+		log.Fatal("Message was empty, submission aborted.")
+	}
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "name", //get from config whenever that's ready
-			Email: "someone@somehwere.com",
+			Name:  config.Global.Git.Name,
+			Email: config.Global.Git.Email,
 			When:  time.Now(),
 		},
 	}
