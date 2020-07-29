@@ -18,7 +18,6 @@ func Clone(url string) {
     target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
     var opt = &git.CloneOptions {
         URL: url,
-        Progress: os.Stdout,
     }
     _, err := git.PlainClone(target, false, opt)
     if err != nil {

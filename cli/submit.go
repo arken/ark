@@ -135,8 +135,8 @@ func push(repo *git.Repository, repoPath string) {
 	if pushErr != nil {
 		cleanup(repoPath)
 		if pushErr.Error() == "authentication required" {
-			log.Fatal(`The given username/password did not give you access to the requested repo.
-You can retry submitting if you think you made a typo, or you may not have the proper permissions.`)
+			log.Fatal(`The given username/password did not give you write access to the requested repo.
+You can retry submitting if you think you made a typo, but you may not have the proper permissions.`)
 		} else {
 			log.Fatal(pushErr)
 		}
