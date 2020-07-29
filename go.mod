@@ -15,7 +15,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.5.7
 	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/libp2p/go-libp2p-peerstore v0.2.6
-	github.com/minio/minio v0.0.0-20200721013122-ec06089eda25
 	github.com/multiformats/go-multiaddr v0.2.2
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	github.com/stretchr/testify v1.6.1
 )

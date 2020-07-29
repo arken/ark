@@ -1,10 +1,10 @@
 package keysets
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/arkenproject/ait/utils"
+    "fmt"
+    "github.com/arkenproject/ait/utils"
+    "os"
+    "path/filepath"
 )
 
 //Generate creates a keyset file with the given path. Path should not be the
@@ -12,24 +12,35 @@ import (
 //exist yet, and the file should end in ".ks" The resultant keyset files contains
 //the name (not path) of the file and an IPFS cid hash, separated by a space.
 func Generate(path string) error {
-	keySetFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer keySetFile.Close()
-	addedFiles, err := os.OpenFile(utils.AddedFilesPath, os.O_RDONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer addedFiles.Close()
-	contents := make(map[string]struct{})
-	utils.FillMap(contents, addedFiles)
-	for filePath := range contents {
-		line := filepath.Base(filePath) /* TODO: + IPFS cid */ + "\n"
-		_, err = keySetFile.WriteString(line)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+    keySetFile, err := os.OpenFile(path, os.O_CREATE | os.O_WRONLY, 0644)
+    if err != nil {
+        return err
+    }
+    addedFiles, err := os.OpenFile(utils.AddedFilesPath, os.O_RDONLY, 0644)
+    if err != nil {
+        return err
+    }
+    contents := make(map[string]struct{})
+    utils.FillMap(contents, addedFiles)
+    addedFiles.Close()
+    for filePath := range contents {
+        cid := "IPFSCIDHERE" //temporary while IPFS package undergoes maintenance
+        if err != nil {
+            cleanup(keySetFile)
+            return err
+        }
+        line := fmt.Sprintf("%v %v\n", filepath.Base(filePath), cid)
+        _, err = keySetFile.WriteString(line)
+        if err != nil {
+            cleanup(keySetFile)
+            return err
+        }
+    }
+    return keySetFile.Close()
+}
+
+func cleanup(file *os.File) {
+    path := file.Name()
+    file.Close()
+    _ = os.Remove(path)
 }
