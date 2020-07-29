@@ -23,7 +23,7 @@ func defaultConf() Config {
 			Email: "",
 		},
 		IPFS: ipfs{
-			Path: filepath.Join(path, "ipfs"),
+			Path: filepath.Join(filepath.Dir(path), "ipfs"),
 		},
 	}
 	return result
