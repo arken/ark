@@ -3,21 +3,25 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/arkenproject/ait/keysets"
-	"github.com/arkenproject/ait/utils"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/display"
+	"github.com/arkenproject/ait/keysets"
+	"github.com/arkenproject/ait/utils"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
+// Submit creates and uploads the keyset definition file.
 var Submit = cmd.CMD{
 	Name:  "submit",
 	Short: "Submit your Keyset to a git repository.",
@@ -25,11 +29,12 @@ var Submit = cmd.CMD{
 	Run:   SubmitRun,
 }
 
+// SubmitArgs handles the specific arguments for the submit command.
 type SubmitArgs struct {
 	Args []string
 }
 
-//A place to put special repo "aliases"
+//SpecialRepos is a place to put special repo "aliases"
 var SpecialRepos = map[string]string{
 	"core": "https://github.com/arkenproject/core-keyset.git",
 }
@@ -100,11 +105,11 @@ func commit(repo *git.Repository, repoPath string) {
 		cleanup(repoPath)
 		log.Fatal(err)
 	}
-	msg := CollectCommit()
+	msg := display.CollectCommit()
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "name", //get from config whenever that's ready
-			Email: "someone@somehwere.com",
+			Name:  config.Global.Git.Name,
+			Email: config.Global.Git.Email,
 			When:  time.Now(),
 		},
 	}
