@@ -4,35 +4,29 @@ import (
 	"os"
 
 	files "github.com/ipfs/go-ipfs-files"
-	"github.com/ipfs/interface-go-ipfs-core/options"
 )
 
 // Add imports a file to IPFS and returns the file identifier to ait.
 func Add(path string) (cid string, err error) {
-	file, err := getUnixfsFile(path)
+	file, err := getUnixfsNode(path)
 	if err != nil {
-		return nil, err
+		return cid, err
 	}
-	return ipfs.Unixfs().Add(ctx, node, func(input *options.UnixfsAddSettings) {
-		input.FsCache = false
-		input.Pin = true
-	})
+	output, err := ipfs.Unixfs().Add(ctx, file)
+	if err != nil {
+		return cid, err
+	}
+	cid = output.Cid().String()
+	return cid, nil
 }
 
-// getUnixfsFile opens a file to read for IPFS import.
-func getUnixfsFile(path string) (files.File, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	st, err := file.Stat()
+func getUnixfsNode(path string) (files.Node, error) {
+	st, err := os.Stat(path)
 	if err != nil {
 		return nil, err
 	}
 
-	f, err := files.NewReaderPathFile(path, file, st)
+	f, err := files.NewSerialFile(path, false, st)
 	if err != nil {
 		return nil, err
 	}
