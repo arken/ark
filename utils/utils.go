@@ -78,6 +78,20 @@ func GetRepoName(url string) string {
 	}
 }
 
+//GetRepoOwner returns the name of a repo given its HTTPS or SSH address. If no
+//name was found, the empty string is returned.
+func GetRepoOwner(url string) string {
+	if len(url) < 19 {
+		return ""
+	}
+	start := 19 // == len("https://github.com/")
+	end := strings.Index(url[start:], "/") + start
+	if end < start {
+		return ""
+	}
+	return url[start:end]
+}
+
 //BasicFileOpen just opens a file and log.Fatal's any error that arises
 func BasicFileOpen(path string, flag int, bits os.FileMode) *os.File {
 	file, err := os.OpenFile(path, flag, bits)

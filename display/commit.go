@@ -19,7 +19,7 @@ var commitPrompt = //temporary
 
 `
 
-// CollectCommit queries the user to fill out the template.
+// CollectCommit queries the user to fill out the commit template.
 func CollectCommit() string {
 	editor := "vim" //eventually this will come from the global config struct
 	commitPath := filepath.Join(".ait", "commit")
@@ -42,10 +42,11 @@ func CollectCommit() string {
 	commitFile = utils.BasicFileOpen(commitPath, os.O_RDONLY, 0644)
 	commitMsg := readCommit(commitFile)
 	commitFile.Close()
-	_ = os.Remove(commitPath)
 	return commitMsg
 }
 
+//readCommit reads a text file and puts it into a string, with newlines
+//as they appear in the file. Lines that start with '#' are not included.
 func readCommit(file *os.File) string {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)

@@ -63,46 +63,49 @@ to add files for submission.`)
 	}
 	target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 	if !utils.FileExists(target) {
-		keysets.Clone(url)
+		path := filepath.Join(".ait", "sources", utils.GetRepoName(url))
+		_, err := keysets.Clone(url, path)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	repo, err := git.PlainOpen(target)
 	if err != nil {
-		cleanup(target)
+		Cleanup()
 		log.Fatal(err)
 	}
 	keysetPath := "test.ks"
 	err = keysets.Generate(filepath.Join(target, keysetPath))
 	if err != nil {
-		cleanup(target)
+		Cleanup()
 		log.Fatal(err)
 	}
-	add(repo, keysetPath, target)
-	commit(repo, target)
-	push(repo, target)
-	cleanup(target)
-	//somewhere in here I'm going to have to add pull request support
+	add(repo, keysetPath)
+	commit(repo)
+	push(repo, url)
+	Cleanup()
 }
 
 //add adds the keyset file at the given path to the repo.
 //Effectively: git add keysetPath
-func add(repo *git.Repository, keysetPath, repoPath string) {
+func add(repo *git.Repository, keysetPath string) {
 	tree, err := repo.Worktree()
 	if err != nil {
-		cleanup(repoPath)
+		Cleanup()
 		log.Fatal(err)
 	}
 	_, err = tree.Add(keysetPath)
 	if err != nil {
-		cleanup(repoPath)
+		Cleanup()
 		log.Fatal(err)
 	}
 }
 
 //commit attempts to commit the file that was previously added.
-func commit(repo *git.Repository, repoPath string) {
+func commit(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	if err != nil {
-		cleanup(repoPath)
+		Cleanup()
 		log.Fatal(err)
 	}
 	msg := display.CollectCommit()
@@ -115,38 +118,67 @@ func commit(repo *git.Repository, repoPath string) {
 	}
 	_, err = tree.Commit(msg, opt)
 	if err != nil {
-		cleanup(repoPath)
+		Cleanup()
 		log.Fatal(err)
 	}
 }
 
 //push attempts to push the latest commit to the git repo's default remote.
 //Users are prompted for their usernames/passwords for this.
-func push(repo *git.Repository, repoPath string) {
+func push(repo *git.Repository, url string) {
 	_, err := repo.Worktree()
 	if err != nil {
-		cleanup(repoPath)
+		Cleanup()
 		log.Fatal(err)
 	}
-	username, password := promptCredentials()
 	opt := &git.PushOptions{
-		Progress: os.Stdout,
 		Auth: &http.BasicAuth{
-			Username: username,
-			Password: password,
+			Username:"",
+			Password: "",
 		},
 	}
-	pushErr := repo.Push(opt)
-	if pushErr != nil {
-		cleanup(repoPath)
-		if pushErr.Error() == "authentication required" {
-			log.Fatal(`The given username/password did not give you write access to the requested repo.
-You can retry submitting if you think you made a typo, but you may not have the proper permissions.`)
+	reader := bufio.NewReader(os.Stdin)
+	var pushErr error
+	fmt.Print("\n")
+	for choice := "r"; choice == "r"; {
+		username, password := promptCredentials()
+		opt.Auth = &http.BasicAuth{
+			Username: username,
+			Password: password,
+		}
+		pushErr = repo.Push(opt)
+		if pushErr != nil {
+			if pushErr.Error() == "authentication required" ||
+			   pushErr.Error() == "authorization failed" {
+				fmt.Print(`
+Those credentials did not give you write access to the repo.
+Retry if you think you made a typo, but you might not have the proper permissions.
+Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `)
+				choice, _ = reader.ReadString('\n')
+				choice = strings.TrimSpace(choice)
+				fmt.Print("\n")
+			} else { //non-authentication error
+				Cleanup()
+				log.Fatal(pushErr)
+			}
+
+			if choice == "p" {
+				pushErr = keysets.PullRequest(url)
+				break
+			} else if choice == "r" {
+				continue
+			} else {
+				break
+			}
 		} else {
-			log.Fatal(pushErr)
+			break //the push was actually successful
 		}
 	}
-	fmt.Println("Submission successful!")
+	if pushErr == nil {
+		fmt.Println("Submission successful!")
+	} else {
+		fmt.Println("Submission failed: ", pushErr)
+	}
 }
 
 //promptCredentials gets the user's github username and password. When the user
@@ -165,11 +197,13 @@ func promptCredentials() (string, string) {
 	return strings.TrimSpace(username), strings.TrimSpace(string(bytePassword))
 }
 
-//cleanup deletes the folder at the given path and prints a message if it fails.
-func cleanup(path string) {
+//Cleanup deletes the folder at the given path and prints a message if it fails.
+func Cleanup() {
+	path := filepath.Join(".ait", "sources")
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Printf(`Unable to remove the repo which was temporarily cloned to %v.
 It is advisable that you delete it.\n`, path)
 	}
+	_ = os.Remove(".ait/commit")
 }
