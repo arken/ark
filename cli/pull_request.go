@@ -1,14 +1,16 @@
-package keysets
+package cli
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/oauth2"
+	"log"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -21,13 +23,22 @@ import (
 func PullRequest(url string) error {
 	owner := utils.GetRepoOwner(url)
 	name := utils.GetRepoName(url)
-	_, err := fork(owner, name)
+	repo, _, err := fork(owner, name)
+	ksPath := filepath.Join(".ait", "sources", name + "_fork", "test_f.ks")
+	err = keysets.Generate(ksPath)
+	if err != nil {
+		Cleanup()
+		log.Fatal(err)
+	}
+	AddKeyset(repo, filepath.Base(ksPath))
+	CommitKeyset(repo)
+	PushKeyset(repo, url, true)
 	return err
 }
 
 //fork uses the github api to create a fork in the user's github account and clone
 //that fork into local storage. This is done using oauth2.
-func fork(owner, name string) (*git.Repository, error) {
+func fork(owner, name string) (*git.Repository, *github.Client, error) {
 	token := os.Getenv("GITHUB_AUTH_TOKEN")
 	if token == "" {
 		fmt.Print(
@@ -53,10 +64,11 @@ Enter your GitHub Oauth token: `)
 	//202 means Github is processing the fork request, but this is ok.
 	//202 seems to be the most common non-error status code.
 	if remoteRepo == nil || status != 202 && status != 200 {
-		return nil, errors.New(fmt.Sprintf(
+		return nil, nil, errors.New(fmt.Sprintf(
 			"Something went wrong when trying to fork %v's repo %v:\n%v",
 			owner, name, err))
 	}
 	target := filepath.Join(".ait", "sources", name + "_fork")
-	return Clone(remoteRepo.GetHTMLURL(), target)
+	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
+	return localRepo, client, err
 }

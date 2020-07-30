@@ -14,7 +14,7 @@ import (
 var commitPrompt = //temporary
 `# Describe the files you're submitting below (preferably <50 characters).
 
-
+# An empty commit message will abort the submission.
 # Describe the files in more detail below. Note: lines starting with '#' are excluded.
 
 `
@@ -23,9 +23,12 @@ var commitPrompt = //temporary
 func CollectCommit() string {
 	editor := "vim" //eventually this will come from the global config struct
 	commitPath := filepath.Join(".ait", "commit")
-	_ = os.Remove(commitPath) //just in case there's one there already
-	commitFile := utils.BasicFileOpen(commitPath, os.O_CREATE|os.O_WRONLY, 0644)
-	_, _ = commitFile.WriteString(commitPrompt) //not the end of the world if the prompt isn't written
+	flag := os.O_WRONLY
+	if !utils.FileExists(commitPath) { flag |= os.O_CREATE }
+	commitFile := utils.BasicFileOpen(commitPath, flag, 0644)
+	if s, _  :=utils.GetFileSize(commitPath); s == 0 {
+		_, _ = commitFile.WriteString(commitPrompt) //not the end of the world if the prompt isn't written
+	}
 	commitFile.Close()
 	execPath, err := exec.LookPath(editor)
 	if err != nil {

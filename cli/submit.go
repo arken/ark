@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/keysets"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/display"
-	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -74,41 +74,45 @@ to add files for submission.`)
 		Cleanup()
 		log.Fatal(err)
 	}
-	keysetPath := "test.ks"
-	err = keysets.Generate(filepath.Join(target, keysetPath))
+	ksPath := "test.ks"
+	err = keysets.Generate(filepath.Join(target, ksPath))
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
-	add(repo, keysetPath)
-	commit(repo)
-	push(repo, url)
+	AddKeyset(repo, ksPath)
+	CommitKeyset(repo)
+	PushKeyset(repo, url, false)
 	Cleanup()
 }
 
-//add adds the keyset file at the given path to the repo.
-//Effectively: git add keysetPath
-func add(repo *git.Repository, keysetPath string) {
+//AddKeyset adds the keyset file at the given path to the repo.
+//Effectively: git add ksPath
+func AddKeyset(repo *git.Repository, ksPath string) {
 	tree, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
-	_, err = tree.Add(keysetPath)
+	_, err = tree.Add(ksPath)
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
 }
 
-//commit attempts to commit the file that was previously added.
-func commit(repo *git.Repository) {
+//CommitKeyset attempts to CommitKeyset the file that was previously added.
+func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
 	msg := display.CollectCommit()
+	if len(strings.TrimSpace(msg)) == 0 {
+		Cleanup()
+		log.Fatal("Empty commit message, submission aborted.")
+	}
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  config.Global.Git.Name,
@@ -123,9 +127,9 @@ func commit(repo *git.Repository) {
 	}
 }
 
-//push attempts to push the latest commit to the git repo's default remote.
+//PushKeyset attempts to push the latest commit to the git repo's default remote.
 //Users are prompted for their usernames/passwords for this.
-func push(repo *git.Repository, url string) {
+func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	_, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
@@ -150,10 +154,7 @@ func push(repo *git.Repository, url string) {
 		if pushErr != nil {
 			if pushErr.Error() == "authentication required" ||
 			   pushErr.Error() == "authorization failed" {
-				fmt.Print(`
-Those credentials did not give you write access to the repo.
-Retry if you think you made a typo, but you might not have the proper permissions.
-Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `)
+				fmt.Print(getCredentialPrompt(isPR))
 				choice, _ = reader.ReadString('\n')
 				choice = strings.TrimSpace(choice)
 				fmt.Print("\n")
@@ -162,17 +163,21 @@ Re-enter your credentials (r), submit a pull request (p), or abort (any other ke
 				log.Fatal(pushErr)
 			}
 
-			if choice == "p" {
-				pushErr = keysets.PullRequest(url)
+			if choice == "p" && !isPR { //start pull request
+				pushErr = PullRequest(url)
 				break
-			} else if choice == "r" {
+			} else if choice == "r" { //retry credentials
 				continue
-			} else {
+			} else { //any other key
+				fmt.Println("Submission aborted.")
 				break
 			}
-		} else {
-			break //the push was actually successful
+		} else { //the push was actually successful
+			break
 		}
+	}
+	if isPR {
+		return
 	}
 	if pushErr == nil {
 		fmt.Println("Submission successful!")
@@ -206,4 +211,17 @@ func Cleanup() {
 It is advisable that you delete it.\n`, path)
 	}
 	_ = os.Remove(".ait/commit")
+}
+
+func getCredentialPrompt(isPR bool) string {
+	if isPR {
+		return `
+Those credentials did not give you write access to the repo. Retry if you 
+think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
+	} else {
+		return `
+Those credentials did not give you write access to the repo.
+Retry if you think you made a typo, but you might not have the proper permissions.
+Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
+	}
 }
