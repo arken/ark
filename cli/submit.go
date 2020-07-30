@@ -101,7 +101,8 @@ func AddKeyset(repo *git.Repository, ksPath string) {
 	}
 }
 
-//CommitKeyset attempts to CommitKeyset the file that was previously added.
+//CommitKeyset attempts to commit the file that was previously added. This
+//function expects a repo that already has a file added to the worktree.
 func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	if err != nil {
@@ -163,14 +164,14 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 				log.Fatal(pushErr)
 			}
 
-			if choice == "p" && !isPR { //start pull request
-				pushErr = PullRequest(url)
+			if choice == "p" && !isPR { //start pull request process
+				pushErr = PullRequest(url, username)
 				break
 			} else if choice == "r" { //retry credentials
 				continue
 			} else { //any other key
-				fmt.Println("Submission aborted.")
-				break
+				Cleanup()
+				log.Fatal("Submission aborted.")
 			}
 		} else { //the push was actually successful
 			break

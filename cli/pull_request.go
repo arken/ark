@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/arkenproject/ait/display"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 	"github.com/go-git/go-git/v5"
@@ -17,14 +18,18 @@ import (
 	"time"
 )
 
-//PullRequest is root function from which the entire pull request chain is run:
+//PullRequest is the root function from which the pull request chain is run:
 //Fork, Clone the fork, add keyset to fork, commit and push the fork, create
 //pull request to upstream repository.
-func PullRequest(url string) error {
-	owner := utils.GetRepoOwner(url)
-	name := utils.GetRepoName(url)
-	repo, _, err := fork(owner, name)
-	ksPath := filepath.Join(".ait", "sources", name + "_fork", "test_f.ks")
+func PullRequest(url, forkOwner string) error {
+	upstreamOwner := utils.GetRepoOwner(url)
+	upstreamRepo := utils.GetRepoName(url)
+	repo, client, err := fork(upstreamOwner, upstreamRepo)
+	if err != nil {
+		Cleanup()
+		log.Fatal(err)
+	}
+	ksPath := filepath.Join(".ait", "sources", upstreamRepo + "_fork", "test_f.ks")
 	err = keysets.Generate(ksPath)
 	if err != nil {
 		Cleanup()
@@ -33,6 +38,7 @@ func PullRequest(url string) error {
 	AddKeyset(repo, filepath.Base(ksPath))
 	CommitKeyset(repo)
 	PushKeyset(repo, url, true)
+	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
 	return err
 }
 
@@ -71,4 +77,25 @@ Enter your GitHub Oauth token: `)
 	target := filepath.Join(".ait", "sources", name + "_fork")
 	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
 	return localRepo, client, err
+}
+
+func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkOwner string) {
+	head := forkOwner + ":master"
+	application := display.ReadApplication()
+	pr := &github.NewPullRequest {
+		Title:               github.String(application.Title),
+		Body:                github.String(application.PRBody),
+		Head:                github.String(head),
+		Base:                github.String("master"),
+		MaintainerCanModify: github.Bool(true),
+		Draft:               github.Bool(false),
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8 * time.Second)
+	defer cancel()
+	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
+	if err != nil {
+		Cleanup()
+		log.Fatal(err)
+	}
+	fmt.Println(donePR.GetHTMLURL())
 }
