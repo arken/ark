@@ -13,9 +13,9 @@ import (
 //desired directory, rather it should be a full path to a file which does not
 //exist yet, and the file should end in ".ks" The resultant keyset files contains
 //the name (not path) of the file and an IPFS cid hash, separated by a space.
-func Generate(path string) error {
+func Generate(dir string) error {
 
-	keySetFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
+	keySetFile, err := os.OpenFile(dir, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

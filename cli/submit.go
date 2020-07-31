@@ -74,13 +74,14 @@ to add files for submission.`)
 		Cleanup()
 		log.Fatal(err)
 	}
-	ksPath := "test.ks"
-	err = keysets.Generate(filepath.Join(target, ksPath))
+	display.ShowApplication()
+	ksName := display.ReadApplication().GetKSName()
+	err = keysets.Generate(filepath.Join(target, ksName))
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
-	AddKeyset(repo, ksPath)
+	AddKeyset(repo, ksName)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, false)
 	Cleanup()
@@ -109,7 +110,8 @@ func CommitKeyset(repo *git.Repository) {
 		Cleanup()
 		log.Fatal(err)
 	}
-	msg := display.CollectCommit()
+	app := display.ReadApplication()
+	msg := app.GetTitle() + "\n\n" + app.GetCommit()
 	if len(strings.TrimSpace(msg)) == 0 {
 		Cleanup()
 		log.Fatal("Empty commit message, submission aborted.")
@@ -154,7 +156,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 		pushErr = repo.Push(opt)
 		if pushErr != nil {
 			if pushErr.Error() == "authentication required" ||
-			   pushErr.Error() == "authorization failed" {
+			   pushErr.Error() == "authorization failed" { //TODO: give specific error messages for both of these errors
 				fmt.Print(getCredentialPrompt(isPR))
 				choice, _ = reader.ReadString('\n')
 				choice = strings.TrimSpace(choice)

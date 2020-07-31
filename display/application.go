@@ -8,12 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/arkenproject/ait/utils"
 )
 
 var commitPrompt = //temporary
-`# Provide a name for the keyset file that is about to be created
+`# Provide a name for the keyset file that is about to be created (no file extension, just the name)
 # FILENAME below
 
 # Briefly describe the files you're submitting (preferably <50 characters).
@@ -29,28 +30,11 @@ var commitPrompt = //temporary
 
 `
 
-type ApplicationContents struct {
-	Title    string
-	Commit   string
-	PRBody   string
-	Category string
-	KSPath   string
-}
+var application *ApplicationContents
 
-//TrimFields trims the spaces off of all fields.
-func (app *ApplicationContents) TrimFields() {
-	app.Title    = strings.TrimSpace(app.Title)
-	app.Commit   = strings.TrimSpace(app.Commit)
-	app.PRBody   = strings.TrimSpace(app.PRBody)
-	app.Category = strings.TrimSpace(app.Category)
-	app.KSPath   = strings.TrimSpace(app.KSPath)
-}
-
-
-var Appliation *ApplicationContents
-
-// CollectCommit queries the user to fill out the commit template.
-func CollectCommit() string {
+//ShowApplication pulls up our template application, currently stored in the
+//string above.
+func ShowApplication() {
 	editor := "vim" //eventually this will come from the global config struct
 	commitPath := filepath.Join(".ait", "commit")
 	if s, _ := utils.GetFileSize(commitPath); s == 0 { //commit file is empty
@@ -68,32 +52,44 @@ func CollectCommit() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	res := ReadApplication()
-	return res.Title + "\n\n" + res.Commit
+	now := time.Now()
+	_ = os.Chtimes(commitPath, now, now)
+	//ignored because docs say that if this function an error, it's a PathError,
+	//and if commitPath was bad, the program would have already crashed.
 }
 
-//ReadApplication reads a text file and puts it into a string, with newlines
-//as they appear in the file. Lines that start with '#' are not included.
+//ReadApplication reads a text file and puts it into a struct. It keeps track of
+//when the last time the commit file was modified, so after one read, this method
+//can be called at will without incurring slow file i/o, as long as the file isn't
+//modified.
 func ReadApplication() *ApplicationContents {
 	commitPath := filepath.Join(".ait", "commit")
 	commitFile := utils.BasicFileOpen(commitPath, os.O_RDONLY, 0644)
 	defer commitFile.Close()
 	scanner := bufio.NewScanner(commitFile)
 	scanner.Split(bufio.ScanLines)
-	result := &ApplicationContents{}
-	ptr := &result.KSPath
-	for scanner.Scan() {
+	lastMod, err := utils.GetFileModTime(commitPath)
+	if application != nil && err == nil && application.timeFilled.After(lastMod) {
+		return application
+	} else if application == nil {
+		application = &ApplicationContents{}
+	}
+	application.Clear()
+	ptr := &application.ksName
+	for scanner.Scan() { //fill out the struct with the contents of the file
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "#") {
 			*ptr += line + " \n"
 		} else if strings.HasPrefix(line, "# TITLE below") {
-			ptr = &result.Title
+			ptr = &application.title
 		} else if strings.HasPrefix(line, "# COMMIT below") {
-			ptr = &result.Commit
+			ptr = &application.commit
 		} else if strings.HasPrefix(line, "# PULL REQUEST below") {
-			ptr = &result.PRBody
+			ptr = &application.prBody
 		}
 	}
-	result.TrimFields()
-	return result
+	application.TrimFields()
+	application.ksName += ".ks"
+	application.timeFilled = time.Now()
+	return application
 }

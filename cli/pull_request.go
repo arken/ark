@@ -29,13 +29,15 @@ func PullRequest(url, forkOwner string) error {
 		Cleanup()
 		log.Fatal(err)
 	}
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo + "_fork", "test_f.ks")
+	ksName := display.ReadApplication().GetKSName() //just the name of the file
+	ksPath := filepath.Join(".ait", "sources", upstreamRepo + "_fork", ksName)
+	//full relative path from repo root ^
 	err = keysets.Generate(ksPath)
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
-	AddKeyset(repo, filepath.Base(ksPath))
+	AddKeyset(repo, ksName)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, true)
 	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
@@ -83,8 +85,8 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 	head := forkOwner + ":master"
 	application := display.ReadApplication()
 	pr := &github.NewPullRequest {
-		Title:               github.String(application.Title),
-		Body:                github.String(application.PRBody),
+		Title:               github.String(application.GetTitle()),
+		Body:                github.String(application.GetPRBody()),
 		Head:                github.String(head),
 		Base:                github.String("master"),
 		MaintainerCanModify: github.Bool(true),

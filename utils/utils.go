@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
@@ -99,4 +100,12 @@ func BasicFileOpen(path string, flag int, bits os.FileMode) *os.File {
 		log.Fatal(err)
 	}
 	return file
+}
+
+func GetFileModTime(path string) (time.Time, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return time.Now(), err
+	}
+	return info.ModTime(), nil
 }
