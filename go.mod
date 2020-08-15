@@ -17,4 +17,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	github.com/schollz/progressbar/v3 v3.3.4
+	github.com/stretchr/testify v1.6.1
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
 )
