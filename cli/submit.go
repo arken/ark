@@ -3,13 +3,14 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/keysets"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/arkenproject/ait/keysets"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
@@ -76,12 +77,13 @@ to add files for submission.`)
 	}
 	display.ShowApplication()
 	ksName := display.ReadApplication().GetKSName()
-	err = keysets.Generate(filepath.Join(target, ksName))
+	category := display.ReadApplication().GetCategory()
+	err = keysets.Generate(filepath.Join(target, category, ksName))
 	if err != nil {
 		Cleanup()
 		log.Fatal(err)
 	}
-	AddKeyset(repo, ksName)
+	AddKeyset(repo, filepath.Join(category, ksName))
 	CommitKeyset(repo)
 	PushKeyset(repo, url, false)
 	Cleanup()
@@ -140,7 +142,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	}
 	opt := &git.PushOptions{
 		Auth: &http.BasicAuth{
-			Username:"",
+			Username: "",
 			Password: "",
 		},
 	}
@@ -156,7 +158,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 		pushErr = repo.Push(opt)
 		if pushErr != nil {
 			if pushErr.Error() == "authentication required" ||
-			   pushErr.Error() == "authorization failed" { //TODO: give specific error messages for both of these errors
+				pushErr.Error() == "authorization failed" { //TODO: give specific error messages for both of these errors
 				fmt.Print(getCredentialPrompt(isPR))
 				choice, _ = reader.ReadString('\n')
 				choice = strings.TrimSpace(choice)
@@ -221,10 +223,9 @@ func getCredentialPrompt(isPR bool) string {
 		return `
 Those credentials did not give you write access to the repo. Retry if you 
 think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
-	} else {
-		return `
+	}
+	return `
 Those credentials did not give you write access to the repo.
 Retry if you think you made a typo, but you might not have the proper permissions.
 Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
-	}
 }

@@ -14,6 +14,7 @@ import (
 //exist yet, and the file should end in ".ks" The resultant keyset files contains
 //the name (not path) of the file and an IPFS cid hash, separated by a space.
 func Generate(dir string) error {
+	os.MkdirAll(filepath.Dir(dir), os.ModePerm)
 
 	keySetFile, err := os.OpenFile(dir, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

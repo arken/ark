@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ApplicationContents is a struct representing the application fields.
 type ApplicationContents struct {
 	title      string
 	commit     string
@@ -23,35 +24,42 @@ func (app *ApplicationContents) TrimFields() {
 	app.ksName = strings.TrimSpace(app.ksName)
 }
 
+// GetTitle returns the name of the title.
 func (app *ApplicationContents) GetTitle() string {
 	return app.title
 }
 
+// GetCommit returns the commit message.
 func (app *ApplicationContents) GetCommit() string {
 	return app.commit
 }
 
+// GetPRBody returns the Pull Request Message.
 func (app *ApplicationContents) GetPRBody() string {
 	return app.prBody
 }
 
+// GetCategory returns the Category of the KeySet File.
 func (app *ApplicationContents) GetCategory() string {
 	return app.category
 }
 
+// GetKSName returns the name of the KeySet File.
 func (app *ApplicationContents) GetKSName() string {
 	return app.ksName
 }
 
+// IsEmpty checks if the commit file is empty.
 func (app *ApplicationContents) IsEmpty() bool {
-	return len(app.title) + len(app.commit) + len(app.prBody) +
-		   len(app.category) + len(app.ksName) == 0
+	return len(app.title)+len(app.commit)+len(app.prBody)+
+		len(app.category)+len(app.ksName) == 0
 }
 
+// Clear empties the values of the struct.
 func (app *ApplicationContents) Clear() {
-	app.title    = ""
-	app.commit   = ""
-	app.prBody   = ""
+	app.title = ""
+	app.commit = ""
+	app.prBody = ""
 	app.category = ""
 	app.ksName = ""
 }
