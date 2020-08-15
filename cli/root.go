@@ -23,4 +23,5 @@ func init() {
 	Root.RegisterCMD(&Remove)
 	Root.RegisterCMD(&Status)
 	Root.RegisterCMD(&Submit)
+	Root.RegisterCMD(&Upload)
 }
