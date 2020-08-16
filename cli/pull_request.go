@@ -2,8 +2,13 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"syscall"
+	"time"
+
 	"github.com/arkenproject/ait/display"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
@@ -11,16 +16,11 @@ import (
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/oauth2"
-	"log"
-	"os"
-	"path/filepath"
-	"syscall"
-	"time"
 )
 
-//PullRequest is the root function from which the pull request chain is run:
-//Fork, Clone the fork, add keyset to fork, commit and push the fork, create
-//pull request to upstream repository.
+// PullRequest is the root function from which the pull request chain is run:
+// Fork, Clone the fork, add keyset to fork, commit and push the fork, create
+// pull request to upstream repository.
 func PullRequest(url, forkOwner string) error {
 	upstreamOwner := utils.GetRepoOwner(url)
 	upstreamRepo := utils.GetRepoName(url)
@@ -29,9 +29,10 @@ func PullRequest(url, forkOwner string) error {
 		Cleanup()
 		log.Fatal(err)
 	}
-	ksName := display.ReadApplication().GetKSName() //just the name of the file
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo + "_fork", ksName)
-	//full relative path from repo root ^
+	ksName := display.ReadApplication().GetKSName() // Just the name of the file
+	ksPath := filepath.Join(".ait", "sources", upstreamRepo+"_fork", ksName)
+
+	// Full relative path from repo root ^
 	err = keysets.Generate(ksPath)
 	if err != nil {
 		Cleanup()
@@ -44,47 +45,50 @@ func PullRequest(url, forkOwner string) error {
 	return err
 }
 
-//fork uses the github api to create a fork in the user's github account and clone
-//that fork into local storage. This is done using oauth2.
+// fork uses the github api to create a fork in the user's github account and clone
+// that fork into local storage. This is done using oauth2.
 func fork(owner, name string) (*git.Repository, *github.Client, error) {
 	token := os.Getenv("GITHUB_AUTH_TOKEN")
 	if token == "" {
 		fmt.Print(
-`You will now need a GitHub Oauth token. If you don't have one, you can make one
+			`You will now need a GitHub Oauth token. If you don't have one, you can make one
 by following the steps at https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
 Enter your GitHub Oauth token: `)
 		byteToken, _ := terminal.ReadPassword(syscall.Stdin)
 		token = string(byteToken)
 		fmt.Print("\n\n")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 	client := github.NewClient(httpClient)
 
-	remoteRepo, response, err := client.Repositories.CreateFork(ctx, owner, name,nil)
-	//A traditional if err != nil will not work here. See https://godoc.org/github.com/google/go-github/github#RepositoriesService.CreateFork
+	remoteRepo, response, err := client.Repositories.CreateFork(ctx, owner, name, nil)
+
+	// A traditional if err != nil will not work here. See https://godoc.org/github.com/google/go-github/github#RepositoriesService.CreateFork
 	status := -1
 	if response != nil && remoteRepo != nil {
 		status = response.StatusCode
 	}
-	//202 means Github is processing the fork request, but this is ok.
-	//202 seems to be the most common non-error status code.
+
+	// 202 means Github is processing the fork request, but this is ok.
+	// 202 seems to be the most common non-error status code.
 	if remoteRepo == nil || status != 202 && status != 200 {
-		return nil, nil, errors.New(fmt.Sprintf(
+		return nil, nil, fmt.Errorf(
 			"Something went wrong when trying to fork %v's repo %v:\n%v",
-			owner, name, err))
+			owner, name, err)
 	}
-	target := filepath.Join(".ait", "sources", name + "_fork")
+	target := filepath.Join(".ait", "sources", name+"_fork")
 	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
 	return localRepo, client, err
 }
 
+// CreatePullRequest creates a pull request from the forked repository to the Github Repository.
 func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkOwner string) {
 	head := forkOwner + ":master"
 	application := display.ReadApplication()
-	pr := &github.NewPullRequest {
+	pr := &github.NewPullRequest{
 		Title:               github.String(application.GetTitle()),
 		Body:                github.String(application.GetPRBody()),
 		Head:                github.String(head),
@@ -92,8 +96,10 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 		MaintainerCanModify: github.Bool(true),
 		Draft:               github.Bool(false),
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
+
 	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
 	if err != nil {
 		Cleanup()
