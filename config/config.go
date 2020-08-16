@@ -19,6 +19,7 @@ type Config struct {
 // general defines the substruct about general application settings.
 type general struct {
 	Version string
+	Editor  string
 }
 
 // git defines git specific config settings.

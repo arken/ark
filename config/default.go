@@ -16,7 +16,8 @@ func defaultConf() Config {
 			// Configuration version number. If a field is added or changed
 			// in this default, the version must be changed to tell the app
 			// to rebuild the users config files.
-			Version: "0.0.2",
+			Version: "0.0.3",
+			Editor:  "nano",
 		},
 		Git: git{
 			Name:  "",
