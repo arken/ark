@@ -3,8 +3,8 @@ package ipfs
 import (
 	"context"
 	"fmt"
+	"github.com/arkenproject/ait/utils"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -42,10 +42,7 @@ func init() {
 	ctx, cancel = context.WithCancel(context.Background())
 
 	ipfs, err = spawnNode(ctx, aitConf.Global.IPFS.Path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	utils.CheckError(err)
 	ps = peering.NewPeeringService(node.PeerHost)
 
 	bootstrapNodes := []string{
@@ -186,7 +183,7 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 			defer wg.Done()
 			err := ipfs.Swarm().Connect(ctx, *peerInfo)
 			if err != nil {
-				log.Printf("failed to connect to %s: %s", peerInfo.ID, err)
+				fmt.Printf("failed to connect to %s: %s\n", peerInfo.ID, err)
 			}
 		}(peerInfo)
 	}
@@ -214,7 +211,7 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	// Create the repo with the config
 	err = fsrepo.Init(path, cfg)
 	if err != nil {
-		return "", fmt.Errorf("failed to init node: %s", err)
+		return "", fmt.Errorf("failed to init node: %s\n", err)
 	}
 
 	return path, nil

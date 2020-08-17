@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"errors"
-	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/arkenproject/ait/utils"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Remove is the reverse of the add method. Given a set of file patterns, it
@@ -41,7 +41,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*RemoveArgs)
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
-		log.Fatal(errors.New("no files currently staged, nothing was done"))
+		utils.FatalPrintln("no files currently staged, nothing was done")
 	}
 	if flags.All {
 		file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
@@ -63,10 +63,8 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			}
 		}
 	}
-	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY | os.O_TRUNC, 0644)
+	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	err := utils.DumpMap(contents, file)
 	file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 }

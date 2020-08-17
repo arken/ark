@@ -1,11 +1,12 @@
 package cli
 
 import (
-	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/arkenproject/ait/utils"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Add imports a file or directory to AIT's local staging file.
@@ -32,7 +33,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
 
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
-	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE | os.O_RDONLY, 0644)
+	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
 	//completely truncate the file to avoid duplicated filenames
@@ -59,7 +60,5 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	//dump the map's keys, which have to be unique, into the file.
 	err := utils.DumpMap(contents, file)
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 }

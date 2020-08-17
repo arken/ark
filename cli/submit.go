@@ -3,7 +3,6 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,10 +50,10 @@ var SpecialRepos = map[string]string{
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*SubmitArgs).Args
 	if len(args) < 1 {
-		log.Fatal("Not enough arguments, expected repository url")
+		utils.FatalPrintln("Not enough arguments, expected repository url")
 	}
 	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
-		log.Fatal(`No files are currently added, nothing to submit. Use
+		utils.FatalPrintln(`No files are currently added, nothing to submit. Use
     ait add <files>...
 to add files for submission.`)
 	}
@@ -66,14 +65,12 @@ to add files for submission.`)
 	if !utils.FileExists(target) {
 		path := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 		_, err := keysets.Clone(url, path)
-		if err != nil {
-			log.Fatal(err)
-		}
+		utils.CheckError(err)
 	}
 	repo, err := git.PlainOpen(target)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	display.ShowApplication()
 	ksName := display.ReadApplication().GetKSName()
@@ -81,7 +78,7 @@ to add files for submission.`)
 	err = keysets.Generate(filepath.Join(target, category, ksName))
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	AddKeyset(repo, filepath.Join(category, ksName))
 	CommitKeyset(repo)
@@ -95,12 +92,12 @@ func AddKeyset(repo *git.Repository, ksPath string) {
 	tree, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	_, err = tree.Add(ksPath)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 }
 
@@ -110,13 +107,13 @@ func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	app := display.ReadApplication()
 	msg := app.GetTitle() + "\n\n" + app.GetCommit()
 	if len(strings.TrimSpace(msg)) == 0 {
 		Cleanup()
-		log.Fatal("Empty commit message, submission aborted.")
+		utils.FatalPrintln("Empty commit message, submission aborted.")
 	}
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
@@ -128,7 +125,7 @@ func CommitKeyset(repo *git.Repository) {
 	_, err = tree.Commit(msg, opt)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 }
 
@@ -138,7 +135,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	_, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	opt := &git.PushOptions{
 		Auth: &http.BasicAuth{
@@ -165,7 +162,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 				fmt.Print("\n")
 			} else { //non-authentication error
 				Cleanup()
-				log.Fatal(pushErr)
+				utils.FatalPrintln(pushErr)
 			}
 
 			if choice == "p" && !isPR { //start pull request process
@@ -175,7 +172,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 				continue
 			} else { //any other key
 				Cleanup()
-				log.Fatal("Submission aborted.")
+				utils.FatalPrintln("Submission aborted.")
 			}
 		} else { //the push was actually successful
 			break
@@ -201,7 +198,7 @@ func promptCredentials() (string, string) {
 	fmt.Print("Enter your GitHub password: ")
 	bytePassword, err := terminal.ReadPassword(syscall.Stdin)
 	if err != nil {
-		log.Fatal("\nSomething went wrong when collecting your password: ", err)
+		utils.FatalPrintf("\nSomething went wrong when collecting your password: %v\n", err.Error())
 	}
 	fmt.Print("\n") //necessary
 	return strings.TrimSpace(username), strings.TrimSpace(string(bytePassword))

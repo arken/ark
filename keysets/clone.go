@@ -11,19 +11,19 @@ import (
 // Clone pulls a remote repository to the local instance of AIT.
 func Clone(url, path string) (*git.Repository, error) {
 	dir := filepath.Dir(path)
-    if !utils.FileExists(dir) {
-        err := os.MkdirAll(dir, os.ModePerm)
-        if err != nil {
+	if !utils.FileExists(dir) {
+		err := os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
 			return nil, err
 		}
-    }
-    var opt = &git.CloneOptions {
-        URL: url,
-    }
-    repo, err := git.PlainClone(path, false, opt)
-    if err != nil {
-        _ = os.Remove(path)
-        return nil, err
-    }
-    return repo, nil
+	}
+	var opt = &git.CloneOptions{
+		URL: url,
+	}
+	repo, err := git.PlainClone(path, false, opt)
+	if err != nil {
+		_ = os.Remove(path)
+		return nil, err
+	}
+	return repo, nil
 }

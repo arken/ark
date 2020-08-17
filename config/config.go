@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"github.com/arkenproject/ait/utils"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -44,9 +44,7 @@ var (
 func init() {
 	// Determine the current user to build expected file path.
 	user, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 	// Create expected config path.
 	path = filepath.Join(user.HomeDir, ".ait", "ait.config")
 	readConf(&Global)
@@ -67,6 +65,6 @@ func readConf(conf *Config) {
 		readConf(conf)
 	}
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 }
