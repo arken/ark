@@ -64,8 +64,8 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		}
 	}
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY | os.O_TRUNC, 0644)
-	file.Close()
 	err := utils.DumpMap(contents, file)
+	file.Close()
 	if err != nil {
 		log.Fatal(err)
 	}

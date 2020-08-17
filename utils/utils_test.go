@@ -18,3 +18,13 @@ func TestGetRepoName(t *testing.T) {
     assert.Equal(t, "", GetRepoName(""))
     assert.Equal(t, "", GetRepoName("/"))
 }
+
+func TestGetRepoOwner(t *testing.T) {
+    assert.Equal(t, "arkenproject", GetRepoOwner("https://github.com/arkenproject/ait.git"))
+    assert.Equal(t, "google", GetRepoOwner("https://github.com/google/go-github.git"))
+    assert.Equal(t, "go-git", GetRepoOwner("https://github.com/go-git/go-git.git"))
+    assert.Equal(t, "torvalds", GetRepoOwner("https://github.com/torvalds/linux.git"))
+    assert.Equal(t, "", GetRepoOwner("https://github.com//linux.git"))
+    assert.Equal(t, "", GetRepoOwner(""))
+    assert.Equal(t, "a", GetRepoOwner("123456789012345678/a/"))
+}

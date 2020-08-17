@@ -1,7 +1,6 @@
 package keysets
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -10,21 +9,21 @@ import (
 )
 
 // Clone pulls a remote repository to the local instance of AIT.
-func Clone(url string) {
-	if !utils.FileExists(".ait/sources") {
-		err := os.Mkdir(".ait/sources", os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
+func Clone(url, path string) (*git.Repository, error) {
+	dir := filepath.Dir(path)
+    if !utils.FileExists(dir) {
+        err := os.MkdirAll(dir, os.ModePerm)
+        if err != nil {
+			return nil, err
 		}
-	}
-	target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-	var opt = &git.CloneOptions{
-		URL:      url,
-		Progress: os.Stdout,
-	}
-	_, err := git.PlainClone(target, false, opt)
-	if err != nil {
-		_ = os.Remove(target)
-		log.Fatal(err)
-	}
+    }
+    var opt = &git.CloneOptions {
+        URL: url,
+    }
+    repo, err := git.PlainClone(path, false, opt)
+    if err != nil {
+        _ = os.Remove(path)
+        return nil, err
+    }
+    return repo, nil
 }
