@@ -3,6 +3,7 @@ package cli
 import (
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -26,10 +27,15 @@ type UploadArgs struct {
 
 // UploadRun handles the uploading and display of the upload command.
 func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
-	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
+	contents := make(map[string]struct{}) // basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
+
+	bar := progressbar.Default(int64(len(contents)))
+	bar.RenderBlank()
+
+	workers := genNumWorkers()
 
 	input := make(chan string, len(contents))
 	for path := range contents {
@@ -39,19 +45,38 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 		}
 		input <- cid
 	}
-	bar := progressbar.Default(int64(len(contents)))
-	bar.RenderBlank()
-	for cid := range input {
-		replications, err := ipfs.FindProvs(cid, 20)
-		if err != nil {
-			log.Fatal(err)
+	for i := 0; i < workers; i++ {
+		go func(bar *progressbar.ProgressBar, input chan string) {
+			for cid := range input {
+				replications, err := ipfs.FindProvs(cid, 20)
+				if err != nil {
+					log.Fatal(err)
+				}
+				if replications >= 3 {
+					bar.Add(1)
+				} else {
+					bar.Add(0)
+					input <- cid
+				}
+			}
+		}(bar, input)
+	}
+
+	for {
+		if bar.State().CurrentPercent == float64(1) {
+			close(input)
+			return
 		}
-		if replications > 3 {
-			bar.Add(1)
-		} else {
-			bar.Add(0)
-			input <- cid
-		}
+		bar.Add(0)
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+// Generate the number of worker processes to optimize efficiency.
+// Subtract 2 from the number of cores because of the main thread and the GetAll function.
+func genNumWorkers() int {
+	if runtime.NumCPU() > 2 {
+		return runtime.NumCPU() - 1
+	}
+	return 1
 }
