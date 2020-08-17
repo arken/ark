@@ -39,8 +39,8 @@ func IsInSubDir(dir, pathToCheck string) bool {
 	return strings.HasPrefix(dirAbs, pathAbs)
 }
 
-//PathMatch checks if two paths match using wildcards, but it will also return
-//true if path is in a subdirectory of pattern.
+// PathMatch checks if two paths match using wildcards, but it will also return
+// true if path is in a subdirectory of pattern.
 func PathMatch(pattern, path string) bool {
 	matched, _ := filepath.Match(pattern, path)
 	return matched || IsInSubDir(path, pattern)
@@ -57,7 +57,7 @@ func FillMap(contents map[string]struct{}, file *os.File) {
 	}
 }
 
-//Dumps all keys in the given map to the given file, separated by a newline.
+// Dumps all keys in the given map to the given file, separated by a newline.
 func DumpMap(contents map[string]struct{}, file *os.File) error {
 	for line := range contents {
 		_, err := file.WriteString(line + "\n")
@@ -68,8 +68,8 @@ func DumpMap(contents map[string]struct{}, file *os.File) error {
 	return nil
 }
 
-//GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
-//name was found, the empty string is returned.
+// GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
+// name was found, the empty string is returned.
 func GetRepoName(url string) string {
 	index := strings.LastIndex(url, "/") + 1
 	if index < 0 || len(url)-4 < 0 || index > len(url)-4 {
@@ -79,8 +79,8 @@ func GetRepoName(url string) string {
 	}
 }
 
-//GetRepoOwner returns the name of a repo given its HTTPS or SSH address. If no
-//name was found, the empty string is returned.
+// GetRepoOwner returns the owner of a repo given its HTTPS or SSH address. If
+// no name was found, the empty string is returned.
 func GetRepoOwner(url string) string {
 	if len(url) < 19 {
 		return ""
@@ -93,13 +93,15 @@ func GetRepoOwner(url string) string {
 	return url[start:end]
 }
 
-//BasicFileOpen just opens a file and log.Fatal's any error that arises
+// BasicFileOpen just opens a file and log.Fatal's any error that arises
 func BasicFileOpen(path string, flag int, bits os.FileMode) *os.File {
 	file, err := os.OpenFile(path, flag, bits)
 	CheckError(err)
 	return file
 }
 
+// GetFileModTime returns the file at the path's last time of modification
+// according to the OS. If there is an error, it returns time.Now() and the error.
 func GetFileModTime(path string) (time.Time, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -108,6 +110,7 @@ func GetFileModTime(path string) (time.Time, error) {
 	return info.ModTime(), nil
 }
 
+// FatalPrintln Println's the given arguments and then exits with exit code 1.
 func FatalPrintln(a ...interface{}) {
 	if a != nil {
 		fmt.Println(a...)
@@ -115,6 +118,7 @@ func FatalPrintln(a ...interface{}) {
 	os.Exit(1)
 }
 
+// FatalPrintf Printf's the given arguments and then exits with exit code 1.
 func FatalPrintf(format string, a ...interface{}) {
 	if a != nil {
 		fmt.Printf(format, a...)
@@ -124,6 +128,8 @@ func FatalPrintf(format string, a ...interface{}) {
 	os.Exit(1)
 }
 
+// CheckError checks if the given error is nil, and if not it FatalPrintln's the
+// error.
 func CheckError(err error) {
 	if err != nil {
 		FatalPrintln(err)
