@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/DataDrake/cli-ng/cmd"
 )
@@ -27,20 +27,16 @@ func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
 		err := os.Mkdir(".ait", os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
+		utils.CheckError(err)
 	} else if info.IsDir() {
-		log.Fatal(errors.New("a directory called \".ait\" already exists here, " +
-			"suggesting that this is already an ait repo"))
+		utils.FatalPrintln("a directory called \".ait\" already exists here, " +
+			"suggesting that this is already an ait repo")
 	} else {
-		log.Fatal(errors.New("a file called \".ait\" already exists in this " +
+		utils.FatalPrintln("a file called \".ait\" already exists in this " +
 			"this directory and it is not itself a directory. Please move or " +
-			"rename this file"))
+			"rename this file")
 	}
 	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 	fmt.Printf("New ait repo initiated at %v", wd)
 }

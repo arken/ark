@@ -2,7 +2,7 @@ package utils
 
 import (
 	"bufio"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,10 +72,10 @@ func DumpMap(contents map[string]struct{}, file *os.File) error {
 //name was found, the empty string is returned.
 func GetRepoName(url string) string {
 	index := strings.LastIndex(url, "/") + 1
-	if index < 0 || len(url) - 4 < 0 || index > len(url) - 4 {
+	if index < 0 || len(url)-4 < 0 || index > len(url)-4 {
 		return ""
 	} else {
-		return url[index:len(url) - 4]
+		return url[index : len(url)-4]
 	}
 }
 
@@ -96,9 +96,7 @@ func GetRepoOwner(url string) string {
 //BasicFileOpen just opens a file and log.Fatal's any error that arises
 func BasicFileOpen(path string, flag int, bits os.FileMode) *os.File {
 	file, err := os.OpenFile(path, flag, bits)
-	if err != nil {
-		log.Fatal(err)
-	}
+	CheckError(err)
 	return file
 }
 
@@ -108,4 +106,26 @@ func GetFileModTime(path string) (time.Time, error) {
 		return time.Now(), err
 	}
 	return info.ModTime(), nil
+}
+
+func FatalPrintln(a ...interface{}) {
+	if a != nil {
+		fmt.Println(a...)
+	}
+	os.Exit(1)
+}
+
+func FatalPrintf(format string, a ...interface{}) {
+	if a != nil {
+		fmt.Printf(format, a...)
+	} else {
+		fmt.Printf(format)
+	}
+	os.Exit(1)
+}
+
+func CheckError(err error) {
+	if err != nil {
+		FatalPrintln(err)
+	}
 }

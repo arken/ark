@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"log"
 	"os"
 	"runtime"
 	"time"
@@ -40,18 +39,14 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	input := make(chan string, len(contents))
 	for path := range contents {
 		cid, err := ipfs.Add(path)
-		if err != nil {
-			log.Fatal(err)
-		}
+		utils.CheckError(err)
 		input <- cid
 	}
 	for i := 0; i < workers; i++ {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
-				if err != nil {
-					log.Fatal(err)
-				}
+				utils.CheckError(err)
 				if replications >= 3 {
 					bar.Add(1)
 				} else {

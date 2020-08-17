@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -12,6 +11,7 @@ import (
 	"github.com/arkenproject/ait/display"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/crypto/ssh/terminal"
@@ -27,7 +27,7 @@ func PullRequest(url, forkOwner string) error {
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err.Error())
 	}
 	ksName := display.ReadApplication().GetKSName() // Just the name of the file
 	ksPath := filepath.Join(".ait", "sources", upstreamRepo+"_fork", ksName)
@@ -36,7 +36,7 @@ func PullRequest(url, forkOwner string) error {
 	err = keysets.Generate(ksPath)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	AddKeyset(repo, ksName)
 	CommitKeyset(repo)
@@ -103,7 +103,7 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
 	if err != nil {
 		Cleanup()
-		log.Fatal(err)
+		utils.FatalPrintln(err)
 	}
 	fmt.Println(donePR.GetHTMLURL())
 }

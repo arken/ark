@@ -3,7 +3,6 @@ package display
 import (
 	"bufio"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -58,9 +57,9 @@ func ShowApplication() {
 	}
 	execPath, err := exec.LookPath(config.Global.General.Editor)
 	if err != nil {
-		log.Fatalf("%v, your configured editor, could not be found. "+
+		utils.FatalPrintf("%v, your configured editor, could not be found. "+
 			"Please make sure it is installed and in your OS's PATH "+
-			"or change it in the ~/.ait/ait.config file.", config.Global.General.Editor)
+			"or change it in the ~/.ait/ait.config file.\n", config.Global.General.Editor)
 	}
 
 	cmd := exec.Command(execPath, commitPath)
@@ -68,9 +67,7 @@ func ShowApplication() {
 	cmd.Stdout = os.Stdout
 	// Display the editor to the user by running the command.
 	err = cmd.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 	now := time.Now()
 	_ = os.Chtimes(commitPath, now, now)
 	// Ignored because docs say that if this function an error, it's a PathError,

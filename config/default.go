@@ -2,9 +2,10 @@ package config
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/BurntSushi/toml"
 )
@@ -35,13 +36,9 @@ func genConf(conf Config) {
 	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	buf := new(bytes.Buffer)
 	err := toml.NewEncoder(buf).Encode(conf)
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 	f, err := os.Create(path)
-	if err != nil {
-		log.Fatal(err)
-	}
+	utils.CheckError(err)
 	defer f.Close()
 	f.Write(buf.Bytes())
 }

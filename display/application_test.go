@@ -16,14 +16,14 @@ func TestReadApplicationModTiming(t *testing.T) {
 	commitPath := filepath.Join(".ait", "commit")
 	ioutil.WriteFile(commitPath, commitTestPrompt, 0644)
 	app := ReadApplication() //read the file
-	ReadApplication() //should use the struct in memory
-	time.Sleep(15*time.Second)
+	ReadApplication()        //should use the struct in memory
+	time.Sleep(15 * time.Second)
 	//modifying the file with os.OpenFile does not actually change what the os
 	//thinks is the file's last modified time. However, if you go open up vim
 	//and modify it during these 15 seconds, you'll see the desired behavior.
 	//run with coverage to see.
 	app = ReadApplication() //should re-read the file if you modify it somehow
-	printApp(app) //any changes made should be reflected here
+	printApp(app)           //any changes made should be reflected here
 }
 
 func printApp(app *ApplicationContents) {
