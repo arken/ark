@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
@@ -33,7 +34,9 @@ func Generate(dir string) error {
 			cleanup(keySetFile)
 			return err
 		}
-		line := fmt.Sprintf("%v %v\n", filepath.Base(filePath), cid)
+		// Scrub filename for spaces and replace with dashes.
+		filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
+		line := fmt.Sprintf("%v %v\n", filename, cid)
 		_, err = keySetFile.WriteString(line)
 		if err != nil {
 			cleanup(keySetFile)
