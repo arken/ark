@@ -39,7 +39,7 @@ func PullRequest(url, forkOwner string) error {
 	ksPath := filepath.Join(".ait", "sources", upstreamRepo, ksName)
 
 	// Full relative path from repo root ^
-	err = keysets.Generate(ksPath)
+	err = keysets.Generate(ksPath, false)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)

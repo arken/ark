@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	err := Generate("test.ks")
+	err := Generate("test.ks", false)
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()

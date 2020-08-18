@@ -75,7 +75,21 @@ to add files for submission.`)
 	display.ShowApplication(repoPath)
 	ksName := display.ReadApplication().GetKSName()
 	category := display.ReadApplication().GetCategory()
-	err = keysets.Generate(filepath.Join(repoPath, category, ksName))
+	ksPath := filepath.Join(repoPath, category, ksName)
+	var choice string
+	if utils.FileExists(ksPath) {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("A file called %v already exists in the clobes repo.\n",
+			filepath.Join(category, ksName))
+		for choice != "a" && choice != "o" {
+			fmt.Print("Would you like to overwrite it (o) or add to it (a)? ")
+			choice, _ = reader.ReadString('\n')
+			choice = strings.TrimSpace(choice)
+		}
+	}
+	overwrite := choice != "a"
+	err = keysets.Generate(ksPath, overwrite)
+	err = keysets.Generate(ksPath, false)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
