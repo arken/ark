@@ -2,6 +2,7 @@ package display
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -49,17 +50,67 @@ func ShowApplication(repoPath string) {
 // will be used instead. The appropriate template is deep-copied into
 // ./.ait/commit, so this function can cause the program to terminate if i/o
 // errors arise
-func fetchApplicationTemplate(repoPath, destination string) {
-	fromPath := filepath.Join(filepath.Dir(config.Path), "application.md")
-	//        = ~/.ait/application.md
-	if utils.FileExists(fromPath) {
-		fromPath = filepath.Join(repoPath, "application.md")
-		//       = ./.ait/sources/<repo-name>/application.md
+func fetchApplicationTemplate(repoPath, destPath string) {
+	fromPath := filepath.Join(repoPath, "application.md")
+	//       := ./.ait/sources/<repo-name>/application.md
+	if !isValidAppTemplate(fromPath) { // false if the file does not exist
+		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
+		//       = ~/.ait/application.md
+		fmt.Println("The application template file found in the cloned " +
+			"repo was found to be invalid, using default instead\n ")
 	}
-	err := utils.CopyFile(fromPath, destination)
+	if !isValidAppTemplate(fromPath) {
+		utils.FatalPrintf(`Your default application template stored in %v is invalid. 
+This means you probably edited it such that it has duplicate labels or
+it is missing one or more of the required fields, Commit and Title. 
+Please backup %v/ait.config, delete folder %v and rerun ait. 
+This will generate a default application template.
+In the future, please refrain from editing %v.
+`, fromPath, filepath.Dir(fromPath), filepath.Dir(fromPath), fromPath)
+	}
+	err := utils.CopyFile(fromPath, destPath)
 	if err != nil {
 		utils.FatalPrintln(err)
 	}
+}
+
+// isValidAppTemplate makes sure the application template at the given path meets
+// the following standards:
+//   1. Must not have ANY duplicate labels ("# COMMIT" is an example of a label)
+//   2. Must contain at least a title and commit field
+// Returns false if any error occurs when opening the file at the given path.
+func isValidAppTemplate(path string) bool {
+	commitFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
+	if err != nil {
+		return false
+	}
+	defer commitFile.Close()
+	scanner := bufio.NewScanner(commitFile)
+	scanner.Split(bufio.ScanLines)
+
+	reqs := map[string]bool {
+		"# LOCATION": false,
+		"# FILENAME": false,
+		"# TITLE": false,
+		"# COMMIT": false,
+		"# PULL REQUEST" : false,
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		for key := range reqs {
+			if strings.HasPrefix(line, key) {
+				if reqs[key] {   // this means the label was already found in
+					return false // the file, meaning there's a duplicate label
+				}
+				reqs[key] = true
+			}
+		}
+	}
+	if !reqs["# COMMIT"] || !reqs["# TITLE"] {
+		return false
+	}
+	return true
 }
 
 // ReadApplication reads a text file and puts it into a struct. It keeps track of
@@ -68,21 +119,19 @@ func fetchApplicationTemplate(repoPath, destination string) {
 // modified.
 func ReadApplication() *ApplicationContents {
 	commitPath := filepath.Join(".ait", "commit")
-	commitFile := utils.BasicFileOpen(commitPath, os.O_RDONLY, 0644)
-
-	defer commitFile.Close()
-
-	scanner := bufio.NewScanner(commitFile)
-	scanner.Split(bufio.ScanLines)
-
 	lastMod, err := utils.GetFileModTime(commitPath)
+
 	if application != nil && err == nil && application.timeFilled.After(lastMod) {
 		return application
 	} else if application == nil {
 		application = &ApplicationContents{}
 	}
+	commitFile := utils.BasicFileOpen(commitPath, os.O_RDONLY, 0644)
+	defer commitFile.Close()
 
 	application.Clear()
+	scanner := bufio.NewScanner(commitFile)
+	scanner.Split(bufio.ScanLines)
 	var ptr *string = nil
 
 	// Fill out the struct with the contents of the file

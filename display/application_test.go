@@ -2,6 +2,7 @@ package display
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"go/build"
 	"io/ioutil"
 	"os"
@@ -24,6 +25,20 @@ func TestReadApplicationModTiming(t *testing.T) {
 	//run with coverage to see.
 	app = ReadApplication() //should re-read the file if you modify it somehow
 	printApp(app)           //any changes made should be reflected here
+}
+
+func TestIsValidApplication(t *testing.T) {
+	_ = ioutil.WriteFile("temp", commitTestPrompt, 0644)
+	assert.True(t, isValidAppTemplate("temp"))
+	_ = ioutil.WriteFile("temp", []byte(""), 0644)
+	assert.False(t, isValidAppTemplate("temp"))
+	_ = ioutil.WriteFile("temp", []byte(`# COMMIT
+#TITLE`), 0644)
+	assert.False(t, isValidAppTemplate("temp"))
+	_ = ioutil.WriteFile("temp", []byte(`# COMMIT
+# TITLE`), 0644)
+	assert.True(t, isValidAppTemplate("temp"))
+	os.Remove("temp")
 }
 
 func printApp(app *ApplicationContents) {
