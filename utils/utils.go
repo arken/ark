@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -134,4 +135,16 @@ func CheckError(err error) {
 	if err != nil {
 		FatalPrintln(err)
 	}
+}
+
+func CopyFile(fromPath, toPath string) error {
+	fromBytes, err := ioutil.ReadFile(fromPath)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(toPath, fromBytes, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

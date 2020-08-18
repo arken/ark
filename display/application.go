@@ -2,7 +2,6 @@ package display
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,40 +9,8 @@ import (
 	"time"
 
 	"github.com/arkenproject/ait/config"
-
 	"github.com/arkenproject/ait/utils"
 )
-
-var commitPrompt = //temporary
-`# Where should your addition be located within the keyset repository?
-# This line should be in the format of a path.
-# For example, 
-# library/fiction/classics
-# or 
-# science/biology/datasets
-# (An empty line will add the file to the root of the KeySet which is not normally recommended.)
-# LOCATION below
-
-
-# Provide a name for the keyset file that is about to be created (no file extension, just the name)
-# FILENAME below
-
-
-# Briefly describe the files you're submitting (preferably <50 characters).
-# TITLE below
-
-
-# An empty commit message will abort the submission.
-# Describe the files in more detail. 
-# Note: lines starting with '#' are excluded from messages
-# COMMIT below
-
-
-# If you will be submitting a pull request, explain why these files should be added
-# to the desired repository
-# PULL REQUEST below
-
-`
 
 var application *ApplicationContents
 
@@ -53,7 +20,9 @@ func ShowApplication() {
 	commitPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
 	if s, _ := utils.GetFileSize(commitPath); s == 0 {
-		_ = ioutil.WriteFile(commitPath, []byte(commitPrompt), 0644)
+		fromPath := filepath.Join(filepath.Dir(config.Path), "application.md")
+		err := utils.CopyFile(fromPath, commitPath)
+		utils.CheckError(err)
 	}
 	execPath, err := exec.LookPath(config.Global.General.Editor)
 	if err != nil {

@@ -36,7 +36,7 @@ type ipfs struct {
 var (
 	// Global is the configuration struct for the application.
 	Global Config
-	path   string
+	Path   string
 )
 
 // initialize the app config system. If a config doesn't exist, create one.
@@ -46,7 +46,7 @@ func init() {
 	user, err := user.Current()
 	utils.CheckError(err)
 	// Create expected config path.
-	path = filepath.Join(user.HomeDir, ".ait", "ait.config")
+	Path = filepath.Join(user.HomeDir, ".ait", "ait.config")
 	readConf(&Global)
 	// If the configuration version has changed update the config to the new
 	// format while keeping the user's preferences.
@@ -59,9 +59,9 @@ func init() {
 
 // Read the config or create a new one if it doesn't exist.
 func readConf(conf *Config) {
-	_, err := toml.DecodeFile(path, &conf)
+	_, err := toml.DecodeFile(Path, &conf)
 	if os.IsNotExist(err) {
-		genConf(defaultConf())
+		genConf(defaultConf(), defaultApplication())
 		readConf(conf)
 	}
 	if err != nil && !os.IsNotExist(err) {
