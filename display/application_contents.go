@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// ApplicationContents is a struct representing the application fields.
+// ApplicationContents is a read-only struct holding the application fields.
 type ApplicationContents struct {
 	title      string
 	commit     string
@@ -15,7 +15,7 @@ type ApplicationContents struct {
 	timeFilled time.Time //when the application struct was last filled in
 }
 
-//TrimFields trims the spaces off of all fields.
+// TrimFields trims the spaces off of all fields.
 func (app *ApplicationContents) TrimFields() {
 	app.title = strings.TrimSpace(app.title)
 	app.commit = strings.TrimSpace(app.commit)

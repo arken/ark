@@ -43,7 +43,7 @@ var SpecialRepos = map[string]string{
 //url, adds the keyset file, commits it, and pushes it, and then deletes the repo
 //once everything is done or if anything goes wrong before completion. With all
 //of those steps, there are MANY possible points of failure. If anything goes
-//wrong, the error will be log.Fatal'd and the repo will we deleted from
+//wrong, the error will be PrintFatal'd and the repo will we deleted from
 //its temporary location at .ait/sources. Users are not meant to deal with the
 //repos directly at any point so it and the keyset file are basically ephemeral
 //and only exist on disk while this command is running.
@@ -61,21 +61,21 @@ to add files for submission.`)
 	if !contains {
 		url = args[0]
 	}
-	target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-	if !utils.FileExists(target) {
+	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
+	if !utils.FileExists(repoPath) {
 		path := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 		_, err := keysets.Clone(url, path)
 		utils.CheckError(err)
 	}
-	repo, err := git.PlainOpen(target)
+	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	display.ShowApplication()
+	display.ShowApplication(repoPath)
 	ksName := display.ReadApplication().GetKSName()
 	category := display.ReadApplication().GetCategory()
-	err = keysets.Generate(filepath.Join(target, category, ksName))
+	err = keysets.Generate(filepath.Join(repoPath, category, ksName))
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)

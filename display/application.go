@@ -16,13 +16,13 @@ var application *ApplicationContents
 
 // ShowApplication pulls up our template application, currently stored in the
 // string above.
-func ShowApplication() {
+func ShowApplication(repoPath string) {
 	commitPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
-	if s, _ := utils.GetFileSize(commitPath); s == 0 {
-		fromPath := filepath.Join(filepath.Dir(config.Path), "application.md")
-		err := utils.CopyFile(fromPath, commitPath)
-		utils.CheckError(err)
+	if s, _ := utils.GetFileSize(commitPath); s == 0 { 
+		//^ if the commit file is empty and/or does not exist, one must be 
+		//fetched from the appropriate source
+		fetchApplicationTemplate(repoPath, commitPath)
 	}
 	execPath, err := exec.LookPath(config.Global.General.Editor)
 	if err != nil {
@@ -41,6 +41,25 @@ func ShowApplication() {
 	_ = os.Chtimes(commitPath, now, now)
 	// Ignored because docs say that if this function an error, it's a PathError,
 	// and if commitPath was bad, the program would have already crashed.
+}
+
+// fetchApplicationTemplate fetches the prompt that will be shown to the user.
+// It will preferentially choose the cloned repository, but if there is none
+// there, the default application template that lives in ~/.ait/application.md
+// will be used instead. The appropriate template is deep-copied into
+// ./.ait/commit, so this function can cause the program to terminate if i/o
+// errors arise
+func fetchApplicationTemplate(repoPath, destination string) {
+	fromPath := filepath.Join(filepath.Dir(config.Path), "application.md")
+	//        = ~/.ait/application.md
+	if utils.FileExists(fromPath) {
+		fromPath = filepath.Join(repoPath, "application.md")
+		//       = ./.ait/sources/<repo-name>/application.md
+	}
+	err := utils.CopyFile(fromPath, destination)
+	if err != nil {
+		utils.FatalPrintln(err)
+	}
 }
 
 // ReadApplication reads a text file and puts it into a struct. It keeps track of
@@ -64,20 +83,22 @@ func ReadApplication() *ApplicationContents {
 	}
 
 	application.Clear()
-	ptr := &application.category
+	var ptr *string = nil
 
 	// Fill out the struct with the contents of the file
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "#") {
+		if !strings.HasPrefix(line, "#") && ptr != nil {
 			*ptr += line + " \n"
-		} else if strings.HasPrefix(line, "# FILENAME below") {
+		} else if strings.HasPrefix(line, "# CATEGORY") {
+			ptr = &application.category
+		} else if strings.HasPrefix(line, "# FILENAME") {
 			ptr = &application.ksName
-		} else if strings.HasPrefix(line, "# TITLE below") {
+		} else if strings.HasPrefix(line, "# TITLE") {
 			ptr = &application.title
-		} else if strings.HasPrefix(line, "# COMMIT below") {
+		} else if strings.HasPrefix(line, "# COMMIT") {
 			ptr = &application.commit
-		} else if strings.HasPrefix(line, "# PULL REQUEST below") {
+		} else if strings.HasPrefix(line, "# PULL REQUEST") {
 			ptr = &application.prBody
 		}
 	}
