@@ -66,7 +66,7 @@ func defaultApplication() []byte {
 # or 
 # science/biology/datasets
 # (An empty line will add the file to the root of the KeySet which is not normally recommended.)
-# LOCATION below
+# CATEGORY below
 
 
 # Provide a name for the keyset file that is about to be created (no file extension, just the name)

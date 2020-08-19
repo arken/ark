@@ -20,8 +20,8 @@ var application *ApplicationContents
 func ShowApplication(repoPath string) {
 	commitPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
-	if s, _ := utils.GetFileSize(commitPath); s == 0 { 
-		//^ if the commit file is empty and/or does not exist, one must be 
+	if s, _ := utils.GetFileSize(commitPath); s == 0 {
+		//^ if the commit file is empty and/or does not exist, one must be
 		//fetched from the appropriate source
 		fetchApplicationTemplate(repoPath, commitPath)
 	}
@@ -88,19 +88,19 @@ func isValidAppTemplate(path string) bool {
 	scanner := bufio.NewScanner(commitFile)
 	scanner.Split(bufio.ScanLines)
 
-	reqs := map[string]bool {
-		"# LOCATION": false,
-		"# FILENAME": false,
-		"# TITLE": false,
-		"# COMMIT": false,
-		"# PULL REQUEST" : false,
+	reqs := map[string]bool{
+		"# LOCATION":     false,
+		"# FILENAME":     false,
+		"# TITLE":        false,
+		"# COMMIT":       false,
+		"# PULL REQUEST": false,
 	}
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		for key := range reqs {
 			if strings.HasPrefix(line, key) {
-				if reqs[key] {   // this means the label was already found in
+				if reqs[key] { // this means the label was already found in
 					return false // the file, meaning there's a duplicate label
 				}
 				reqs[key] = true
