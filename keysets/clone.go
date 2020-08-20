@@ -22,7 +22,7 @@ func Clone(url, path string) (*git.Repository, error) {
 	}
 	repo, err := git.PlainClone(path, false, opt)
 	if err != nil {
-		_ = os.Remove(path)
+		_ = os.RemoveAll(path)
 		return nil, err
 	}
 	return repo, nil

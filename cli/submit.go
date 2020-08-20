@@ -75,11 +75,16 @@ to add files for submission.`)
 	display.ShowApplication(repoPath)
 	ksName := display.ReadApplication().GetKSName()
 	category := display.ReadApplication().GetCategory()
+	if len(display.ReadApplication().GetTitle()) == 0 ||
+		len(display.ReadApplication().GetCommit()) == 0 {
+		Cleanup()
+		utils.FatalPrintln("Empty commit message or title, submission aborted.")
+	}
 	ksPath := filepath.Join(repoPath, category, ksName)
 	var choice string
 	if utils.FileExists(ksPath) {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("A file called %v already exists in the clobes repo.\n",
+		fmt.Printf("A file called %v already exists in the cloned repo.\n",
 			filepath.Join(category, ksName))
 		for choice != "a" && choice != "o" {
 			fmt.Print("Would you like to overwrite it (o) or add to it (a)? ")
@@ -89,7 +94,6 @@ to add files for submission.`)
 	}
 	overwrite := choice != "a"
 	err = keysets.Generate(ksPath, overwrite)
-	err = keysets.Generate(ksPath, false)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
@@ -125,10 +129,6 @@ func CommitKeyset(repo *git.Repository) {
 	}
 	app := display.ReadApplication()
 	msg := app.GetTitle() + "\n\n" + app.GetCommit()
-	if len(strings.TrimSpace(msg)) == 0 {
-		Cleanup()
-		utils.FatalPrintln("Empty commit message, submission aborted.")
-	}
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  config.Global.Git.Name,

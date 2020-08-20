@@ -12,6 +12,9 @@ import (
 
 const delimiter string = "\t\t"
 
+// Generate is the public facing function for the creation of a keyset file.
+// Depending on the value of overwrite, the keyset file is either generated from
+// scratch or added to.
 func Generate(path string, overwrite bool) error {
 	if overwrite {
 		return createNew(path)
@@ -26,7 +29,7 @@ func Generate(path string, overwrite bool) error {
 // ".ks" The resultant keyset files contains the name (not path) of the file and
 // an IPFS cid hash, separated by a space.
 func createNew(path string) error {
-	os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	_ = os.MkdirAll(filepath.Dir(path), os.ModePerm)
 
 	keySetFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
@@ -60,8 +63,8 @@ func createNew(path string) error {
 // amendExisting looks at current files in added_files and adds any that aren't
 // already in the keyset file to the keyset files. The keyset file in question
 // should be at path.
-func amendExisting(path string) error {
-	keySetFile, err := os.OpenFile(path, os.O_RDWR, 0644)
+func amendExisting(ksPath string) error {
+	keySetFile, err := os.OpenFile(ksPath, os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -72,13 +75,24 @@ func amendExisting(path string) error {
 	}
 	defer addedFiles.Close()
 	addedFilesContents := make(map[string]struct{})
-	utils.FillMap(addedFilesContents, addedFiles) //full of just filenames
+	utils.FillMap(addedFilesContents, addedFiles) // full of just filenames
 	ksContents := make(map[string]struct{})
-	utils.FillMap(ksContents, keySetFile) //full of filenames and cid's
-	//TODO finish this
-	return nil
+	utils.FillMap(ksContents, keySetFile) // full of filenames and cid's
+	newFilenames := make(map[string]struct{})
+	for filename := range addedFilesContents {
+		cid, err := ipfs.Add(filename)
+		utils.CheckError(err)
+		line := filepath.Base(filename) + delimiter + cid
+		if _, contains := ksContents[line]; !contains {
+			newFilenames[line] = struct{}{}
+		} else {
+			delete(ksContents, line)
+		}
+	}
+	return utils.DumpMap(newFilenames, keySetFile)
 }
 
+// cleanup closes and deletes the given file.
 func cleanup(file *os.File) {
 	path := file.Name()
 	file.Close()
