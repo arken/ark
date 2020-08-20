@@ -43,7 +43,9 @@ func PullRequest(url, forkOwner string) error {
 	err = keysets.Generate(ksPath, false)
 	if err != nil {
 		Cleanup()
-		utils.FatalPrintln(err)
+		utils.FatalPrintln(err, "\nIt's possible your fork of",
+			upstreamRepo, "is out of sync with the upstream repo. In this \n" +
+			"case you should delete your fork using Github.com and try again.")
 	}
 	AddKeyset(repo, ksName, ksPath)
 	CommitKeyset(repo)

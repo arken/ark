@@ -34,23 +34,25 @@ type SubmitArgs struct {
 	Args []string
 }
 
-// credentials is a simple struct to hold github username and password.
-type credentials struct {
-	username, password string
+// submitFields is a simple struct to hold github username and password and other
+// fields the user has to fill in/choose.
+type submitFields struct {
+	// ksGenMethod is whether to overwrite or amend to existing keyset files.
+	username, password, ksGenMethod string
 }
 
-// isEmpty returns true if both fields are the empty string.
-func (c *credentials) isEmpty() bool {
-	return len(c.password + c.username) == 0
+// credsEmpty returns true if both credential fields are the empty string.
+func (c *submitFields) credsEmpty() bool {
+	return c.username == "" && c.password == ""
 }
 
-// clear sets both fields to the empty string
-func (c *credentials) clear() {
+// clear sets both credential fields to the empty string
+func (c *submitFields) clear() {
 	c.username = ""
 	c.password = ""
 }
 
-var	ghCreds credentials
+var	fields submitFields
 
 //SubmitRun generates a keyset file and then clones the Github repo at the given
 //url, adds the keyset file, commits it, and pushes it, and then deletes the repo
@@ -100,18 +102,18 @@ to add files for submission.`)
 //AddKeyset adds the keyset file at the given path to the repo.
 //Effectively: git add ksPath
 func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
-	var choice string
-	if utils.FileExists(ksPathFromWD) {
+	var choice = &fields.ksGenMethod
+	if utils.FileExists(ksPathFromWD) && *choice == "" {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("A file called %v already exists in the cloned repo.\n",
 			filepath.Base(ksPathFromWD))
-		for choice != "a" && choice != "o" {
+		for *choice != "a" && *choice != "o" {
 			fmt.Print("Would you like to overwrite it (o) or add to it (a)? ")
-			choice, _ = reader.ReadString('\n')
-			choice = strings.TrimSpace(choice)
+			*choice, _ = reader.ReadString('\n')
+			*choice = strings.TrimSpace(*choice)
 		}
 	}
-	overwrite := choice != "a"
+	overwrite := *choice != "a"
 	err := keysets.Generate(ksPathFromWD, overwrite)
 	if err != nil {
 		Cleanup()
@@ -166,15 +168,15 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	var pushErr error
 	fmt.Print("\n")
 	for choice := "r"; choice == "r"; {
-		if ghCreds.isEmpty() {
+		if fields.credsEmpty() {
 			promptCredentials()
 		}
 		opt.Auth = &http.BasicAuth{
-			Username: ghCreds.username,
-			Password: ghCreds.password,
+			Username: fields.username,
+			Password: fields.password,
 		}
 		if isPR {
-			ghCreds.clear() //don't need these anymore
+			fields.clear() //don't need these anymore
 		}
 		pushErr = repo.Push(opt)
 		if pushErr != nil {
@@ -185,7 +187,7 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 				correctCreds = false
 			} else if pushErr.Error() == "authorization failed" {
 				fmt.Print("\nThat account does not have the privileges to write to the requested repo.\n" +
-					"Retry entering your credentials (r), start a pull request (p), or abort submission (any other key)? ")
+					"Retry entering your submitFields (r), start a pull request (p), or abort submission (any other key)? ")
 			} else { //non-authentication error
 				Cleanup()
 				utils.FatalPrintln(pushErr)
@@ -194,10 +196,10 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 			choice = strings.TrimSpace(choice)
 			fmt.Print("\n")
 			if choice == "p" && !isPR && correctCreds { //start pull request process
-				pushErr = PullRequest(url, ghCreds.username)
+				pushErr = PullRequest(url, fields.username)
 				break
-			} else if choice == "r" { //retry credentials
-				ghCreds.clear()
+			} else if choice == "r" { //retry submitFields
+				fields.clear()
 				continue
 			} else { //any other key
 				Cleanup()
@@ -230,8 +232,8 @@ func promptCredentials() {
 		utils.FatalPrintf("\nSomething went wrong when collecting your password: %v\n", err.Error())
 	}
 	fmt.Print("\n") //necessary
-	ghCreds.username = strings.TrimSpace(username)
-	ghCreds.password = strings.TrimSpace(string(bytePassword))
+	fields.username = strings.TrimSpace(username)
+	fields.password = strings.TrimSpace(string(bytePassword))
 }
 
 // Cleanup deletes the folder at the given path and prints a message if it fails.
@@ -248,11 +250,11 @@ It is advisable that you delete it.\n`, path)
 func getCredentialPrompt(isPR bool) string {
 	if isPR {
 		return `
-Those credentials did not give you write access to the repo. Retry if you 
-think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
+Those submitFields did not give you write access to the repo. Retry if you 
+think you made a typo. Re-enter your submitFields (r) or abort (any other key)? `
 	}
 	return `
-Those credentials did not give you write access to the repo.
+Those submitFields did not give you write access to the repo.
 Retry if you think you made a typo, but you might not have the proper permissions.
-Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
+Re-enter your submitFields (r), submit a pull request (p), or abort (any other key)? `
 }

@@ -38,5 +38,5 @@ func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
 	}
 	wd, err := os.Getwd()
 	utils.CheckError(err)
-	fmt.Printf("New ait repo initiated at %v", wd)
+	fmt.Printf("New ait repo initiated at %v\n", wd)
 }

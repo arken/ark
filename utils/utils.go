@@ -150,11 +150,3 @@ func CopyFile(fromPath, toPath string) error {
 	}
 	return nil
 }
-
-// IMax returns the larger of a or b
-func IMax(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
