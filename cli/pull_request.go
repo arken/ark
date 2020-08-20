@@ -33,10 +33,11 @@ func PullRequest(url, forkOwner string) error {
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
 	if err != nil {
 		Cleanup()
-		utils.FatalPrintln(err.Error())
+		utils.FatalPrintln(err)
 	}
 	ksName := display.ReadApplication().GetKSName() // Just the name of the file
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo, ksName)
+	category := display.ReadApplication().GetCategory()
+	ksPath := filepath.Join(".ait", "sources", upstreamRepo, category,ksName)
 
 	// Full relative path from repo root ^
 	err = keysets.Generate(ksPath, false)
@@ -44,7 +45,7 @@ func PullRequest(url, forkOwner string) error {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	AddKeyset(repo, ksName)
+	AddKeyset(repo, ksName, ksPath)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, true)
 	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
@@ -111,5 +112,5 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	fmt.Println(donePR.GetHTMLURL())
+	fmt.Println("Your new pull request can be found at:", donePR.GetHTMLURL())
 }

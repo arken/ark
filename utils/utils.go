@@ -47,7 +47,7 @@ func PathMatch(pattern, path string) bool {
 	return matched || IsInSubDir(path, pattern)
 }
 
-//Splits the given file by newline and adds each line to the given map.
+// FillMap splits the given file by newline and adds each line to the given map.
 func FillMap(contents map[string]struct{}, file *os.File) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -137,6 +137,8 @@ func CheckError(err error) {
 	}
 }
 
+// CopyFile performs a depp copy of the path at fromPath to toPath. Returns any
+// returns any i/o errors that arise.
 func CopyFile(fromPath, toPath string) error {
 	fromBytes, err := ioutil.ReadFile(fromPath)
 	if err != nil {
@@ -147,4 +149,12 @@ func CopyFile(fromPath, toPath string) error {
 		return err
 	}
 	return nil
+}
+
+// IMax returns the larger of a or b
+func IMax(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

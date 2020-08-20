@@ -1,6 +1,7 @@
 package keysets
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,8 +10,6 @@ import (
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
 )
-
-const delimiter string = "\t\t"
 
 // Generate is the public facing function for the creation of a keyset file.
 // Depending on the value of overwrite, the keyset file is either generated from
@@ -45,20 +44,11 @@ func createNew(path string) error {
 	var maxTitle int
 	for filePath := range contents {
 		filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
-		if len(filename) > maxTitle {
-			maxTitle = len(filename)
-		}
+		maxTitle = utils.IMax(maxTitle, len(filename))
 	}
 	for filePath := range contents {
-		cid, err := ipfs.Add(filePath)
-		if err != nil {
-			cleanup(keySetFile)
-			return err
-		}
-		// Scrub filename for spaces and replace with dashes.
-		filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
-		line := fmt.Sprintf("%v%v%v\n", filename, strings.Repeat(" ", maxTitle+4-len(filename)), cid)
-		_, err = keySetFile.WriteString(line)
+		line := getKeySetLineFromPath(filePath, maxTitle)
+		_, err = keySetFile.WriteString(line + "\n")
 		if err != nil {
 			cleanup(keySetFile)
 			return err
@@ -81,22 +71,32 @@ func amendExisting(ksPath string) error {
 		return err
 	}
 	defer addedFiles.Close()
-	addedFilesContents := make(map[string]struct{})
-	utils.FillMap(addedFilesContents, addedFiles) // full of just filenames
-	ksContents := make(map[string]struct{})
-	utils.FillMap(ksContents, keySetFile) // full of filenames and cid's
-	newFilenames := make(map[string]struct{})
-	for filename := range addedFilesContents {
-		cid, err := ipfs.Add(filename)
-		utils.CheckError(err)
-		line := filepath.Base(filename) + delimiter + cid
-		if _, contains := ksContents[line]; !contains {
-			newFilenames[line] = struct{}{}
+	addedFilesContents := make(map[string]string)
+	// ^ cid -> filePATH
+	fillMapWithCID(addedFilesContents, addedFiles)
+	ksContents := make(map[string]string)
+	// ^ cid -> fileNAME
+	fillMapWithCID(ksContents, keySetFile)
+	newFiles := make(map[string]string)
+	// ^ paths of the files which will be added
+	max := 0
+	for cid, path := range addedFilesContents {
+		if _, contains := ksContents[cid]; !contains {
+			filename := strings.Join(strings.Fields(filepath.Base(path)), "-")
+			newFiles[cid] = filename
+			max = utils.IMax(max, len(filename))
 		} else {
-			delete(ksContents, line)
+			delete(ksContents, cid)
 		}
 	}
-	return utils.DumpMap(newFilenames, keySetFile)
+	for cid, filename := range newFiles {
+		line := getKeySetLine(filename, cid, max)
+		_, err := keySetFile.WriteString(line+"\n")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // cleanup closes and deletes the given file.
@@ -104,4 +104,61 @@ func cleanup(file *os.File) {
 	path := file.Name()
 	file.Close()
 	_ = os.Remove(path)
+}
+
+// getKeySetLine returns a properly formed line for a KeySet file given a path
+// to a file. No newline at the end.
+func getKeySetLineFromPath(filePath string, maxTitle int) string {
+	// Scrub filename for spaces and replace with dashes.
+	cid, err := ipfs.Add(filePath)
+	utils.CheckError(err)
+	filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
+	return fmt.Sprintf("%v%v%v", filename,
+		strings.Repeat(" ", maxTitle+4-len(filename)), cid)
+}
+
+// getKeySetLine returns a properly formed line for a KeySet file. It expects a
+// fileNAME (not path) and an IPFS cid. No newline at the end.
+func getKeySetLine(filename, cid string, maxTitle int) string {
+	// Scrub filename for spaces and replace with dashes.
+	filename = strings.Join(strings.Fields(filename), "-")
+	return fmt.Sprintf("%v%v%v", filename,
+		strings.Repeat(" ", maxTitle+4-len(filename)), cid)
+}
+
+// fillMapWithCID will fill the given map with IPFS cid hashes as the key and
+// either the filename or filepath as the value. This function ONLY be used for
+// files that are standard keyset files or files that are just newline separated
+// paths. Returns the length of the longest fileNAME, not path. If the file was
+// a keyset file, the values are filenames. If the file was just file paths, the
+// the values will be file paths.
+func fillMapWithCID(contents map[string]string, file *os.File) int {
+	max := 0
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	if filepath.Ext(file.Name()) == ".ks" {
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if len(line) > 0 {
+				pair := strings.Fields(line)
+				if len(pair) != 2 {
+					utils.FatalPrintln("Malformed KeySet file detected.")
+				}
+				max = utils.IMax(max, len(pair[0]))
+				contents[pair[1]] = pair[0]
+			}
+		}
+	} else {
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if len(line) > 0 {
+				filename := filepath.Base(line)
+				max = utils.IMax(max, len(filename))
+				cid, err := ipfs.Add(line)
+				utils.CheckError(err)
+				contents[cid] = filename
+			}
+		}
+	}
+	return max
 }
