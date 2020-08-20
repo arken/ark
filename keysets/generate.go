@@ -42,6 +42,13 @@ func createNew(path string) error {
 	contents := make(map[string]struct{})
 	utils.FillMap(contents, addedFiles)
 	addedFiles.Close()
+	var maxTitle int
+	for filePath := range contents {
+		filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
+		if len(filename) > maxTitle {
+			maxTitle = len(filename)
+		}
+	}
 	for filePath := range contents {
 		cid, err := ipfs.Add(filePath)
 		if err != nil {
@@ -50,7 +57,7 @@ func createNew(path string) error {
 		}
 		// Scrub filename for spaces and replace with dashes.
 		filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
-		line := fmt.Sprintf("%v%v%v\n", filename, delimiter, cid)
+		line := fmt.Sprintf("%v%v%v\n", filename, strings.Repeat(" ", maxTitle+4-len(filename)), cid)
 		_, err = keySetFile.WriteString(line)
 		if err != nil {
 			cleanup(keySetFile)
