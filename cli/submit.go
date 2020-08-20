@@ -251,10 +251,10 @@ func getCredentialPrompt(isPR bool) string {
 	if isPR {
 		return `
 Those submitFields did not give you write access to the repo. Retry if you 
-think you made a typo. Re-enter your submitFields (r) or abort (any other key)? `
+think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
 	}
 	return `
 Those submitFields did not give you write access to the repo.
 Retry if you think you made a typo, but you might not have the proper permissions.
-Re-enter your submitFields (r), submit a pull request (p), or abort (any other key)? `
+Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
 }

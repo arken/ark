@@ -32,7 +32,7 @@ func defaultConf() Config {
 	return result
 }
 
-// genConf encodes the values of the Config stuct back into a TOML file.
+// genConf encodes the values of the Config struct back into a TOML file.
 func genConf(conf Config, appBytes []byte) {
 	os.MkdirAll(filepath.Dir(Path), os.ModePerm)
 	buf := new(bytes.Buffer)
@@ -59,32 +59,32 @@ func reloadConf() {
 // defaultApplication defines the default file to be used as an application prompt
 // when attempting to submit files.
 func defaultApplication() []byte {
-	return []byte(`# Where should your addition be located within the keyset repository?
-# This line should be in the format of a path.
-# For example, 
-# library/fiction/classics
-# or 
-# science/biology/datasets
-# (An empty line will add the file to the root of the KeySet which is not normally recommended.)
+	return []byte(`<!-- Where should your addition be located within the keyset repository?
+This line should be in the format of a path.
+For example,
+library/fiction/classics
+or
+science/biology/datasets
+(An empty line will add the file to the root of the KeySet which is not normally recommended.) -->
 # CATEGORY below
 
 
-# Provide a name for the keyset file that is about to be created (no file extension, just the name)
+<!-- Provide a name for the keyset file that is about to be created (no file extension, just the name) -->
 # FILENAME below
 
 
-# Briefly describe the files you're submitting (preferably <50 characters).
+<!-- Briefly describe the files you're submitting (preferably <50 characters). -->
 # TITLE below
 
 
-# An empty commit message will abort the submission.
-# Describe the files in more detail. 
-# Note: lines starting with '#' are excluded from messages
+<!-- An empty commit message will abort the submission.
+Describe the files in more detail.
+Note: lines starting with '#' are excluded from messages -->
 # COMMIT below
 
 
-# If you will be submitting a pull request, explain why these files should be added
-# to the desired repository
+<!-- If you will be submitting a pull request, explain why these files should be added
+to the desired repository -->
 # PULL REQUEST below
 
 `)

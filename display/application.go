@@ -135,9 +135,13 @@ func ReadApplication() *ApplicationContents {
 	var ptr *string = nil
 
 	// Fill out the struct with the contents of the file
+	var isComment bool
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "#") && ptr != nil {
+		if strings.Contains(line, "<!--") {
+			isComment = true
+		}
+		if !strings.HasPrefix(line, "#") && !isComment && ptr != nil {
 			*ptr += line + " \n"
 		} else if strings.HasPrefix(line, "# CATEGORY") {
 			ptr = &application.category
@@ -149,6 +153,9 @@ func ReadApplication() *ApplicationContents {
 			ptr = &application.commit
 		} else if strings.HasPrefix(line, "# PULL REQUEST") {
 			ptr = &application.prBody
+		}
+		if strings.Contains(line, "-->") {
+			isComment = false
 		}
 	}
 	application.TrimFields()
