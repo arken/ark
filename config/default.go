@@ -59,7 +59,10 @@ func reloadConf() {
 // defaultApplication defines the default file to be used as an application prompt
 // when attempting to submit files.
 func defaultApplication() []byte {
-	return []byte(`<!-- Where should your addition be located within the keyset repository?
+	return []byte(
+`### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
+### View this document as raw Markdown instead of rendered HTML to see the prompts.'
+<!-- Where should your addition be located within the keyset repository?
 This line should be in the format of a path.
 For example,
 library/fiction/classics
@@ -79,7 +82,6 @@ science/biology/datasets
 
 <!-- An empty commit message will abort the submission.
 Describe the files in more detail.
-Note: lines starting with '#' are excluded from messages -->
 # COMMIT below
 
 
