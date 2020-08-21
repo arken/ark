@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"fmt"
+	"os/user"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,4 +31,16 @@ func TestGetRepoOwner(t *testing.T) {
 	assert.Equal(t, "", GetRepoOwner("https://github.com//linux.git"))
 	assert.Equal(t, "", GetRepoOwner(""))
 	assert.Equal(t, "a", GetRepoOwner("123456789012345678/a/"))
+}
+
+func TestCopyFile(t *testing.T) {
+	u, err := user.Current()
+	CheckError(err)
+	// Create expected config path.
+	path := filepath.Join(u.HomeDir, ".ait", "application.md")
+	err = CopyFile(path, "commit.md")
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
 }

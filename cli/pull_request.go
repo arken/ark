@@ -24,29 +24,38 @@ import (
 func PullRequest(url, forkOwner string) error {
 	upstreamOwner := utils.GetRepoOwner(url)
 	upstreamRepo := utils.GetRepoName(url)
-	repo, client, err := fork(upstreamOwner, upstreamRepo)
+	err := os.RemoveAll(filepath.Join(".ait", "sources", upstreamRepo))
+	// ^Once a pull request is started, we don't need the old clone of the repo
 	if err != nil {
 		Cleanup()
-		utils.FatalPrintln(err.Error())
+		utils.FatalPrintln("Unable to remove the old clone of ", url)
 	}
-	ksName := display.ReadApplication().GetKSName() // Just the name of the file
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo+"_fork", ksName)
-
-	// Full relative path from repo root ^
-	err = keysets.Generate(ksPath)
+	repo, client, err := fork(upstreamOwner, upstreamRepo)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	AddKeyset(repo, ksName)
+	ksName := display.ReadApplication().GetKSName() // Just the name of the file
+	category := display.ReadApplication().GetCategory()
+	ksPath := filepath.Join(".ait", "sources", upstreamRepo, category,ksName)
+
+	// Full relative path from repo root ^
+	err = keysets.Generate(ksPath, false)
+	if err != nil {
+		Cleanup()
+		utils.FatalPrintln(err, "\nIt's possible your fork of",
+			upstreamRepo, "is out of sync with the upstream repo. In this \n" +
+			"case you should delete your fork using Github.com and try again.")
+	}
+	AddKeyset(repo, ksName, ksPath)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, true)
 	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
 	return err
 }
 
-// fork uses the github api to create a fork in the user's github account and clone
-// that fork into local storage. This is done using oauth2.
+// fork uses the github api to create a fork in the user's github account and
+// clone that fork into local storage. This is done using oauth2.
 func fork(owner, name string) (*git.Repository, *github.Client, error) {
 	token := os.Getenv("GITHUB_AUTH_TOKEN")
 	if token == "" {
@@ -79,7 +88,7 @@ Enter your GitHub Oauth token: `)
 			"Something went wrong when trying to fork %v's repo %v:\n%v",
 			owner, name, err)
 	}
-	target := filepath.Join(".ait", "sources", name+"_fork")
+	target := filepath.Join(".ait", "sources", name)
 	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
 	return localRepo, client, err
 }
@@ -105,5 +114,5 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	fmt.Println(donePR.GetHTMLURL())
+	fmt.Println("Your new pull request can be found at:", donePR.GetHTMLURL())
 }

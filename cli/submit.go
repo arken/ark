@@ -34,16 +34,31 @@ type SubmitArgs struct {
 	Args []string
 }
 
-//SpecialRepos is a place to put special repo "aliases"
-var SpecialRepos = map[string]string{
-	"core": "https://github.com/arkenproject/core-keyset.git",
+// submitFields is a simple struct to hold github username and password and other
+// fields the user has to fill in/choose.
+type submitFields struct {
+	// ksGenMethod is whether to overwrite or amend to existing keyset files.
+	username, password, ksGenMethod string
 }
+
+// credsEmpty returns true if both credential fields are the empty string.
+func (c *submitFields) credsEmpty() bool {
+	return c.username == "" && c.password == ""
+}
+
+// clear sets both credential fields to the empty string
+func (c *submitFields) clear() {
+	c.username = ""
+	c.password = ""
+}
+
+var	fields submitFields
 
 //SubmitRun generates a keyset file and then clones the Github repo at the given
 //url, adds the keyset file, commits it, and pushes it, and then deletes the repo
 //once everything is done or if anything goes wrong before completion. With all
 //of those steps, there are MANY possible points of failure. If anything goes
-//wrong, the error will be log.Fatal'd and the repo will we deleted from
+//wrong, the error will be PrintFatal'd and the repo will we deleted from
 //its temporary location at .ait/sources. Users are not meant to deal with the
 //repos directly at any point so it and the keyset file are basically ephemeral
 //and only exist on disk while this command is running.
@@ -57,30 +72,28 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
     ait add <files>...
 to add files for submission.`)
 	}
-	url, contains := SpecialRepos[args[0]]
-	if !contains {
-		url = args[0]
-	}
-	target := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-	if !utils.FileExists(target) {
+	url := args[0]
+	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
+	if !utils.FileExists(repoPath) {
 		path := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 		_, err := keysets.Clone(url, path)
 		utils.CheckError(err)
 	}
-	repo, err := git.PlainOpen(target)
+	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	display.ShowApplication()
+	display.ShowApplication(repoPath)
 	ksName := display.ReadApplication().GetKSName()
 	category := display.ReadApplication().GetCategory()
-	err = keysets.Generate(filepath.Join(target, category, ksName))
-	if err != nil {
+	if len(display.ReadApplication().GetTitle()) == 0 ||
+		len(display.ReadApplication().GetCommit()) == 0 {
 		Cleanup()
-		utils.FatalPrintln(err)
+		utils.FatalPrintln("Empty commit message or title, submission aborted.")
 	}
-	AddKeyset(repo, filepath.Join(category, ksName))
+	ksPath := filepath.Join(repoPath, category, ksName)
+	AddKeyset(repo, filepath.Join(category, ksName), ksPath)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, false)
 	Cleanup()
@@ -88,13 +101,30 @@ to add files for submission.`)
 
 //AddKeyset adds the keyset file at the given path to the repo.
 //Effectively: git add ksPath
-func AddKeyset(repo *git.Repository, ksPath string) {
+func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
+	var choice = &fields.ksGenMethod
+	if utils.FileExists(ksPathFromWD) && *choice == "" {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("A file called %v already exists in the cloned repo.\n",
+			filepath.Base(ksPathFromWD))
+		for *choice != "a" && *choice != "o" {
+			fmt.Print("Would you like to overwrite it (o) or add to it (a)? ")
+			*choice, _ = reader.ReadString('\n')
+			*choice = strings.TrimSpace(*choice)
+		}
+	}
+	overwrite := *choice != "a"
+	err := keysets.Generate(ksPathFromWD, overwrite)
+	if err != nil {
+		Cleanup()
+		utils.FatalPrintln(err)
+	}
 	tree, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	_, err = tree.Add(ksPath)
+	_, err = tree.Add(ksPathFromRepo)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
@@ -111,10 +141,6 @@ func CommitKeyset(repo *git.Repository) {
 	}
 	app := display.ReadApplication()
 	msg := app.GetTitle() + "\n\n" + app.GetCommit()
-	if len(strings.TrimSpace(msg)) == 0 {
-		Cleanup()
-		utils.FatalPrintln("Empty commit message, submission aborted.")
-	}
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  config.Global.Git.Name,
@@ -129,46 +155,51 @@ func CommitKeyset(repo *git.Repository) {
 	}
 }
 
-//PushKeyset attempts to push the latest commit to the git repo's default remote.
-//Users are prompted for their usernames/passwords for this.
+// PushKeyset attempts to push the latest commit to the git repo's default remote.
+// Users are prompted for their usernames/passwords for this.
 func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	_, err := repo.Worktree()
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
-	opt := &git.PushOptions{
-		Auth: &http.BasicAuth{
-			Username: "",
-			Password: "",
-		},
-	}
+	opt := &git.PushOptions{}
 	reader := bufio.NewReader(os.Stdin)
 	var pushErr error
 	fmt.Print("\n")
 	for choice := "r"; choice == "r"; {
-		username, password := promptCredentials()
+		if fields.credsEmpty() {
+			promptCredentials()
+		}
 		opt.Auth = &http.BasicAuth{
-			Username: username,
-			Password: password,
+			Username: fields.username,
+			Password: fields.password,
+		}
+		if isPR {
+			fields.clear() //don't need these anymore
 		}
 		pushErr = repo.Push(opt)
 		if pushErr != nil {
-			if pushErr.Error() == "authentication required" ||
-				pushErr.Error() == "authorization failed" { //TODO: give specific error messages for both of these errors
-				fmt.Print(getCredentialPrompt(isPR))
-				choice, _ = reader.ReadString('\n')
-				choice = strings.TrimSpace(choice)
-				fmt.Print("\n")
+			correctCreds := true
+			if pushErr.Error() == "authentication required" {
+				fmt.Print("\nThe username/password did not match a GitHub account.\n" +
+					"Retry (r) or abort submission (any other key)? ")
+				correctCreds = false
+			} else if pushErr.Error() == "authorization failed" {
+				fmt.Print("\nThat account does not have the privileges to write to the requested repo.\n" +
+					"Retry entering your submitFields (r), start a pull request (p), or abort submission (any other key)? ")
 			} else { //non-authentication error
 				Cleanup()
 				utils.FatalPrintln(pushErr)
 			}
-
-			if choice == "p" && !isPR { //start pull request process
-				pushErr = PullRequest(url, username)
+			choice, _ = reader.ReadString('\n')
+			choice = strings.TrimSpace(choice)
+			fmt.Print("\n")
+			if choice == "p" && !isPR && correctCreds { //start pull request process
+				pushErr = PullRequest(url, fields.username)
 				break
-			} else if choice == "r" { //retry credentials
+			} else if choice == "r" { //retry submitFields
+				fields.clear()
 				continue
 			} else { //any other key
 				Cleanup()
@@ -188,10 +219,10 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 	}
 }
 
-//promptCredentials gets the user's github username and password. When the user
-//types their password, it does not appear on screen by use of the terminal
-//package.
-func promptCredentials() (string, string) {
+// promptCredentials gets the user's github username and password. When the user
+// types their password, it does not appear on screen by use of the terminal
+// package.
+func promptCredentials() {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your GitHub username: ")
 	username, _ := reader.ReadString('\n')
@@ -201,10 +232,11 @@ func promptCredentials() (string, string) {
 		utils.FatalPrintf("\nSomething went wrong when collecting your password: %v\n", err.Error())
 	}
 	fmt.Print("\n") //necessary
-	return strings.TrimSpace(username), strings.TrimSpace(string(bytePassword))
+	fields.username = strings.TrimSpace(username)
+	fields.password = strings.TrimSpace(string(bytePassword))
 }
 
-//Cleanup deletes the folder at the given path and prints a message if it fails.
+// Cleanup deletes the folder at the given path and prints a message if it fails.
 func Cleanup() {
 	path := filepath.Join(".ait", "sources")
 	err := os.RemoveAll(path)
@@ -218,11 +250,11 @@ It is advisable that you delete it.\n`, path)
 func getCredentialPrompt(isPR bool) string {
 	if isPR {
 		return `
-Those credentials did not give you write access to the repo. Retry if you 
+Those submitFields did not give you write access to the repo. Retry if you 
 think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
 	}
 	return `
-Those credentials did not give you write access to the repo.
+Those submitFields did not give you write access to the repo.
 Retry if you think you made a typo, but you might not have the proper permissions.
 Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
 }

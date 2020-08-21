@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,7 +47,7 @@ func PathMatch(pattern, path string) bool {
 	return matched || IsInSubDir(path, pattern)
 }
 
-//Splits the given file by newline and adds each line to the given map.
+// FillMap splits the given file by newline and adds each line to the given map.
 func FillMap(contents map[string]struct{}, file *os.File) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -134,4 +135,18 @@ func CheckError(err error) {
 	if err != nil {
 		FatalPrintln(err)
 	}
+}
+
+// CopyFile performs a depp copy of the path at fromPath to toPath. Returns any
+// returns any i/o errors that arise.
+func CopyFile(fromPath, toPath string) error {
+	fromBytes, err := ioutil.ReadFile(fromPath)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(toPath, fromBytes, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
