@@ -46,8 +46,8 @@ func (c *submitFields) credsEmpty() bool {
 	return c.username == "" && c.password == ""
 }
 
-// clear sets both credential fields to the empty string
-func (c *submitFields) clear() {
+// clearCreds sets both credential fields to the empty string
+func (c *submitFields) clearCreds() {
 	c.username = ""
 	c.password = ""
 }
@@ -112,6 +112,7 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 			*choice, _ = reader.ReadString('\n')
 			*choice = strings.TrimSpace(*choice)
 		}
+		fmt.Print("\n")
 	}
 	overwrite := *choice != "a"
 	err := keysets.Generate(ksPathFromWD, overwrite)
@@ -158,65 +159,67 @@ func CommitKeyset(repo *git.Repository) {
 // PushKeyset attempts to push the latest commit to the git repo's default remote.
 // Users are prompted for their usernames/passwords for this.
 func PushKeyset(repo *git.Repository, url string, isPR bool) {
-	_, err := repo.Worktree()
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err)
-	}
-	opt := &git.PushOptions{}
 	reader := bufio.NewReader(os.Stdin)
-	var pushErr error
-	fmt.Print("\n")
+	var err error
+	var existingCreds, hasWriteAccess bool
 	for choice := "r"; choice == "r"; {
-		if fields.credsEmpty() {
-			promptCredentials()
-		}
-		opt.Auth = &http.BasicAuth{
-			Username: fields.username,
-			Password: fields.password,
-		}
-		if isPR {
-			fields.clear() //don't need these anymore
-		}
-		pushErr = repo.Push(opt)
-		if pushErr != nil {
-			correctCreds := true
-			if pushErr.Error() == "authentication required" {
-				fmt.Print("\nThe username/password did not match a GitHub account.\n" +
-					"Retry (r) or abort submission (any other key)? ")
-				correctCreds = false
-			} else if pushErr.Error() == "authorization failed" {
-				fmt.Print("\nThat account does not have the privileges to write to the requested repo.\n" +
-					"Retry entering your submitFields (r), start a pull request (p), or abort submission (any other key)? ")
-			} else { //non-authentication error
-				Cleanup()
-				utils.FatalPrintln(pushErr)
-			}
-			choice, _ = reader.ReadString('\n')
-			choice = strings.TrimSpace(choice)
-			fmt.Print("\n")
-			if choice == "p" && !isPR && correctCreds { //start pull request process
-				pushErr = PullRequest(url, fields.username)
-				break
-			} else if choice == "r" { //retry submitFields
-				fields.clear()
-				continue
-			} else { //any other key
-				Cleanup()
-				utils.FatalPrintln("Submission aborted.")
-			}
-		} else { //the push was actually successful
+		existingCreds, hasWriteAccess, err = tryPush(repo)
+		if err == nil { //push was successful
 			break
 		}
+		printSubmissionPrompt(existingCreds, hasWriteAccess, isPR)
+		choice, _ = reader.ReadString('\n')
+		choice = strings.TrimSpace(choice)
+		if choice == "p" && !isPR && existingCreds {
+			err = PullRequest(url, fields.username)
+			utils.CheckError(err)
+			return
+		} else if choice == "r" {
+			fields.clearCreds()
+			fmt.Print("\n")
+			continue
+		} else {
+			fmt.Println("Submission aborted.")
+			return
+		}
 	}
-	if isPR {
-		return
-	}
-	if pushErr == nil {
+	if err == nil {
 		fmt.Println("Submission successful!")
 	} else {
-		fmt.Println("Submission failed: ", pushErr)
+		fmt.Println("Submission failed:", err)
 	}
+}
+
+// tryPush attempts a push on the given repo. This function will prompt for
+// credentials if none are currently in fields. In this order, it returns:
+//     - whether the attempted credentials belong to an existing account
+//     - whether the account has write access to the given repository
+//     - any error returned by the push operation, nil if it was successful
+// A fully successful push will return (true, true, nil).
+func tryPush(repo *git.Repository) (existingCreds bool, hasWriteAccess bool, err error) {
+	if fields.credsEmpty() {
+		promptCredentials()
+	}
+	opt := &git.PushOptions{
+		Auth: &http.BasicAuth{
+			Username: fields.username,
+			Password: fields.password,
+		},
+	}
+	err = repo.Push(opt)
+	if err == nil {
+		return true, true, nil
+	} else if err.Error() == "authentication required" {
+		existingCreds = false
+		hasWriteAccess = false
+	} else if err.Error() == "authorization failed" {
+		existingCreds = true
+		hasWriteAccess = false
+	} else {      // if it wasn't one of those ^ errors it was probably file i/o
+		Cleanup() // or network related, or repo was already up to date.
+		utils.FatalPrintln(err)
+	}
+	return existingCreds, hasWriteAccess, err
 }
 
 // promptCredentials gets the user's github username and password. When the user
@@ -236,6 +239,32 @@ func promptCredentials() {
 	fields.password = strings.TrimSpace(string(bytePassword))
 }
 
+// printSubmissionPrompt takes 3 boolean values and prints the appropriate
+// message for a select number of situations. Not all possibilities are covered,
+// but if they are not covered it's likely that it's an "impossible" scenario
+// (knock on wood). For example, an existingCredits cannot be false while
+// hasWriteAccess is true. If the account does not exist, it cannot have write
+// access.
+// These prompts establish the following inputs as meaning:
+//     - "r": retry entering credentials
+//     - "p": start a pull request
+//     - any other key: abort the submission
+func printSubmissionPrompt(existingCreds, hasWriteAccess, isPR bool) {
+	if !existingCreds {
+		fmt.Print(`
+The username/password did not match an existing GitHub account.
+Retry (r) entering your credentials or abort submission (any other key)? `)
+	} else if existingCreds && !hasWriteAccess && !isPR {
+		fmt.Print(`
+That account does not have the privileges to write to the requested repo.
+Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `)
+	} else if existingCreds && !hasWriteAccess && isPR {
+		fmt.Print(`
+That account does not have the privileges to write to the requested repo.
+Re-enter your credentials (r) or abort (any other key)? `)
+	}
+}
+
 // Cleanup deletes the folder at the given path and prints a message if it fails.
 func Cleanup() {
 	path := filepath.Join(".ait", "sources")
@@ -245,16 +274,4 @@ func Cleanup() {
 It is advisable that you delete it.\n`, path)
 	}
 	_ = os.Remove(".ait/commit")
-}
-
-func getCredentialPrompt(isPR bool) string {
-	if isPR {
-		return `
-Those submitFields did not give you write access to the repo. Retry if you 
-think you made a typo. Re-enter your credentials (r) or abort (any other key)? `
-	}
-	return `
-Those submitFields did not give you write access to the repo.
-Retry if you think you made a typo, but you might not have the proper permissions.
-Re-enter your credentials (r), submit a pull request (p), or abort (any other key)? `
 }

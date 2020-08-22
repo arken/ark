@@ -18,12 +18,12 @@ var application *ApplicationContents
 // ShowApplication pulls up our template application, currently stored in the
 // string above.
 func ShowApplication(repoPath string) {
-	commitPath := filepath.Join(".ait", "commit")
+	appPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
-	if s, _ := utils.GetFileSize(commitPath); s == 0 {
+	if s, _ := utils.GetFileSize(appPath); s == 0 {
 		//^ if the commit file is empty and/or does not exist, one must be
 		//fetched from the appropriate source
-		fetchApplicationTemplate(repoPath, commitPath)
+		fetchApplicationTemplate(repoPath, appPath)
 	}
 	execPath, err := exec.LookPath(config.Global.General.Editor)
 	if err != nil {
@@ -32,16 +32,16 @@ func ShowApplication(repoPath string) {
 			"or change it in the ~/.ait/ait.config file.\n", config.Global.General.Editor)
 	}
 
-	cmd := exec.Command(execPath, commitPath)
+	cmd := exec.Command(execPath, appPath)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	// Display the editor to the user by running the command.
 	err = cmd.Run()
 	utils.CheckError(err)
 	now := time.Now()
-	_ = os.Chtimes(commitPath, now, now)
+	_ = os.Chtimes(appPath, now, now)
 	// Ignored because docs say that if this function an error, it's a PathError,
-	// and if commitPath was bad, the program would have already crashed.
+	// and if appPath was bad, the program would have already crashed.
 }
 
 // fetchApplicationTemplate fetches the prompt that will be shown to the user.
@@ -116,21 +116,24 @@ func isValidAppTemplate(path string) bool {
 // ReadApplication reads a text file and puts it into a struct. It keeps track of
 // when the last time the commit file was modified, so after one read, this method
 // can be called at will without incurring slow file i/o, as long as the file isn't
-// modified.
+// modified. Return nil if the file does not exist.
 func ReadApplication() *ApplicationContents {
-	commitPath := filepath.Join(".ait", "commit")
-	lastMod, err := utils.GetFileModTime(commitPath)
+	appPath := filepath.Join(".ait", "commit")
+	if !utils.FileExists(appPath) {
+		return nil
+	}
+	lastMod, err := utils.GetFileModTime(appPath)
 
 	if application != nil && err == nil && application.timeFilled.After(lastMod) {
 		return application
 	} else if application == nil {
 		application = &ApplicationContents{}
 	}
-	commitFile := utils.BasicFileOpen(commitPath, os.O_RDONLY, 0644)
-	defer commitFile.Close()
+	appFile := utils.BasicFileOpen(appPath, os.O_RDONLY, 0644)
+	defer appFile.Close()
 
 	application.Clear()
-	scanner := bufio.NewScanner(commitFile)
+	scanner := bufio.NewScanner(appFile)
 	scanner.Split(bufio.ScanLines)
 	var ptr *string = nil
 
