@@ -61,7 +61,7 @@ func reloadConf() {
 func defaultApplication() []byte {
 	return []byte(
 `### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
-### View this document as raw Markdown instead of rendered HTML to see the prompts.'
+### View this document as raw Markdown instead of rendered HTML to see the prompts.
 <!-- Where should your addition be located within the keyset repository?
 This line should be in the format of a path.
 For example,
@@ -81,7 +81,7 @@ science/biology/datasets
 
 
 <!-- An empty commit message will abort the submission.
-Describe the files in more detail.
+Describe the files in more detail. -->
 # COMMIT below
 
 

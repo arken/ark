@@ -24,9 +24,11 @@ import (
 func PullRequest(url, forkOwner string) error {
 	upstreamOwner := utils.GetRepoOwner(url)
 	upstreamRepo := utils.GetRepoName(url)
-	err := os.RemoveAll(filepath.Join(".ait", "sources", upstreamRepo))
+	repoPath := filepath.Join(".ait", "sources", upstreamRepo)
+	err := os.RemoveAll(repoPath)
 	// ^Once a pull request is started, we don't need the old clone of the repo
-	if err != nil {
+	if err != nil && utils.FileExists(repoPath) {
+		//I don't care if it failed because there was no repo there to begin with
 		Cleanup()
 		utils.FatalPrintln("Unable to remove the old clone of ", url)
 	}
@@ -37,16 +39,9 @@ func PullRequest(url, forkOwner string) error {
 	}
 	ksName := display.ReadApplication().GetKSName() // Just the name of the file
 	category := display.ReadApplication().GetCategory()
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo, category,ksName)
-
+	ksPath := filepath.Join(repoPath, category, ksName)
 	// Full relative path from repo root ^
-	err = keysets.Generate(ksPath, false)
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err, "\nIt's possible your fork of",
-			upstreamRepo, "is out of sync with the upstream repo. In this \n" +
-			"case you should delete your fork using Github.com and try again.")
-	}
+
 	AddKeyset(repo, ksName, ksPath)
 	CommitKeyset(repo)
 	PushKeyset(repo, url, true)
