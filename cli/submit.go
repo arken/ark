@@ -26,12 +26,17 @@ var Submit = cmd.CMD{
 	Name:  "submit",
 	Short: "Submit your Keyset to a git repository.",
 	Args:  &SubmitArgs{},
+	Flags: &SubmitFlags{},
 	Run:   SubmitRun,
 }
 
 // SubmitArgs handles the specific arguments for the submit command.
 type SubmitArgs struct {
 	Args []string
+}
+
+type SubmitFlags struct {
+	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
 // submitFields is a simple struct to hold github username and password and other
@@ -76,13 +81,8 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")
 	}
-	var url string
-	for _, arg := range args {
-		if strings.HasSuffix(arg, ".git") {
-			url = arg
-		}
-		fields.isPR = fields.isPR || arg == "p"
-	}
+	url := args[0]
+	fields.isPR = c.Flags.(*SubmitFlags).IsPR
 	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
 		utils.FatalPrintln(`No files are currently added, nothing to submit. Use
     ait add <files>...
@@ -94,23 +94,18 @@ to add files for submission.`)
 			"please delete it and try again\n", repoPath)
 	}
 	if fields.isPR { //-p flag was included
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print(`You've chosen to start a pull request. Please enter your
-GitHub username (make sure this is correct!): `)
-		username, _ := reader.ReadString('\n')
-		fmt.Print("\n")
-		fields.username = strings.TrimSpace(username)
+		collectUsername()
 		err := PullRequest(url, fields.username)
-		utils.CheckErrorWithCleanup(err, submissionCleanup)
+		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	} else {
 		repo, err := keysets.Clone(url, repoPath)
-		utils.CheckErrorWithCleanup(err, submissionCleanup)
+		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 		display.ShowApplication(repoPath)
 		app := display.ReadApplication()
 		ksName := app.GetKSName()
 		category := app.GetCategory()
 		if !app.IsValid() {
-			utils.FatalWithCleanup(submissionCleanup,
+			utils.FatalWithCleanup(utils.SubmissionCleanup,
 				"Empty commit message and/or title, submission aborted.")
 		}
 		ksPath := filepath.Join(repoPath, category, ksName)
@@ -118,7 +113,8 @@ GitHub username (make sure this is correct!): `)
 		CommitKeyset(repo)
 		PushKeyset(repo, url)
 	}
-	submissionCleanup()
+	utils.SubmissionCleanup()
+	fmt.Println("Submission successful!")
 }
 
 // AddKeyset adds the keyset file at the given path to the repo.
@@ -137,18 +133,18 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 		fmt.Print("\n")
 	}
 	err := keysets.Generate(ksPathFromWD, fields.doOverwrite())
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	tree, err := repo.Worktree()
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	_, err = tree.Add(ksPathFromRepo)
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 }
 
 // CommitKeyset attempts to commit the file that was previously added. This
 // function expects a repo that already has a file added to the worktree.
 func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	app := display.ReadApplication()
 	msg := app.GetTitle() + "\n\n" + app.GetCommit()
 	opt := &git.CommitOptions{
@@ -159,7 +155,7 @@ func CommitKeyset(repo *git.Repository) {
 		},
 	}
 	_, err = tree.Commit(msg, opt)
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 }
 
 // PushKeyset attempts to push the latest commit to the git repo's default remote.
@@ -186,7 +182,7 @@ func PushKeyset(repo *git.Repository, url string) {
 			fields.clearCreds()
 			continue
 		} else {
-			utils.FatalWithCleanup(submissionCleanup, "Submission aborted.")
+			utils.FatalWithCleanup(utils.SubmissionCleanup, "Submission aborted.")
 		}
 	}
 	if err == nil {
@@ -223,7 +219,7 @@ func tryPush(repo *git.Repository) (existingCreds bool, hasWriteAccess bool, err
 		hasWriteAccess = false
 	} else { // if it wasn't one of those ^ errors it was probably file i/o
 		     // or network related, or repo was already up to date.
-		utils.FatalWithCleanup(submissionCleanup, err)
+		utils.FatalWithCleanup(utils.SubmissionCleanup, err)
 	}
 	return existingCreds, hasWriteAccess, err
 }
@@ -243,7 +239,7 @@ func promptCredentials() {
 	fmt.Print("Enter your GitHub password: ")
 	bytePassword, err := terminal.ReadPassword(syscall.Stdin)
 	if err != nil {
-		utils.FatalWithCleanup(submissionCleanup,
+		utils.FatalWithCleanup(utils.SubmissionCleanup,
 			"\nSomething went wrong when collecting your password:", err.Error())
 	}
 	fmt.Print("\n") //necessary
@@ -276,9 +272,28 @@ Re-enter your credentials (r) or abort (any other key)? `)
 	}
 }
 
-// submissionCleanup attempts to delete the sources and commit file. Nothing
-// is done if either of those operations is unsuccessful
-func submissionCleanup() {
-	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
-	_ = os.Remove(".ait/commit")
+// collectUsername prompts the user for their github username and puts it in the
+// fields struct. It asks the user to verify that their username is entered
+// correctly, because the rest of the pull request chain depends on it being an
+// actual account that exists.
+func collectUsername() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("You've chosen to start a pull request.")
+	var choice string
+	for {
+		fmt.Print("Please enter your GitHub username: ")
+		username, _ := reader.ReadString('\n')
+		fields.username = strings.TrimSpace(username)
+		fmt.Printf("You entered \"%v\". Is this the correct username? Enter \"a\" to abort. y/[n]/a: ",
+			fields.username)
+		choice, _ = reader.ReadString('\n')
+		choice = strings.TrimSpace(choice)
+		if choice == "y" {
+			break
+		} else if choice == "a" {
+			utils.FatalPrintln("Submission aborted.")
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
 }

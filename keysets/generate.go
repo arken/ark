@@ -105,7 +105,7 @@ func cleanup(file *os.File) {
 func getKeySetLineFromPath(filePath string) string {
 	// Scrub filename for spaces and replace with dashes.
 	cid, err := ipfs.Add(filePath)
-	utils.CheckError(err)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
 	return getKeySetLine(filename, cid)
 }
@@ -133,7 +133,8 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			if len(line) > 0 {
 				pair := strings.Fields(line)
 				if len(pair) != 2 {
-					utils.FatalPrintln("Malformed KeySet file detected.")
+					utils.FatalWithCleanup(utils.SubmissionCleanup,
+						"Malformed KeySet file detected:", file.Name())
 				}
 				contents[pair[0]] = pair[1]
 			}
@@ -144,7 +145,7 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			if len(line) > 0 {
 				filename := filepath.Base(line)
 				cid, err := ipfs.Add(line)
-				utils.CheckError(err)
+				utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 				contents[cid] = filename
 			}
 		}

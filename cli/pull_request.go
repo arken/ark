@@ -29,10 +29,10 @@ func PullRequest(url, forkOwner string) error {
 	// ^Once a pull request is started, we don't need the old clone of the repo
 	if err != nil && utils.FileExists(repoPath) {
 		//I don't care if it failed because there was no repo there to begin with
-		utils.FatalWithCleanup(submissionCleanup, "Unable to remove the old clone of", url)
+		utils.FatalWithCleanup(utils.SubmissionCleanup, "Unable to remove the old clone of", url)
 	}
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	if display.ReadApplication() == nil {
 		display.ShowApplication(repoPath)
 	}
@@ -104,6 +104,6 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 	defer cancel()
 
 	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
-	utils.CheckErrorWithCleanup(err, submissionCleanup)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	fmt.Println("Your new pull request can be found at:", donePR.GetHTMLURL())
 }
