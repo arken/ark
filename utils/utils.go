@@ -171,7 +171,7 @@ func FatalWithCleanup(cleanup func(), a ...interface{}) {
 	FatalPrintln(a...)
 }
 
-// submissionCleanup attempts to delete the sources and commit file. Nothing
+// SubmissionCleanup attempts to delete the sources and commit file. Nothing
 // is done if either of those operations is unsuccessful
 func SubmissionCleanup() {
 	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
