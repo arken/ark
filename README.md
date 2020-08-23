@@ -5,7 +5,7 @@ The Arken Import Tool allows anyone to index and upload data to an Arken cluster
 You can think of the Arken Import Tool or AIT as a git like upload client for Arken that indexes, generates, and submits Keyset additions as pull requests.
 
 ## Installation
-1. Install Go(lang)
+1. Install Go(lang) 1.14
 2. go get github.com/arkenproject/ait
 
 ## Usage
