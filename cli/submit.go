@@ -52,18 +52,25 @@ func (c *submitFields) clearCreds() {
 	c.password = ""
 }
 
+// doOverwrite returns false if the struct's ksGenMethod is equal to "a" (amend
+// or append), false otherwise.
+func (c *submitFields) doOverwrite() bool {
+	return c.ksGenMethod != "a"
+}
+
 var	fields submitFields
 
-//SubmitRun generates a keyset file and then clones the Github repo at the given
-//url, adds the keyset file, commits it, and pushes it, and then deletes the repo
-//once everything is done or if anything goes wrong before completion. With all
-//of those steps, there are MANY possible points of failure. If anything goes
-//wrong, the error will be PrintFatal'd and the repo will we deleted from
-//its temporary location at .ait/sources. Users are not meant to deal with the
-//repos directly at any point so it and the keyset file are basically ephemeral
-//and only exist on disk while this command is running.
+// SubmitRun generates a keyset file and then clones the Github repo at the given
+// url, adds the keyset file, commits it, and pushes it, and then deletes the repo
+// once everything is done or if anything goes wrong before completion. With all
+// of those steps, there are MANY possible points of failure. If anything goes
+// wrong, the error will be PrintFatal'd and the repo will we deleted from
+// its temporary location at .ait/sources. Users are not meant to deal with the
+// repos directly at any point so it and the keyset file are basically ephemeral
+// and only exist on disk while this command is running.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*SubmitArgs).Args
+	url := args[0]
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")
 	}
@@ -72,25 +79,24 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
     ait add <files>...
 to add files for submission.`)
 	}
-	url := args[0]
 	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-	if !utils.FileExists(repoPath) {
-		path := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-		_, err := keysets.Clone(url, path)
-		utils.CheckError(err)
+	if utils.FileExists(repoPath) {
+		utils.FatalPrintf("A file/folder already exists at %v, " +
+			"please delete it and try again", repoPath)
 	}
-	repo, err := git.PlainOpen(repoPath)
+	repo, err := keysets.Clone(url, repoPath)
+	utils.CheckError(err)
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
 	display.ShowApplication(repoPath)
-	ksName := display.ReadApplication().GetKSName()
-	category := display.ReadApplication().GetCategory()
-	if len(display.ReadApplication().GetTitle()) == 0 ||
-		len(display.ReadApplication().GetCommit()) == 0 {
+	app := display.ReadApplication()
+	ksName := app.GetKSName()
+	category := app.GetCategory()
+	if !app.IsValid() {
 		Cleanup()
-		utils.FatalPrintln("Empty commit message or title, submission aborted.")
+		utils.FatalPrintln("Empty commit message and/or title, submission aborted.")
 	}
 	ksPath := filepath.Join(repoPath, category, ksName)
 	AddKeyset(repo, filepath.Join(category, ksName), ksPath)
@@ -99,10 +105,10 @@ to add files for submission.`)
 	Cleanup()
 }
 
-//AddKeyset adds the keyset file at the given path to the repo.
-//Effectively: git add ksPath
+// AddKeyset adds the keyset file at the given path to the repo.
+// Effectively: git add ksPath
 func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
-	var choice = &fields.ksGenMethod
+	var choice = &fields.ksGenMethod //want to keep this response saved in the struct
 	if utils.FileExists(ksPathFromWD) && *choice == "" {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("A file called %v already exists in the cloned repo.\n",
@@ -114,8 +120,7 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 		}
 		fmt.Print("\n")
 	}
-	overwrite := *choice != "a"
-	err := keysets.Generate(ksPathFromWD, overwrite)
+	err := keysets.Generate(ksPathFromWD, fields.doOverwrite())
 	if err != nil {
 		Cleanup()
 		utils.FatalPrintln(err)
@@ -132,8 +137,8 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 	}
 }
 
-//CommitKeyset attempts to commit the file that was previously added. This
-//function expects a repo that already has a file added to the worktree.
+// CommitKeyset attempts to commit the file that was previously added. This
+// function expects a repo that already has a file added to the worktree.
 func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	if err != nil {
@@ -170,13 +175,13 @@ func PushKeyset(repo *git.Repository, url string, isPR bool) {
 		printSubmissionPrompt(existingCreds, hasWriteAccess, isPR)
 		choice, _ = reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
+		fmt.Print("\n")
 		if choice == "p" && !isPR && existingCreds {
 			err = PullRequest(url, fields.username)
 			utils.CheckError(err)
 			return
 		} else if choice == "r" {
 			fields.clearCreds()
-			fmt.Print("\n")
 			continue
 		} else {
 			fmt.Println("Submission aborted.")

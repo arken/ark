@@ -63,3 +63,8 @@ func (app *ApplicationContents) Clear() {
 	app.category = ""
 	app.ksName = ""
 }
+
+// IsValid return true only if both the title and commit fields are not empty.
+func (app *ApplicationContents) IsValid() bool {
+	return len(app.title) != 0 && len(app.commit) != 0
+}

@@ -56,8 +56,9 @@ func fetchApplicationTemplate(repoPath, destPath string) {
 	if !isValidAppTemplate(fromPath) { // false if the file does not exist
 		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
 		//       = ~/.ait/application.md
-		fmt.Println("The application template file found in the cloned " +
-			"repo was found to be invalid, using default instead\n ")
+		fmt.Println(`Either there was no application template file in the cloned repo, or 
+file was found to be invalid. using default instead
+ `)
 	}
 	if !isValidAppTemplate(fromPath) {
 		utils.FatalPrintf(`Your default application template stored in %v is invalid. 
