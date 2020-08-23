@@ -70,9 +70,17 @@ var	fields submitFields
 // and only exist on disk while this command is running.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*SubmitArgs).Args
-	url := args[0]
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")
+	}
+	var url string
+	isPR := false
+	for _, arg := range args {
+		if strings.HasSuffix(arg, ".git") {
+			url = arg
+		} else if arg == "p" {
+			isPR = true
+		}
 	}
 	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
 		utils.FatalPrintln(`No files are currently added, nothing to submit. Use
@@ -82,26 +90,40 @@ to add files for submission.`)
 	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 	if utils.FileExists(repoPath) {
 		utils.FatalPrintf("A file/folder already exists at %v, " +
-			"please delete it and try again", repoPath)
+			"please delete it and try again\n", repoPath)
 	}
-	repo, err := keysets.Clone(url, repoPath)
-	utils.CheckError(err)
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err)
+	if isPR {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print(`You've chosen to start a pull request.
+Please enter your GitHub username (not the name of the repo's owner): `)
+		username, _ := reader.ReadString('\n')
+		fmt.Print("\n")
+		username = strings.TrimSpace(username)
+		err := PullRequest(url, username)
+		if err != nil {
+			Cleanup()
+			utils.FatalPrintln(err)
+		}
+	} else {
+		repo, err := keysets.Clone(url, repoPath)
+		utils.CheckError(err)
+		if err != nil {
+			Cleanup()
+			utils.FatalPrintln(err)
+		}
+		display.ShowApplication(repoPath)
+		app := display.ReadApplication()
+		ksName := app.GetKSName()
+		category := app.GetCategory()
+		if !app.IsValid() {
+			Cleanup()
+			utils.FatalPrintln("Empty commit message and/or title, submission aborted.")
+		}
+		ksPath := filepath.Join(repoPath, category, ksName)
+		AddKeyset(repo, filepath.Join(category, ksName), ksPath)
+		CommitKeyset(repo)
+		PushKeyset(repo, url, false)
 	}
-	display.ShowApplication(repoPath)
-	app := display.ReadApplication()
-	ksName := app.GetKSName()
-	category := app.GetCategory()
-	if !app.IsValid() {
-		Cleanup()
-		utils.FatalPrintln("Empty commit message and/or title, submission aborted.")
-	}
-	ksPath := filepath.Join(repoPath, category, ksName)
-	AddKeyset(repo, filepath.Join(category, ksName), ksPath)
-	CommitKeyset(repo)
-	PushKeyset(repo, url, false)
 	Cleanup()
 }
 

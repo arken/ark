@@ -37,6 +37,9 @@ func PullRequest(url, forkOwner string) error {
 		Cleanup()
 		utils.FatalPrintln(err)
 	}
+	if display.ReadApplication() == nil {
+		display.ShowApplication(repoPath)
+	}
 	ksName := display.ReadApplication().GetKSName() // Just the name of the file
 	category := display.ReadApplication().GetCategory()
 	ksPath := filepath.Join(repoPath, category, ksName)
