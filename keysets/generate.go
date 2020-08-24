@@ -2,12 +2,14 @@ package keysets
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
+	"github.com/schollz/progressbar/v3"
 )
 
 const delimiter = "  "
@@ -42,6 +44,16 @@ func createNew(path string) error {
 	contents := make(map[string]struct{})
 	utils.FillMap(contents, addedFiles)
 	addedFiles.Close()
+
+	// For large Datasets display a loading bar.
+	ipfsBar := progressbar.Default(int64(len(contents)))
+	barPresent := false
+	if len(contents) > 30 {
+		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar.RenderBlank()
+		barPresent = true
+	}
+
 	for filePath := range contents {
 		line := getKeySetLineFromPath(filePath)
 		_, err = keySetFile.WriteString(line + "\n")
@@ -49,6 +61,10 @@ func createNew(path string) error {
 			cleanup(keySetFile)
 			return err
 		}
+		if barPresent {
+			ipfsBar.Add(1)
+		}
+
 	}
 	return keySetFile.Close()
 }
@@ -74,6 +90,16 @@ func amendExisting(ksPath string) error {
 	// ^ cid -> fileNAME
 	fillMapWithCID(ksContents, keySetFile)
 	newFiles := make(map[string]string)
+
+	// For large Datasets display a loading bar.
+	namesBar := progressbar.Default(int64(len(newFiles)))
+	barPresent := false
+	if len(newFiles) > 30 {
+		fmt.Println("Reading File Names:")
+		namesBar.RenderBlank()
+		barPresent = true
+	}
+
 	// ^ paths of the files which will be added
 	for cid, path := range addedFilesContents {
 		if _, contains := ksContents[cid]; !contains {
@@ -82,12 +108,25 @@ func amendExisting(ksPath string) error {
 		} else {
 			delete(ksContents, cid)
 		}
+		if barPresent {
+			namesBar.Add(1)
+		}
 	}
+
+	ipfsBar := progressbar.Default(int64(len(newFiles)))
+	if barPresent {
+		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar.RenderBlank()
+	}
+
 	for cid, filename := range newFiles {
 		line := getKeySetLine(filename, cid)
-		_, err := keySetFile.WriteString(line+"\n")
+		_, err := keySetFile.WriteString(line + "\n")
 		if err != nil {
 			return err
+		}
+		if barPresent {
+			ipfsBar.Add(1)
 		}
 	}
 	return nil
