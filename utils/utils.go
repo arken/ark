@@ -150,3 +150,30 @@ func CopyFile(fromPath, toPath string) error {
 	}
 	return nil
 }
+
+// CheckErrorWithCleanup checks the given error for nil and calls the given
+// cleanup function if it is not nil. Optionally add a custom message to be
+// printed, if none is provided, the error is printed.
+func CheckErrorWithCleanup(err error, cleanup func(), a ...interface{}) {
+	if err != nil {
+		cleanup()
+		if a == nil {
+			FatalPrintln(err)
+		}
+		FatalPrintln(a...)
+	}
+}
+
+// FatalWithCleanup calls the given function then calls FatalPrintln with the
+// other arg(s)
+func FatalWithCleanup(cleanup func(), a ...interface{}) {
+	cleanup()
+	FatalPrintln(a...)
+}
+
+// SubmissionCleanup attempts to delete the sources and commit file. Nothing
+// is done if either of those operations is unsuccessful
+func SubmissionCleanup() {
+	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
+	_ = os.Remove(".ait/commit")
+}
