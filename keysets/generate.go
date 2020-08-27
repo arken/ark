@@ -20,9 +20,8 @@ const delimiter = "  "
 func Generate(path string, overwrite bool) error {
 	if overwrite {
 		return createNew(path)
-	} else {
-		return amendExisting(path)
 	}
+	return amendExisting(path)
 }
 
 // createNew creates a keyset file with the given path. Path should not be the
