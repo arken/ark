@@ -24,32 +24,26 @@ import (
 func PullRequest(url, forkOwner string) error {
 	upstreamOwner := utils.GetRepoOwner(url)
 	upstreamRepo := utils.GetRepoName(url)
-	err := os.RemoveAll(filepath.Join(".ait", "sources", upstreamRepo))
+	repoPath := filepath.Join(".ait", "sources", upstreamRepo)
+	err := os.RemoveAll(repoPath)
 	// ^Once a pull request is started, we don't need the old clone of the repo
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln("Unable to remove the old clone of ", url)
+	if err != nil && utils.FileExists(repoPath) {
+		//I don't care if it failed because there was no repo there to begin with
+		utils.FatalWithCleanup(utils.SubmissionCleanup, "Unable to remove the old clone of", url)
 	}
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
+	if display.ReadApplication() == nil {
+		display.ShowApplication(repoPath)
 	}
 	ksName := display.ReadApplication().GetKSName() // Just the name of the file
 	category := display.ReadApplication().GetCategory()
-	ksPath := filepath.Join(".ait", "sources", upstreamRepo, category,ksName)
-
+	ksPath := filepath.Join(repoPath, category, ksName)
 	// Full relative path from repo root ^
-	err = keysets.Generate(ksPath, false)
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err, "\nIt's possible your fork of",
-			upstreamRepo, "is out of sync with the upstream repo. In this \n" +
-			"case you should delete your fork using Github.com and try again.")
-	}
+
 	AddKeyset(repo, ksName, ksPath)
 	CommitKeyset(repo)
-	PushKeyset(repo, url, true)
+	PushKeyset(repo, url)
 	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
 	return err
 }
@@ -110,9 +104,6 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 	defer cancel()
 
 	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
-	if err != nil {
-		Cleanup()
-		utils.FatalPrintln(err)
-	}
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	fmt.Println("Your new pull request can be found at:", donePR.GetHTMLURL())
 }

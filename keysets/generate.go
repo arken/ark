@@ -2,12 +2,14 @@ package keysets
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
+	"github.com/schollz/progressbar/v3"
 )
 
 const delimiter = "  "
@@ -18,9 +20,8 @@ const delimiter = "  "
 func Generate(path string, overwrite bool) error {
 	if overwrite {
 		return createNew(path)
-	} else {
-		return amendExisting(path)
 	}
+	return amendExisting(path)
 }
 
 // createNew creates a keyset file with the given path. Path should not be the
@@ -42,6 +43,16 @@ func createNew(path string) error {
 	contents := make(map[string]struct{})
 	utils.FillMap(contents, addedFiles)
 	addedFiles.Close()
+
+	// For large Datasets display a loading bar.
+	ipfsBar := progressbar.Default(int64(len(contents)))
+	barPresent := false
+	if len(contents) > 30 {
+		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar.RenderBlank()
+		barPresent = true
+	}
+
 	for filePath := range contents {
 		line := getKeySetLineFromPath(filePath)
 		_, err = keySetFile.WriteString(line + "\n")
@@ -49,6 +60,10 @@ func createNew(path string) error {
 			cleanup(keySetFile)
 			return err
 		}
+		if barPresent {
+			ipfsBar.Add(1)
+		}
+
 	}
 	return keySetFile.Close()
 }
@@ -74,6 +89,16 @@ func amendExisting(ksPath string) error {
 	// ^ cid -> fileNAME
 	fillMapWithCID(ksContents, keySetFile)
 	newFiles := make(map[string]string)
+
+	// For large Datasets display a loading bar.
+	namesBar := progressbar.Default(int64(len(newFiles)))
+	barPresent := false
+	if len(newFiles) > 30 {
+		fmt.Println("Reading File Names:")
+		namesBar.RenderBlank()
+		barPresent = true
+	}
+
 	// ^ paths of the files which will be added
 	for cid, path := range addedFilesContents {
 		if _, contains := ksContents[cid]; !contains {
@@ -82,12 +107,25 @@ func amendExisting(ksPath string) error {
 		} else {
 			delete(ksContents, cid)
 		}
+		if barPresent {
+			namesBar.Add(1)
+		}
 	}
+
+	ipfsBar := progressbar.Default(int64(len(newFiles)))
+	if barPresent {
+		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar.RenderBlank()
+	}
+
 	for cid, filename := range newFiles {
 		line := getKeySetLine(filename, cid)
-		_, err := keySetFile.WriteString(line+"\n")
+		_, err := keySetFile.WriteString(line + "\n")
 		if err != nil {
 			return err
+		}
+		if barPresent {
+			ipfsBar.Add(1)
 		}
 	}
 	return nil
@@ -105,7 +143,7 @@ func cleanup(file *os.File) {
 func getKeySetLineFromPath(filePath string) string {
 	// Scrub filename for spaces and replace with dashes.
 	cid, err := ipfs.Add(filePath)
-	utils.CheckError(err)
+	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
 	return getKeySetLine(filename, cid)
 }
@@ -133,7 +171,8 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			if len(line) > 0 {
 				pair := strings.Fields(line)
 				if len(pair) != 2 {
-					utils.FatalPrintln("Malformed KeySet file detected.")
+					utils.FatalWithCleanup(utils.SubmissionCleanup,
+						"Malformed KeySet file detected:", file.Name())
 				}
 				contents[pair[0]] = pair[1]
 			}
@@ -144,7 +183,7 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			if len(line) > 0 {
 				filename := filepath.Base(line)
 				cid, err := ipfs.Add(line)
-				utils.CheckError(err)
+				utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 				contents[cid] = filename
 			}
 		}
