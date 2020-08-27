@@ -3,6 +3,8 @@ package ipfs
 import (
 	"os"
 
+	"github.com/ipfs/interface-go-ipfs-core/options"
+
 	files "github.com/ipfs/go-ipfs-files"
 )
 
@@ -12,7 +14,11 @@ func Add(path string) (cid string, err error) {
 	if err != nil {
 		return cid, err
 	}
-	output, err := ipfs.Unixfs().Add(ctx, file)
+	output, err := ipfs.Unixfs().Add(ctx, file, func(input *options.UnixfsAddSettings) error {
+		input.Pin = true
+		input.FsCache = false
+		return nil
+	})
 	if err != nil {
 		return cid, err
 	}

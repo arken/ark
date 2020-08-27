@@ -3,11 +3,13 @@ package ipfs
 import (
 	"context"
 	"fmt"
-	"github.com/arkenproject/ait/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
+
+	"github.com/arkenproject/ait/utils"
 
 	aitConf "github.com/arkenproject/ait/config"
 
@@ -66,6 +68,11 @@ func init() {
 
 	go connectToPeers(ctx, ipfs, bootstrapNodes)
 	ps.Start()
+
+	go func() {
+		node.Provider.Run()
+		time.Sleep(5 * time.Minute)
+	}()
 }
 
 // GetID returns the identifier of the node.
@@ -211,7 +218,7 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	// Create the repo with the config
 	err = fsrepo.Init(path, cfg)
 	if err != nil {
-		return "", fmt.Errorf("failed to init node: %s\n", err)
+		return "", fmt.Errorf("failed to init node: %s", err)
 	}
 
 	return path, nil

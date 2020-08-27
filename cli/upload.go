@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"time"
@@ -31,17 +32,25 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	utils.FillMap(contents, file)
 	file.Close()
 
-	bar := progressbar.Default(int64(len(contents)))
-	bar.RenderBlank()
-
 	workers := genNumWorkers()
+
+	fmt.Println("Adding Files to IPFS Store")
+	addBar := progressbar.Default(int64(len(contents)))
+	addBar.RenderBlank()
 
 	input := make(chan string, len(contents))
 	for path := range contents {
 		cid, err := ipfs.Add(path)
 		utils.CheckError(err)
+
+		addBar.Add(1)
 		input <- cid
 	}
+
+	fmt.Println("Uploading Files to Cluster")
+	ipfsBar := progressbar.Default(int64(len(contents)))
+	ipfsBar.RenderBlank()
+
 	for i := 0; i < workers; i++ {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
@@ -54,15 +63,15 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 					input <- cid
 				}
 			}
-		}(bar, input)
+		}(ipfsBar, input)
 	}
 
 	for {
-		if bar.State().CurrentPercent == float64(1) {
+		if ipfsBar.State().CurrentPercent == float64(1) {
 			close(input)
 			return
 		}
-		bar.Add(0)
+		ipfsBar.Add(0)
 		time.Sleep(100 * time.Millisecond)
 	}
 }
