@@ -32,8 +32,8 @@ func defaultConf() Config {
 	return result
 }
 
-// genConf encodes the values of the Config struct back into a TOML file.
-func genConf(conf Config, appBytes []byte) {
+// GenConf encodes the values of the Config struct back into a TOML file.
+func GenConf(conf Config) {
 	os.MkdirAll(filepath.Dir(Path), os.ModePerm)
 	buf := new(bytes.Buffer)
 	err := toml.NewEncoder(buf).Encode(conf)
@@ -42,8 +42,13 @@ func genConf(conf Config, appBytes []byte) {
 	utils.CheckError(err)
 	defer f.Close()
 	f.Write(buf.Bytes())
+}
+
+// genApplication creates a default application.md file in ~/.ait/ using the
+// default definition returned by defaultApplication
+func genApplication(appBytes []byte) {
 	appPath := filepath.Join(filepath.Dir(Path), "application.md")
-	err = ioutil.WriteFile(appPath, appBytes, 0644)
+	err := ioutil.WriteFile(appPath, appBytes, 0644)
 	utils.CheckError(err)
 }
 
@@ -53,7 +58,7 @@ func reloadConf() {
 	result := defaultConf()
 	readConf(&result)
 	result.General.Version = defaultConf().General.Version
-	genConf(result, nil)
+	GenConf(result)
 }
 
 // defaultApplication defines the default file to be used as an application prompt

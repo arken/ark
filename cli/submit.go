@@ -93,6 +93,10 @@ to add files for submission.`)
 		utils.FatalPrintf("A file/folder already exists at %v, " +
 			"please delete it and try again\n", repoPath)
 	}
+	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
+		fmt.Println("You have not defined your name and email in", config.Path)
+		getNameEmail()
+	}
 	if fields.isPR { //-p flag was included
 		collectUsername()
 		err := PullRequest(url, fields.username)
@@ -296,4 +300,17 @@ func collectUsername() {
 		fmt.Print("\n")
 	}
 	fmt.Print("\n")
+}
+
+// getNameEmail asks teh user to enter their name and email for git purposes.
+// this is saved into the file at ~/.ait/ait.config
+func getNameEmail() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Please enter your name (spaces are ok): ")
+	input, _ := reader.ReadString('\n')
+	config.Global.Git.Name = strings.TrimSpace(input)
+	fmt.Print("Please enter your email: ")
+	input, _ = reader.ReadString('\n')
+	config.Global.Git.Email = strings.TrimSpace(input)
+	config.GenConf(config.Global)
 }
