@@ -61,7 +61,8 @@ func init() {
 func readConf(conf *Config) {
 	_, err := toml.DecodeFile(Path, &conf)
 	if os.IsNotExist(err) {
-		genConf(defaultConf(), defaultApplication())
+		GenConf(defaultConf())
+		genApplication(defaultApplication())
 		readConf(conf)
 	}
 	if err != nil && !os.IsNotExist(err) {
