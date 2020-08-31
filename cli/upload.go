@@ -51,12 +51,12 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	ipfsBar := progressbar.Default(int64(len(contents)))
 	ipfsBar.RenderBlank()
 
-	for i := 0; i < workers; i++ {
+	for i := 0; i < workers*2; i++ {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
-				replications, err := ipfs.FindProvs(cid, 20)
+				replications, err := ipfs.FindProvs(cid, 3)
 				utils.CheckError(err)
-				if replications >= 3 {
+				if replications >= 2 {
 					bar.Add(1)
 				} else {
 					bar.Add(0)
