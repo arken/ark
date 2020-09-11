@@ -39,7 +39,8 @@ var (
 	AtRiskThreshhold int
 )
 
-func init() {
+// Init starts the embedded IPFS node.
+func Init() {
 	var err error
 	ctx, cancel = context.WithCancel(context.Background())
 
@@ -57,7 +58,7 @@ func init() {
 
 	go func() {
 		node.Provider.Run()
-		time.Sleep(5 * time.Minute)
+		time.Sleep(1 * time.Hour)
 	}()
 }
 
