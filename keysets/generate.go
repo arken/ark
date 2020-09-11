@@ -18,7 +18,6 @@ const delimiter = "  "
 // Depending on the value of overwrite, the keyset file is either generated from
 // scratch or added to.
 func Generate(path string, overwrite bool) error {
-	ipfs.Init()
 	if overwrite {
 		return createNew(path)
 	}
