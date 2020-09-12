@@ -23,7 +23,7 @@ type InitArgs struct {
 }
 
 //InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
-func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
+func InitRun(_ *cmd.RootCMD, _ *cmd.CMD) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
 		err := os.Mkdir(".ait", os.ModePerm)

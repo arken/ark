@@ -37,7 +37,8 @@ func GetFileSize(filename string) (int64, error) {
 func IsInSubDir(dir, pathToCheck string) bool {
 	pathAbs, _ := filepath.Abs(pathToCheck)
 	dirAbs, _ := filepath.Abs(dir)
-	return strings.HasPrefix(dirAbs, pathAbs)
+	b := strings.HasPrefix(dirAbs, pathAbs)
+	return b
 }
 
 // PathMatch checks if two paths match using wildcards, but it will also return

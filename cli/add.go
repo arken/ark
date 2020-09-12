@@ -52,7 +52,8 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			//more specific with you arguments. Otherwise, let the shell do the work.
 		}
 		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && utils.PathMatch(pattern, path) {
+			if !info.IsDir() && utils.PathMatch(pattern, path) &&
+				!utils.IsInSubDir(path, ".ait") {
 				contents[path] = struct{}{}
 			}
 			return nil
