@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/keysets"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -44,7 +45,7 @@ type SubmitFlags struct {
 type submitFields struct {
 	// ksGenMethod is whether to overwrite or amend to existing keyset files.
 	username, password, ksGenMethod string
-	isPR bool
+	isPR                            bool
 }
 
 // credsEmpty returns true if either of the credential fields is empty.
@@ -66,7 +67,7 @@ func (c *submitFields) doOverwrite() bool {
 	return c.ksGenMethod != "a"
 }
 
-var	fields submitFields
+var fields submitFields
 
 // SubmitRun generates a keyset file and then clones the Github repo at the given
 // url, adds the keyset file, commits it, and pushes it, and then deletes the repo
@@ -77,6 +78,7 @@ var	fields submitFields
 // repos directly at any point so it and the keyset file are basically ephemeral
 // and only exist on disk while this command is running.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
+	ipfs.Init()
 	args := c.Args.(*SubmitArgs).Args
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")
@@ -90,7 +92,7 @@ to add files for submission.`)
 	}
 	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 	if utils.FileExists(repoPath) {
-		utils.FatalPrintf("A file/folder already exists at %v, " +
+		utils.FatalPrintf("A file/folder already exists at %v, "+
 			"please delete it and try again\n", repoPath)
 	}
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
@@ -222,7 +224,7 @@ func tryPush(repo *git.Repository) (existingCreds bool, hasWriteAccess bool, err
 		existingCreds = true
 		hasWriteAccess = false
 	} else { // if it wasn't one of those ^ errors it was probably file i/o
-		     // or network related, or repo was already up to date.
+		// or network related, or repo was already up to date.
 		utils.FatalWithCleanup(utils.SubmissionCleanup, err)
 	}
 	return existingCreds, hasWriteAccess, err

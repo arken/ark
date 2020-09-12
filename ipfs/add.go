@@ -4,9 +4,21 @@ import (
 	"os"
 
 	"github.com/ipfs/interface-go-ipfs-core/options"
+	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
 
 	files "github.com/ipfs/go-ipfs-files"
 )
+
+// Pin a file to local storage.
+func Pin(hash string) (err error) {
+	path := icorepath.New("/ipfs/" + hash)
+
+	err = ipfs.Pin().Add(ctx, path, func(input *options.PinAddSettings) error {
+		input.Recursive = true
+		return nil
+	})
+	return err
+}
 
 // Add imports a file to IPFS and returns the file identifier to ait.
 func Add(path string) (cid string, err error) {
@@ -16,7 +28,6 @@ func Add(path string) (cid string, err error) {
 	}
 	output, err := ipfs.Unixfs().Add(ctx, file, func(input *options.UnixfsAddSettings) error {
 		input.Pin = true
-		input.FsCache = false
 		return nil
 	})
 	if err != nil {

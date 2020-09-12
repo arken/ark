@@ -33,6 +33,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	file.Close()
 
 	workers := genNumWorkers()
+	ipfs.Init()
 
 	fmt.Println("Adding Files to IPFS Store")
 	addBar := progressbar.Default(int64(len(contents)))
@@ -55,12 +56,16 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
-				utils.CheckError(err)
-				if replications >= 3 {
+				fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+				if replications >= 2 {
 					bar.Add(1)
 				} else {
 					bar.Add(0)
 					input <- cid
+				}
+				if replications == 0 {
+					err = ipfs.Pin(cid)
+					utils.CheckError(err)
 				}
 			}
 		}(ipfsBar, input)
@@ -72,7 +77,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			return
 		}
 		ipfsBar.Add(0)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 
