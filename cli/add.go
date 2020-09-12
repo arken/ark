@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arkenproject/ait/utils"
 
@@ -31,7 +32,6 @@ type AddArgs struct {
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddArgs)
-
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
@@ -53,7 +53,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		}
 		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 			if !info.IsDir() && utils.PathMatch(pattern, path) &&
-				!utils.IsInSubDir(path, ".ait") {
+				!strings.HasPrefix(path, ".ait") {
 				contents[path] = struct{}{}
 			}
 			return nil
