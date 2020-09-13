@@ -46,7 +46,8 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			if info.IsDir() {
 				_ = filepath.Walk(userPath, func(diskPath string, info os.FileInfo, err error) error {
 					_, contains := contents[diskPath]
-					if !contains && !info.IsDir() && !strings.Contains(diskPath, ".ait/") {
+					if !contains && !info.IsDir() && !strings.Contains(diskPath,
+						".ait" + string(filepath.Separator)) {
 						contents[diskPath] = struct{}{}
 						numAdded++
 					}
