@@ -61,11 +61,17 @@ func FillMap(contents map[string]struct{}, file *os.File) {
 
 // Dumps all keys in the given map to the given file, separated by a newline.
 func DumpMap(contents map[string]struct{}, file *os.File) error {
+	toDump := make([]byte, 0, 256)
 	for line := range contents {
-		_, err := file.WriteString(line + "\n")
-		if err != nil {
-			return err
+		bLine := []byte(line)
+		for i := 0; i < len(bLine); i++ {
+			toDump = append(toDump, bLine[i])
 		}
+		toDump = append(toDump, '\n')
+	}
+	_, err := file.Write(toDump)
+	if err != nil {
+		return err
 	}
 	return nil
 }

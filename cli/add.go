@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,35 +32,37 @@ type AddArgs struct {
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
-	args := c.Args.(*AddArgs)
+	args := c.Args.(*AddArgs).Patterns
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
+	numAdded := 0
+	for _, userPath := range args {
+		userPath = filepath.Clean(userPath)
+		info, statErr := os.Stat(userPath)
+		_, alreadyContains := contents[userPath]
+		if !alreadyContains && !os.IsNotExist(statErr) && info != nil {
+			if info.IsDir() {
+				_ = filepath.Walk(userPath, func(diskPath string, info os.FileInfo, err error) error {
+					_, contains := contents[diskPath]
+					if !contains && !info.IsDir() && !strings.Contains(diskPath, ".ait/") {
+						contents[diskPath] = struct{}{}
+						numAdded++
+					}
+					return nil
+				})
+			} else {
+				contents[userPath] = struct{}{}
+				numAdded++
+			}
+		}
+	}
 	//completely truncate the file to avoid duplicated filenames
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	defer file.Close()
-	for _, pattern := range args.Patterns {
-		pattern = filepath.Clean(pattern)
-		if pattern == "*" {
-			pattern = "."
-			//You would never get here if you wrote "ait rm *" in a shell because
-			//the shell should expand that. You'll only get here if you can get
-			//the args to this program without going through a shell, like with
-			//an IDE. This will have different behavior to going through a shell,
-			//namely that hidden files won't be omitted, as they are by some
-			//shells (like bash). If not going through a shell, it's best to be
-			//more specific with you arguments. Otherwise, let the shell do the work.
-		}
-		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && utils.PathMatch(pattern, path) &&
-				!strings.HasPrefix(path, ".ait") {
-				contents[path] = struct{}{}
-			}
-			return nil
-		})
-	}
 	//dump the map's keys, which have to be unique, into the file.
 	err := utils.DumpMap(contents, file)
 	utils.CheckError(err)
+	fmt.Println(numAdded, "file(s) added.")
 }

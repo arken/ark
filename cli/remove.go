@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -52,6 +53,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
+	numRMd := 0
 	for _, pattern := range args.Patterns {
 		if pattern == "*" {
 			pattern = "." //see AddRun for a description of why this is done
@@ -60,6 +62,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			pattern = filepath.Clean(pattern)
 			if utils.PathMatch(pattern, path) {
 				delete(contents, path)
+				numRMd++
 			}
 		}
 	}
@@ -67,4 +70,5 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	err := utils.DumpMap(contents, file)
 	file.Close()
 	utils.CheckError(err)
+	fmt.Println(numRMd, "file(s) unstaged.")
 }
