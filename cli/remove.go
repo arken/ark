@@ -28,7 +28,7 @@ var Remove = cmd.CMD{
 
 // RemoveArgs handles the specific arguments for the remove command.
 type RemoveArgs struct {
-	Patterns []string
+	Paths []string
 }
 
 // RemoveFlags handles the specific flags for the remove command.
@@ -39,7 +39,7 @@ type RemoveFlags struct {
 // RemoveRun executes the remove function.
 func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoveFlags)
-	args := c.Args.(*RemoveArgs)
+	args := c.Args.(*RemoveArgs).Paths
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
 		utils.FatalPrintln("no files currently staged, nothing was done")
@@ -54,12 +54,9 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	utils.FillMap(contents, file)
 	file.Close()
 	numRMd := 0
-	for _, pattern := range args.Patterns {
-		if pattern == "*" {
-			pattern = "." //see AddRun for a description of why this is done
-		}
+	for _, pattern := range args {
+		pattern = filepath.Clean(pattern)
 		for path := range contents {
-			pattern = filepath.Clean(pattern)
 			if utils.PathMatch(pattern, path) {
 				delete(contents, path)
 				numRMd++

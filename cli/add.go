@@ -22,7 +22,7 @@ var Add = cmd.CMD{
 
 // AddArgs handles the specific arguments for the add command.
 type AddArgs struct {
-	Patterns []string
+	Paths []string
 }
 
 // AddRun Similar to "git add", this function adds files that match a given list of
@@ -32,7 +32,7 @@ type AddArgs struct {
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
-	args := c.Args.(*AddArgs).Patterns
+	args := c.Args.(*AddArgs).Paths
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)

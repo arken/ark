@@ -14,7 +14,7 @@ func TestBigAdd(t *testing.T) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil) //args are never used in InitRun, this is fine
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Patterns: []string{"."}},
+		Args: &AddArgs{Paths: []string{"."}},
 	}
 	AddRun(nil, addArgs)
 	_ = os.RemoveAll(testRoot + "/.ait")
@@ -28,7 +28,7 @@ func TestAddManyDirs(t *testing.T) {
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
 		//put any or all of the folders in your documents in this slice for testing
-		Args: &AddArgs{Patterns: []string{}},
+		Args: &AddArgs{Paths: []string{}},
 	}
 	AddRun(nil, addArgs)
 	_ = os.RemoveAll(testRoot + "/.ait")
@@ -41,7 +41,7 @@ func TestAddManyFiles(t *testing.T) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Patterns: []string{
+		Args: &AddArgs{Paths: []string{
 			//put the paths to a bunch of individual files in here for testing
 		}},
 	}
