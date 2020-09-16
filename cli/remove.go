@@ -42,11 +42,13 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*RemoveArgs).Paths
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
-		utils.FatalPrintln("no files currently staged, nothing was done")
-	}
-	if flags.All {
+		utils.FatalPrintln("No files currently staged, nothing was done")
+	} else if len(args) == 0 && !flags.All {
+		utils.FatalPrintln("No arguments provided, nothing was done")
+	} else if flags.All || args[0] == "." {
 		file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 		file.Close()
+		fmt.Println("All files unstaged")
 		return
 	}
 	contents := make(map[string]struct{})
@@ -54,11 +56,11 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	utils.FillMap(contents, file)
 	file.Close()
 	numRMd := 0
-	for _, pattern := range args {
-		pattern = filepath.Clean(pattern)
-		for path := range contents {
-			if utils.PathMatch(pattern, path) {
-				delete(contents, path)
+	for _, userPath := range args {
+		userPath = filepath.Clean(userPath)
+		for addedPath := range contents {
+			if utils.IsInSubDir(addedPath, userPath) {
+				delete(contents, addedPath)
 				numRMd++
 			}
 		}
@@ -67,5 +69,5 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	err := utils.DumpMap(contents, file)
 	file.Close()
 	utils.CheckError(err)
-	fmt.Println(numRMd, "file(s) unstaged.")
+	fmt.Println(numRMd, "file(s) unstaged")
 }

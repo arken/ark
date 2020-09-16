@@ -43,6 +43,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		info, statErr := os.Stat(userPath)
 		_, alreadyContains := contents[userPath]
 		if !alreadyContains && !os.IsNotExist(statErr) && info != nil {
+			//if the path isn't already in the map and the file does exist
 			if info.IsDir() {
 				_ = filepath.Walk(userPath, func(diskPath string, info os.FileInfo, err error) error {
 					_, contains := contents[diskPath]
@@ -65,5 +66,5 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	//dump the map's keys, which have to be unique, into the file.
 	err := utils.DumpMap(contents, file)
 	utils.CheckError(err)
-	fmt.Println(numAdded, "file(s) added.")
+	fmt.Println(numAdded, "file(s) added")
 }

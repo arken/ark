@@ -35,17 +35,7 @@ func GetFileSize(filename string) (int64, error) {
 
 //IsInSubDir checks if pathToCheck is in a subdirectory of dir.
 func IsInSubDir(dir, pathToCheck string) bool {
-	pathAbs, _ := filepath.Abs(pathToCheck)
-	dirAbs, _ := filepath.Abs(dir)
-	b := strings.HasPrefix(dirAbs, pathAbs)
-	return b
-}
-
-// PathMatch checks if two paths match using wildcards, but it will also return
-// true if path is in a subdirectory of pattern.
-func PathMatch(pattern, path string) bool {
-	matched, _ := filepath.Match(pattern, path)
-	return matched || IsInSubDir(path, pattern)
+	return strings.HasPrefix(dir, pathToCheck)
 }
 
 // FillMap splits the given file by newline and adds each line to the given map.

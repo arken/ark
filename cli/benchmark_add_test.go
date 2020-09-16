@@ -1,10 +1,13 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/DataDrake/cli-ng/cmd"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestBigAdd(t *testing.T) {
@@ -12,11 +15,13 @@ func TestBigAdd(t *testing.T) {
 	testRoot := filepath.Join(u, "Documents/")
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
-	InitRun(nil, nil) //args are never used in InitRun, this is fine
+	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
 		Args: &AddArgs{Paths: []string{"."}},
 	}
+	start := time.Now()
 	AddRun(nil, addArgs)
+	fmt.Println("\n\t******** Add all took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
@@ -26,11 +31,17 @@ func TestAddManyDirs(t *testing.T) {
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
-	addArgs := &cmd.CMD{
-		//put any or all of the folders in your documents in this slice for testing
-		Args: &AddArgs{Paths: []string{}},
+	files, _ := ioutil.ReadDir(testRoot)
+	var fileNames []string
+	for _, fi := range files {
+		fileNames = append(fileNames, fi.Name())
 	}
+	addArgs := &cmd.CMD{
+		Args: &AddArgs{Paths: fileNames},
+	}
+	start := time.Now()
 	AddRun(nil, addArgs)
+	fmt.Println("\n\t******** Add dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
@@ -45,7 +56,9 @@ func TestAddManyFiles(t *testing.T) {
 			//put the paths to a bunch of individual files in here for testing
 		}},
 	}
+	start := time.Now()
 	AddRun(nil, addArgs)
+	fmt.Println("\n\t******** Add files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
