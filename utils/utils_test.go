@@ -1,8 +1,7 @@
 package utils
 
 import (
-	"fmt"
-	"os/user"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -33,14 +32,37 @@ func TestGetRepoOwner(t *testing.T) {
 	assert.Equal(t, "a", GetRepoOwner("123456789012345678/a/"))
 }
 
-func TestCopyFile(t *testing.T) {
-	u, err := user.Current()
-	CheckError(err)
-	// Create expected config path.
-	path := filepath.Join(u.HomeDir, ".ait", "application.md")
-	err = CopyFile(path, "commit.md")
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
+func TestIsInRepo(t *testing.T) {
+	wd, _ := os.Getwd()
+	if filepath.Base(wd) == "utils" {
+		_ = os.Chdir("..") //make sure I'm testing from project root
 	}
+	in, _ := IsInRepo(".")
+	assert.True(t, in)
+	in, _ = IsInRepo("cli")
+	assert.True(t, in)
+	in, _ = IsInRepo("utils/utils.g")
+	assert.True(t, in)
+	in, _ = IsInRepo("../")
+	assert.False(t, in)
+	in, _ = IsInRepo("../../../../")
+	assert.False(t, in)
+	in, _ = IsInRepo("/")
+	assert.False(t, in)
+	in, _ = IsInRepo("cli/../display/../config/../ipfs/../.ait")
+	assert.True(t, in)
+	in, _ = IsInRepo("cli/../display/../config/../ipfs/../.ait/../")
+	assert.True(t, in)
+	in, _ = IsInRepo("cli/../display/../config/../ipfs/../.ait/../../")
+	assert.False(t, in)
+	in, _ = IsInRepo("dirs/that/definitely/exist/../../../../../")
+	assert.False(t, in)
+	in, _ = IsInRepo("dirs/that/definitely/exist/../../../../")
+	assert.True(t, in)
+	in, _ = IsInRepo("dirs/that/definitely/exist/../../../../../../")
+	assert.False(t, in)
+	in, _ = IsInRepo("cli/../../ait/config")
+	assert.True(t, in)
+	in, _ = IsInRepo("../ait/")
+	assert.True(t, in)
 }

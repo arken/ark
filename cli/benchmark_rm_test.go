@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// This function tests the performance of a large remove operation by adding
+// everything in your documents folder and removing it. The time the rm itself
+// took is printed.
 func TestBigRm(t *testing.T) {
 	u, _ := os.UserHomeDir()
 	testRoot := filepath.Join(u, "Documents/")

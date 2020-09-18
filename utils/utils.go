@@ -174,3 +174,18 @@ func SubmissionCleanup() {
 	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
 	_ = os.Remove(".ait/commit")
 }
+
+// IsInRepo tests if the given path is within this current repo.
+func IsInRepo(path string) (bool, error) {
+	var err error
+	var wd string
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return false, err
+	}
+	wd, err = os.Getwd()
+	if err != nil {
+		return false, err
+	}
+	return strings.HasPrefix(path, wd), nil
+}
