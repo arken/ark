@@ -175,8 +175,8 @@ func SubmissionCleanup() {
 	_ = os.Remove(".ait/commit")
 }
 
-// IsInRepo tests if the given path is within this current repo.
-func IsInRepo(path string) (bool, error) {
+// IsWithinRepo tests if the given path is within this current repo.
+func IsWithinRepo(path string) (bool, error) {
 	var err error
 	var wd string
 	path, err = filepath.Abs(path)

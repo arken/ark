@@ -34,7 +34,7 @@ var threads int32 = 0
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
-	runtime.GOMAXPROCS(300) //TODO: assign this number meaningfully
+	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
 	args := c.Args.(*AddArgs).Paths
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
@@ -43,9 +43,9 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	file.Close()
 	for _, userPath := range args {
 		userPath = filepath.Clean(userPath)
-		inRepo, err := utils.IsInRepo(userPath)
+		withinRepo, err := utils.IsWithinRepo(userPath)
 		utils.CheckError(err)
-		if inRepo {
+		if withinRepo {
 			addPath(userPath, contents)
 		} else {
 			fmt.Printf("Will not add files that are not in this ait repo," +
@@ -61,6 +61,9 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	fmt.Println(len(contents) - origLen, "file(s) added")
 }
 
+// addPath attempts to add the given path to the current collection of added
+// files. No attempt will be made if the file doesn't exist or it is already
+// in the collection.
 func addPath(userPath string, contents map[string]struct{}) {
 	info, statErr := os.Stat(userPath)
 	_, alreadyContains := contents[userPath]
