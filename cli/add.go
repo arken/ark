@@ -2,13 +2,14 @@ package cli
 
 import (
 	"fmt"
-	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/arkenproject/ait/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync/atomic"
+
+	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/utils"
 )
 
 // Add imports a file or directory to AIT's local staging file.
