@@ -197,10 +197,11 @@ func createRepo(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
-	cfg.Reprovider.Strategy = "all"
+	cfg.Reprovider.Strategy = "roots"
 	cfg.Reprovider.Interval = "1h"
 	cfg.Routing.Type = "dhtserver"
 	cfg.Swarm.EnableAutoRelay = true
+	cfg.Experimental.FilestoreEnabled = true
 
 	// Create the repo with the config
 	err = fsrepo.Init(path, cfg)

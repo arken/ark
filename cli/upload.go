@@ -3,10 +3,12 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
@@ -32,6 +34,16 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	utils.FillMap(contents, file)
 	file.Close()
 
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
 	workers := genNumWorkers()
 	ipfs.Init()
 
@@ -41,7 +53,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 
 	input := make(chan string, len(contents))
 	for path := range contents {
-		cid, err := ipfs.Add(path)
+		cid, err := ipfs.Add(filepath.Join(link, path))
 		utils.CheckError(err)
 
 		addBar.Add(1)

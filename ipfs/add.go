@@ -24,16 +24,20 @@ func Pin(hash string) (err error) {
 func Add(path string) (cid string, err error) {
 	file, err := getUnixfsNode(path)
 	if err != nil {
+		file.Close()
 		return cid, err
 	}
 	output, err := ipfs.Unixfs().Add(ctx, file, func(input *options.UnixfsAddSettings) error {
 		input.Pin = true
+		input.NoCopy = true
 		return nil
 	})
 	if err != nil {
+		file.Close()
 		return cid, err
 	}
 	cid = output.Cid().String()
+	file.Close()
 	return cid, nil
 }
 
