@@ -40,7 +40,7 @@ func StatusRun(*cmd.RootCMD, *cmd.CMD) {
 	}
 	if len(lines) > 0 {
 		sort.Strings(lines)
-		fmt.Println("Files currently staged for submission:")
+		fmt.Println(len(lines), "file(s) currently staged for submission:")
 		for _, line := range lines {
 			fmt.Println("\t", line)
 		}

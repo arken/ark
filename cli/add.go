@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/arkenproject/ait/utils"
+	"runtime"
+	"sync/atomic"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/utils"
 )
 
 // Add imports a file or directory to AIT's local staging file.
@@ -20,8 +23,10 @@ var Add = cmd.CMD{
 
 // AddArgs handles the specific arguments for the add command.
 type AddArgs struct {
-	Patterns []string
+	Paths []string
 }
+
+var threads int32 = 0
 
 // AddRun Similar to "git add", this function adds files that match a given list of
 // file matching patterns (can include *, ? wildcards) to a file. Currently this
@@ -30,35 +35,77 @@ type AddArgs struct {
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
-	args := c.Args.(*AddArgs)
-
+	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
+	args := c.Args.(*AddArgs).Paths
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
+	origLen := len(contents)
 	file.Close()
+	for _, userPath := range args {
+		userPath = filepath.Clean(userPath)
+		withinRepo, err := utils.IsWithinRepo(userPath)
+		utils.CheckError(err)
+		if withinRepo {
+			addPath(userPath, contents)
+		} else {
+			fmt.Printf("Will not add files that are not in this ait repo," +
+				" skipping %v", userPath)
+		}
+	}
 	//completely truncate the file to avoid duplicated filenames
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	defer file.Close()
-	for _, pattern := range args.Patterns {
-		pattern = filepath.Clean(pattern)
-		if pattern == "*" {
-			pattern = "."
-			//You would never get here if you wrote "ait rm *" in a shell because
-			//the shell should expand that. You'll only get here if you can get
-			//the args to this program without going through a shell, like with
-			//an IDE. This will have different behavior to going through a shell,
-			//namely that hidden files won't be omitted, as they are by some
-			//shells (like bash). If not going through a shell, it's best to be
-			//more specific with you arguments. Otherwise, let the shell do the work.
-		}
-		_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && utils.PathMatch(pattern, path) {
-				contents[path] = struct{}{}
-			}
-			return nil
-		})
-	}
 	//dump the map's keys, which have to be unique, into the file.
 	err := utils.DumpMap(contents, file)
 	utils.CheckError(err)
+	fmt.Println(len(contents) - origLen, "file(s) added")
+}
+
+// addPath attempts to add the given path to the current collection of added
+// files. No attempt will be made if the file doesn't exist or it is already
+// in the collection.
+func addPath(userPath string, contents map[string]struct{}) {
+	info, statErr := os.Stat(userPath)
+	_, alreadyContains := contents[userPath]
+	if !os.IsNotExist(statErr) && info != nil && !alreadyContains {
+		// if file exists and isn't already in the map
+		if info.IsDir() {
+			c := make(chan string)
+			atomic.AddInt32(&threads, 1)
+			go processDir(userPath, c)
+			for msg := range c {
+				contents[msg] = struct{}{}
+			}
+		} else {
+			contents[userPath] = struct{}{}
+		}
+	} else if os.IsNotExist(statErr) {
+		fmt.Printf("Path \"%v\" found. Continuing...\n", userPath)
+	}
+}
+
+// processDir walks through the directory at dir and sends the path of all
+// regular files back to the main thread via c. If another directory is found,
+// another goproc is called to processDir that directory.
+func processDir(dir string, c chan string) {
+	defer func() {
+		atomic.AddInt32(&threads, -1)
+		if atomic.LoadInt32(&threads) <= 0 {
+			close(c)
+		}
+	}()
+	if dir == ".ait" {
+		return
+	}
+	files, err := ioutil.ReadDir(dir)
+	utils.CheckError(err)
+	for _, info := range files {
+		if info.IsDir() {
+			atomic.AddInt32(&threads, 1)
+			go processDir(filepath.Join(dir, info.Name()), c)
+		} else {
+			c <- filepath.Join(dir, info.Name())
+		}
+	}
 }

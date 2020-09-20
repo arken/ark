@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -27,7 +28,7 @@ var Remove = cmd.CMD{
 
 // RemoveArgs handles the specific arguments for the remove command.
 type RemoveArgs struct {
-	Patterns []string
+	Paths []string
 }
 
 // RemoveFlags handles the specific flags for the remove command.
@@ -38,28 +39,29 @@ type RemoveFlags struct {
 // RemoveRun executes the remove function.
 func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoveFlags)
-	args := c.Args.(*RemoveArgs)
+	args := c.Args.(*RemoveArgs).Paths
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
-		utils.FatalPrintln("no files currently staged, nothing was done")
-	}
-	if flags.All {
+		utils.FatalPrintln("No files currently staged, nothing was done")
+	} else if len(args) == 0 && !flags.All {
+		utils.FatalPrintln("No arguments provided, nothing was done")
+	} else if flags.All || args[0] == "." {
 		file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 		file.Close()
+		fmt.Println("All files unstaged")
 		return
 	}
 	contents := make(map[string]struct{})
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
 	file.Close()
-	for _, pattern := range args.Patterns {
-		if pattern == "*" {
-			pattern = "." //see AddRun for a description of why this is done
-		}
-		for path := range contents {
-			pattern = filepath.Clean(pattern)
-			if utils.PathMatch(pattern, path) {
-				delete(contents, path)
+	numRMd := 0
+	for _, userPath := range args {
+		userPath = filepath.Clean(userPath)
+		for addedPath := range contents {
+			if utils.IsInSubDir(addedPath, userPath) {
+				delete(contents, addedPath)
+				numRMd++
 			}
 		}
 	}
@@ -67,4 +69,5 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	err := utils.DumpMap(contents, file)
 	file.Close()
 	utils.CheckError(err)
+	fmt.Println(numRMd, "file(s) unstaged")
 }
