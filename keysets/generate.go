@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arkenproject/ait/config"
+
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
@@ -40,6 +42,17 @@ func createNew(path string) error {
 	if err != nil {
 		return err
 	}
+
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
 	contents := make(map[string]struct{})
 	utils.FillMap(contents, addedFiles)
 	addedFiles.Close()
@@ -54,7 +67,8 @@ func createNew(path string) error {
 	}
 
 	for filePath := range contents {
-		line := getKeySetLineFromPath(filePath)
+		linkPath := filepath.Join(link, filePath)
+		line := getKeySetLineFromPath(linkPath)
 		_, err = keySetFile.WriteString(line + "\n")
 		if err != nil {
 			cleanup(keySetFile)
@@ -163,6 +177,16 @@ func getKeySetLine(filename, cid string) string {
 // a keyset file, the values are filenames. If the file was just file paths, the
 // the values will be file paths.
 func fillMapWithCID(contents map[string]string, file *os.File) {
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	if filepath.Ext(file.Name()) == ".ks" {
@@ -182,7 +206,7 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			line := strings.TrimSpace(scanner.Text())
 			if len(line) > 0 {
 				filename := filepath.Base(line)
-				cid, err := ipfs.Add(line)
+				cid, err := ipfs.Add(filepath.Join(link, line))
 				utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 				contents[cid] = filename
 			}
