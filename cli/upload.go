@@ -20,6 +20,7 @@ var Upload = cmd.CMD{
 	Name:  "upload",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
 	Args:  &UploadArgs{},
+	Flags: &UploadFlags{},
 	Run:   UploadRun,
 }
 
@@ -27,8 +28,14 @@ var Upload = cmd.CMD{
 type UploadArgs struct {
 }
 
+// UploadFlags handles the specific flags for the upload command.
+type UploadFlags struct {
+	Debug bool `short:"d" long:"debug" desc:"Print Debug information to the console."`
+}
+
 // UploadRun handles the uploading and display of the upload command.
 func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
+	flags := c.Flags.(*UploadFlags)
 	contents := make(map[string]struct{}) // basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
@@ -68,7 +75,9 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
-				fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+				if flags.Debug {
+					fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+				}
 				if replications > 2 {
 					bar.Add(1)
 				} else {

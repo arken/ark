@@ -202,6 +202,11 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	cfg.Routing.Type = "dhtserver"
 	cfg.Swarm.EnableAutoRelay = true
 	cfg.Experimental.FilestoreEnabled = true
+	bootstrapNodes := []string{
+		// Arken Bootstrapper node.
+		"/dns4/link.arken.io/tcp/4001/ipfs/QmP8krSfWWHLNL2eah6E1hr6TzoaGMEVRw2Fooy5og1Wpj",
+	}
+	cfg.Bootstrap = bootstrapNodes
 
 	// Create the repo with the config
 	err = fsrepo.Init(path, cfg)

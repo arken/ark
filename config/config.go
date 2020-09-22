@@ -1,10 +1,13 @@
 package config
 
 import (
-	"github.com/arkenproject/ait/utils"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/BurntSushi/toml"
 )
@@ -55,6 +58,11 @@ func init() {
 		readConf(&Global)
 	}
 	ConsolidateEnvVars(&Global)
+
+	err = createSwarmKey()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Read the config or create a new one if it doesn't exist.
@@ -68,4 +76,14 @@ func readConf(conf *Config) {
 	if err != nil && !os.IsNotExist(err) {
 		utils.FatalPrintln(err)
 	}
+}
+
+func createSwarmKey() (err error) {
+	keyData := []byte(`/key/swarm/psk/1.0.0/
+/base16/
+793bdb68b7cfd2f49071a299711df51f1c60283a047e4a8756a5c3a3d1ab776f`)
+
+	os.MkdirAll(Global.IPFS.Path, os.ModePerm)
+	err = ioutil.WriteFile(filepath.Join(Global.IPFS.Path, "swarm.key"), keyData, 0644)
+	return err
 }
