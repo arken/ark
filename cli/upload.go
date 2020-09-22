@@ -69,7 +69,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
 				fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
-				if replications >= 2 {
+				if replications > 2 {
 					bar.Add(1)
 				} else {
 					bar.Add(0)
