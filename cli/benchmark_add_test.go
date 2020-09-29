@@ -23,7 +23,7 @@ func TestBigAdd(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add all took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding all took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
@@ -45,7 +45,24 @@ func TestAddManyDirs(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
+	_ = os.RemoveAll(testRoot + "/.ait")
+}
+
+func TestAddExtensionFlag(t *testing.T) {
+	u, _ := os.UserHomeDir()
+	testRoot := filepath.Join(u, "Documents/")
+	_ = os.Chdir(testRoot)
+	_ = os.RemoveAll(testRoot + "/.ait")
+	InitRun(nil, nil)
+	ext := "java,c,json,md,js"
+	addArgs := &cmd.CMD{
+		Args: &AddArgs{Paths: nil},
+		Flags: &AddFlags{Extension: ext},
+	}
+	start := time.Now()
+	AddRun(nil, addArgs)
+	fmt.Println("\n\t******** Adding",ext,"files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
@@ -64,7 +81,7 @@ func TestAddManyFiles(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add files took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
