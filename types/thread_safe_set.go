@@ -13,28 +13,28 @@ func NewThreadSafeSet() *ThreadSafeSet {
     }
 }
 
-func (rss *ThreadSafeSet) Contains(str string) bool {
-    rss.RLock()
-    _, ok := rss.internal[str]
-    rss.RUnlock()
+func (tss *ThreadSafeSet) Contains(str string) bool {
+    tss.RLock()
+    _, ok := tss.internal[str]
+    tss.RUnlock()
     return ok
 }
 
-func (rss *ThreadSafeSet) Add(str string) {
-    rss.Lock()
-    rss.internal[str] = struct{}{}
-    rss.Unlock()
+func (tss *ThreadSafeSet) Add(str string) {
+    tss.Lock()
+    tss.internal[str] = struct{}{}
+    tss.Unlock()
 }
 
-func (rss *ThreadSafeSet) Delete(str string) {
-    rss.Lock()
-    delete(rss.internal, str)
-    rss.Unlock()
+func (tss *ThreadSafeSet) Delete(str string) {
+    tss.Lock()
+    delete(tss.internal, str)
+    tss.Unlock()
 }
 
-func (rss *ThreadSafeSet) Size() int {
-    rss.RLock()
-    res := len(rss.internal)
-    rss.RUnlock()
+func (tss *ThreadSafeSet) Size() int {
+    tss.RLock()
+    res := len(tss.internal)
+    tss.RUnlock()
     return res
 }
