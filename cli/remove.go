@@ -85,7 +85,7 @@ func parseRmArgs(c *cmd.CMD) ([]string, *types.StringSet, bool) {
 		args = c.Args.(*RemoveArgs).Paths
 	}
 	rmAll := false
-	exts := types.NewThreadSafeSet()
+	exts := types.NewStringSet()
 	if c.Flags != nil {
 		rmAll = c.Flags.(*RemoveFlags).All
 		extStr := c.Flags.(*RemoveFlags).Extension
