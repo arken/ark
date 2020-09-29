@@ -38,3 +38,27 @@ func BenchmarkBigRm(b *testing.B) {
 		time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
+
+func BenchmarkRmExtensions(b *testing.B) {
+	u, _ := os.UserHomeDir()
+	testRoot := filepath.Join(u, "Documents/")
+	_ = os.Chdir(testRoot)
+	_ = os.RemoveAll(testRoot + "/.ait")
+	InitRun(nil, nil)
+	addArgs := &cmd.CMD{
+		Args: &AddArgs{Paths: []string{"."}},
+	}
+	AddRun(nil, addArgs)
+	ext := "java,c,json,md,js"
+	rmArgs := &cmd.CMD{
+		Flags: &RemoveFlags{
+			All: false,
+			Extension: ext,
+		},
+	}
+	start := time.Now()
+	RemoveRun(nil, rmArgs)
+	fmt.Println("\n\t******** Rm", ext, "took",
+		time.Since(start).Milliseconds(), "ms ********\n ")
+	_ = os.RemoveAll(testRoot + "/.ait")
+}
