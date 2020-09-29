@@ -122,7 +122,7 @@ func processDir(dir string, c chan string) {
 
 // addExtension attempts to add ALL files within the current wd that have the
 // extension(s) contained in exts.
-func addExtension(contents map[string]struct{}, exts *types.ThreadSafeSet) {
+func addExtension(contents map[string]struct{}, exts *types.StringSet) {
 	c := make(chan string)
 	atomic.AddInt32(&threads, 1)
 	go processDirExt(".", c, exts)
@@ -135,7 +135,7 @@ func addExtension(contents map[string]struct{}, exts *types.ThreadSafeSet) {
 // regular files that have the desired file extensions back to the main thread
 // via c. If another directory is found, another goproc is called to
 // processDirExt that directory.
-func processDirExt(dir string, c chan string, exts *types.ThreadSafeSet) {
+func processDirExt(dir string, c chan string, exts *types.StringSet) {
 	defer func() {
 		atomic.AddInt32(&threads, -1)
 		if atomic.LoadInt32(&threads) <= 0 {
@@ -160,7 +160,7 @@ func processDirExt(dir string, c chan string, exts *types.ThreadSafeSet) {
 // parseAddArgs simply does some of the sanitization and extraction required to
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
-func parseAddArgs(c *cmd.CMD) ([]string, *types.ThreadSafeSet) {
+func parseAddArgs(c *cmd.CMD) ([]string, *types.StringSet) {
 	var exts = types.NewThreadSafeSet()
 	extStr := ""
 	if c.Flags != nil {

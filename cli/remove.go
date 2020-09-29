@@ -79,7 +79,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // parseRmArgs simply does some of the sanitization and extraction required to
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
-func parseRmArgs(c *cmd.CMD) ([]string, *types.ThreadSafeSet, bool) {
+func parseRmArgs(c *cmd.CMD) ([]string, *types.StringSet, bool) {
 	var args []string
 	if c.Args != nil {
 		args = c.Args.(*RemoveArgs).Paths
