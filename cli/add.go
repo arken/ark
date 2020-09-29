@@ -161,7 +161,7 @@ func processDirExt(dir string, c chan string, exts *types.StringSet) {
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
 func parseAddArgs(c *cmd.CMD) ([]string, *types.StringSet) {
-	var exts = types.NewThreadSafeSet()
+	var exts = types.NewStringSet()
 	extStr := ""
 	if c.Flags != nil {
 		extStr = c.Flags.(*AddFlags).Extension
