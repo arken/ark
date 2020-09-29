@@ -43,7 +43,7 @@ var threads int32 = 0
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
-	args, exts := parseArgs(c)
+	args, exts := parseAddArgs(c)
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
@@ -60,7 +60,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 				" skipping %v", userPath)
 		}
 	}
-	if exts != nil {
+	if exts.Size() > 0 {
 		addExtension(contents, exts)
 	}
 	//completely truncate the file to avoid duplicated filenames
@@ -157,10 +157,10 @@ func processDirExt(dir string, c chan string, exts *types.ThreadSafeSet) {
 	}
 }
 
-// parseArgs simply does some of the sanitization and extraction required to
+// parseAddArgs simply does some of the sanitization and extraction required to
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
-func parseArgs(c *cmd.CMD) ([]string, *types.ThreadSafeSet) {
+func parseAddArgs(c *cmd.CMD) ([]string, *types.ThreadSafeSet) {
 	var exts = types.NewThreadSafeSet()
 	extStr := ""
 	if c.Flags != nil {
