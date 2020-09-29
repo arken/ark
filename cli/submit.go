@@ -234,8 +234,8 @@ func tryPush(repo *git.Repository) (existingCreds bool, hasWriteAccess bool, err
 // types their password, it does not appear on screen by use of the terminal
 // package.
 func promptCredentials() {
-	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your GitHub username: ")
+	reader := bufio.NewReader(os.Stdin)
 	if len(fields.username) == 0 {
 		username, _ := reader.ReadString('\n')
 		fields.username = strings.TrimSpace(username)
