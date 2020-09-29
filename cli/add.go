@@ -61,7 +61,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		}
 	}
 	if exts != nil {
-		addPathExt(contents, exts)
+		addExtension(contents, exts)
 	}
 	//completely truncate the file to avoid duplicated filenames
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
@@ -120,10 +120,9 @@ func processDir(dir string, c chan string) {
 	}
 }
 
-// addPathExt attempts to add the given path to the current collection of added
-// files. No attempt will be made if the file doesn't exist or it is already
-// in the collection.
-func addPathExt(contents map[string]struct{}, exts *types.ThreadSafeSet) {
+// addExtension attempts to add ALL files within the current wd that have the
+// extension(s) contained in exts.
+func addExtension(contents map[string]struct{}, exts *types.ThreadSafeSet) {
 	c := make(chan string)
 	atomic.AddInt32(&threads, 1)
 	go processDirExt(".", c, exts)
@@ -133,8 +132,9 @@ func addPathExt(contents map[string]struct{}, exts *types.ThreadSafeSet) {
 }
 
 // processDirExt walks through the directory at dir and sends the path of all
-// regular files back to the main thread via c. If another directory is found,
-// another goproc is called to processDir that directory.
+// regular files that have the desired file extensions back to the main thread
+// via c. If another directory is found, another goproc is called to
+// processDirExt that directory.
 func processDirExt(dir string, c chan string, exts *types.ThreadSafeSet) {
 	defer func() {
 		atomic.AddInt32(&threads, -1)
@@ -157,7 +157,9 @@ func processDirExt(dir string, c chan string, exts *types.ThreadSafeSet) {
 	}
 }
 
-
+// parseArgs simply does some of the sanitization and extraction required to
+// get the desired data structures out of the cmd.CMD object, then returns said
+// useful data structures.
 func parseArgs(c *cmd.CMD) ([]string, *types.ThreadSafeSet) {
 	var exts = types.NewThreadSafeSet()
 	extStr := ""
