@@ -18,7 +18,7 @@ func defaultConf() Config {
 			// Configuration version number. If a field is added or changed
 			// in this default, the version must be changed to tell the app
 			// to rebuild the users config files.
-			Version: "0.0.3",
+			Version: "0.1.0",
 			Editor:  "nano",
 		},
 		Git: git{
@@ -65,7 +65,7 @@ func reloadConf() {
 // when attempting to submit files.
 func defaultApplication() []byte {
 	return []byte(
-`### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
+		`### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
 ### View this document as raw Markdown instead of rendered HTML to see the prompts.
 <!-- Where should your addition be located within the keyset repository?
 This line should be in the format of a path.
