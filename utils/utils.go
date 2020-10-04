@@ -39,8 +39,8 @@ func IsInSubDir(dir, pathToCheck string) bool {
 	return strings.HasPrefix(dir, pathToCheck)
 }
 
-// FillMap splits the given file by newline and adds each line to the given map.
-func FillMap(contents types.StringSet, file *os.File) {
+// FillSet splits the given file by newline and adds each line to the given set.
+func FillSet(contents types.StringSet, file *os.File) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
@@ -50,8 +50,9 @@ func FillMap(contents types.StringSet, file *os.File) {
 	}
 }
 
-// Dumps all keys in the given map to the given file, separated by a newline.
-func DumpMap(contents types.StringSet, file *os.File) error {
+// DumpSet dumps all values in the given set into the given file, separated by
+// newlines.
+func DumpSet(contents types.StringSet, file *os.File) error {
 	toDump := make([]byte, 0, 256)
 	for line := range contents.Underlying() {
 		bLine := []byte(line)

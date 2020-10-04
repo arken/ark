@@ -55,7 +55,7 @@ func createNew(path string) error {
 	defer os.Remove(link)
 
 	contents := types.NewBasicStringSet()
-	utils.FillMap(contents, addedFiles)
+	utils.FillSet(contents, addedFiles)
 	addedFiles.Close()
 
 	// For large Datasets display a loading bar.

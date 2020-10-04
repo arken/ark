@@ -39,7 +39,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*UploadFlags)
 	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	file.Close()
 
 	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink

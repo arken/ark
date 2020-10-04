@@ -51,7 +51,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	file.Close()
 	numRMd := 0
 	if exts.Size() >0 && len(args) == 0 {
@@ -68,7 +68,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		}
 	}
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY|os.O_TRUNC, 0644)
-	err := utils.DumpMap(contents, file)
+	err := utils.DumpSet(contents, file)
 	file.Close()
 	utils.CheckError(err)
 	fmt.Println(numRMd, "file(s) unstaged")

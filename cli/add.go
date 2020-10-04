@@ -39,7 +39,7 @@ var threads int32 = 0
 // AddRun Similar to "git add", this function adds files that match a given list of
 // file matching patterns (can include *, ? wildcards) to a file. Currently this
 // file is in .ait/added_files, and it contains paths relative to the program's
-// working directory. Along the way, the filenames are put in a hashmap, so the
+// working directory. Along the way, the filenames are put into a set, so the
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
@@ -47,7 +47,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args, exts := parseAddArgs(c)
 	contents := types.NewThreadSafeStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	origLen := contents.Size()
 	file.Close()
 	for _, userPath := range args {
@@ -67,8 +67,8 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	//completely truncate the file to avoid duplicated filenames
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
 	defer file.Close()
-	//dump the map's keys, which have to be unique, into the file.
-	err := utils.DumpMap(contents, file)
+	//dump the set, which has to have unique values, into the file.
+	err := utils.DumpSet(contents, file)
 	utils.CheckError(err)
 	fmt.Println(contents.Size() - origLen, "file(s) added")
 }
@@ -79,7 +79,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 func addPath(userPath string, contents *types.ThreadSafeStringSet) {
 	info, statErr := os.Stat(userPath)
 	if !os.IsNotExist(statErr) && info != nil && !contents.Contains(userPath) {
-		// if file exists and isn't already in the map
+		// if file exists and isn't already in the set
 		if info.IsDir() {
 			wg := sync.WaitGroup{}
 			wg.Add(1)

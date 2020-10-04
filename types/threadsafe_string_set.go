@@ -2,8 +2,8 @@ package types
 
 import "sync"
 
-// ThreadSafeStringSet is a simple container around a map[string]struct{}, whose values
-// have 0 width, so it has the functionality and performance of a hash-based set.
+// ThreadSafeStringSet is like a BasicStringSet, except that it uses an RWMutex
+// to enforce thread safety.
 type ThreadSafeStringSet struct {
 	internal map[string]struct{}
 	sync.RWMutex
@@ -16,13 +16,15 @@ func NewThreadSafeStringSet() *ThreadSafeStringSet {
 	}
 }
 
-// Contains returns true if the set contains str, false otherwise
+// Contains returns true if the set contains str, false otherwise.
+// No lock.
 func (set *ThreadSafeStringSet) Contains(str string) bool {
 	_, ok := set.internal[str]
 	return ok
 }
 
-// Add adds the given string to the set
+// Add adds the given string to the set.
+// Write lock.
 func (set *ThreadSafeStringSet) Add(str string) {
 	set.Lock()
 	set.internal[str] = struct{}{}
@@ -30,6 +32,7 @@ func (set *ThreadSafeStringSet) Add(str string) {
 }
 
 // Delete deletes the given string from the set
+// Write lock.
 func (set *ThreadSafeStringSet) Delete(str string) {
 	set.Lock()
 	delete(set.internal, str)
@@ -37,11 +40,13 @@ func (set *ThreadSafeStringSet) Delete(str string) {
 }
 
 // Size returns the amount of items in the set.
+// No lock.
 func (set *ThreadSafeStringSet) Size() int {
 	return len(set.internal)
 }
 
-// Performs the given function on each element of the set
+// Performs the given function on each element of the set.
+// Lock and RLock.
 func (set *ThreadSafeStringSet) ForEach(f func(s string)) {
 	set.Lock()
 	set.RLock()
@@ -52,6 +57,8 @@ func (set *ThreadSafeStringSet) ForEach(f func(s string)) {
 	set.RUnlock()
 }
 
+// Underlying returns the underlying map. This is only meant for ranging purposes.
+// No lock (So don't call this in a multithreaded context).
 func (set *ThreadSafeStringSet) Underlying() map[string]struct{} {
 	return set.internal
 }
