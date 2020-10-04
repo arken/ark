@@ -3,6 +3,7 @@ package keysets
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,20 +54,20 @@ func createNew(path string) error {
 	err = os.Symlink(wd, link)
 	defer os.Remove(link)
 
-	contents := make(map[string]struct{})
+	contents := types.NewBasicStringSet()
 	utils.FillMap(contents, addedFiles)
 	addedFiles.Close()
 
 	// For large Datasets display a loading bar.
-	ipfsBar := progressbar.Default(int64(len(contents)))
+	ipfsBar := progressbar.Default(int64(contents.Size()))
 	barPresent := false
-	if len(contents) > 30 {
+	if contents.Size() > 30 {
 		fmt.Println("Adding Files to Embedded IPFS Node:")
 		ipfsBar.RenderBlank()
 		barPresent = true
 	}
 
-	for filePath := range contents {
+	for filePath := range contents.Underlying() {
 		linkPath := filepath.Join(link, filePath)
 		line := getKeySetLineFromPath(linkPath)
 		_, err = keySetFile.WriteString(line + "\n")

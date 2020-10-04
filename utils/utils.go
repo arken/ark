@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,20 +40,20 @@ func IsInSubDir(dir, pathToCheck string) bool {
 }
 
 // FillMap splits the given file by newline and adds each line to the given map.
-func FillMap(contents map[string]struct{}, file *os.File) {
+func FillMap(contents types.StringSet, file *os.File) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		if len(scanner.Text()) > 0 {
-			contents[scanner.Text()] = struct{}{}
+			contents.Add(scanner.Text())
 		}
 	}
 }
 
 // Dumps all keys in the given map to the given file, separated by a newline.
-func DumpMap(contents map[string]struct{}, file *os.File) error {
+func DumpMap(contents types.StringSet, file *os.File) error {
 	toDump := make([]byte, 0, 256)
-	for line := range contents {
+	for line := range contents.Underlying() {
 		bLine := []byte(line)
 		for i := 0; i < len(bLine); i++ {
 			toDump = append(toDump, bLine[i])
