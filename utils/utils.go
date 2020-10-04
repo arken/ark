@@ -189,3 +189,12 @@ func IsWithinRepo(path string) (bool, error) {
 	}
 	return strings.HasPrefix(path, wd), nil
 }
+
+func IndexOf(slice []string, key string) int {
+	for i, s := range slice {
+		if s == key {
+			return i
+		}
+	}
+	return -1
+}

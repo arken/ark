@@ -58,7 +58,7 @@ func BenchmarkAddExtensionFlag(b *testing.B) {
 	ext := "java,c,json,md,js"
 	addArgs := &cmd.CMD{
 		Args: &AddArgs{Paths: nil},
-		Flags: &AddFlags{Extension: ext},
+		Flags: &AddFlags{Extensions: ext},
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)

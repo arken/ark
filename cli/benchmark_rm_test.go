@@ -52,8 +52,8 @@ func BenchmarkRmExtensions(b *testing.B) {
 	ext := "java,c,json,md,js"
 	rmArgs := &cmd.CMD{
 		Flags: &RemoveFlags{
-			All: false,
-			Extension: ext,
+			All:        false,
+			Extensions: ext,
 		},
 	}
 	start := time.Now()

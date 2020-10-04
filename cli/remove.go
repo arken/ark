@@ -3,11 +3,9 @@ package cli
 import (
 	"fmt"
 	"github.com/arkenproject/ait/types"
+	"github.com/arkenproject/ait/utils"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/arkenproject/ait/utils"
 
 	"github.com/DataDrake/cli-ng/cmd"
 )
@@ -35,8 +33,8 @@ type RemoveArgs struct {
 
 // RemoveFlags handles the specific flags for the remove command.
 type RemoveFlags struct {
-	All bool `long:"all" desc:"remove all staged files."`
-	Extension string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
+	All        bool   `long:"all" desc:"remove all staged files."`
+	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
 
 // RemoveRun executes the remove function.
@@ -86,18 +84,19 @@ func parseRmArgs(c *cmd.CMD) ([]string, *types.StringSet, bool) {
 	}
 	rmAll := false
 	exts := types.NewStringSet()
-	if c.Flags != nil {
+	ind := utils.IndexOf(os.Args, "-e")
+	if c.Flags != nil && ind == -1 {
+		//They used the "... -e=png,jpg ..." syntax
 		rmAll = c.Flags.(*RemoveFlags).All
-		extStr := c.Flags.(*RemoveFlags).Extension
-		for _, extension := range strings.Split(extStr, ",") {
-			extension = strings.TrimSpace(extension)
-			if len(extension) > 0 {
-				if !strings.HasPrefix(extension, ".") {
-					extension = "." + extension
-				}
-				exts.Add(extension)
-			}
-		}
+		extStr := c.Flags.(*RemoveFlags).Extensions
+		exts = splitExtensions(extStr)
+	} else if ind > 0 && ind + 1 < len(os.Args) {
+		//They used the "... -e png,jpg ..." syntax
+		extStr := os.Args[ind + 1]
+		exts = splitExtensions(extStr)
+		ind = utils.IndexOf(args, extStr)
+		args = append(args[0:ind], args[ind + 1:]...)
+		//^remove the extension(s) from what cli-ng thinks is the args
 	}
 	if len(args) == 0 && !rmAll && exts.Size() == 0 {
 		utils.FatalPrintln("No arguments provided, nothing was done")

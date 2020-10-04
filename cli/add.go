@@ -30,7 +30,7 @@ type AddArgs struct {
 }
 
 type AddFlags struct {
-	Extension string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
+	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
 
 var threads int32 = 0
@@ -161,27 +161,44 @@ func processDirExt(dir string, c chan string, exts *types.StringSet) {
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
 func parseAddArgs(c *cmd.CMD) ([]string, *types.StringSet) {
-	var exts = types.NewStringSet()
-	extStr := ""
-	if c.Flags != nil {
-		extStr = c.Flags.(*AddFlags).Extension
-		for _, extension := range strings.Split(extStr, ",") {
-			extension = strings.TrimSpace(extension)
-			if len(extension) > 0 {
-				if !strings.HasPrefix(extension, ".") {
-					extension = "." + extension
-				}
-				exts.Add(extension)
-			}
-		}
-	}
 	var args []string
 	if c.Args != nil {
 		args = c.Args.(*AddArgs).Paths
+	}
+	var exts = types.NewStringSet()
+	ind := utils.IndexOf(os.Args, "-e")
+	if c.Flags != nil && ind == -1 {
+		//They used the "... -e=png,jpg ..." syntax
+		extStr := c.Flags.(*AddFlags).Extensions
+		exts = splitExtensions(extStr)
+	} else if ind > 0 && ind + 1 < len(os.Args) {
+		//They used the "... -e png,jpg ..." syntax
+		extStr := os.Args[ind + 1]
+		exts = splitExtensions(extStr)
+		ind = utils.IndexOf(args, extStr)
+		args = append(args[0:ind], args[ind + 1:]...)
+		//^remove the extension(s) from what cli-ng thinks is the args
 	}
 	if exts.Size() == 0 && len(args) == 0 {
 		fmt.Println("No files were given to add, please provide arguments")
 		os.Exit(0)
 	}
 	return args, exts
+}
+
+// splitExtensions takes a string like "png,pdf,jpg" and returns a sanitized set
+// of all extensions with no leading/trailing whitespace and no empty strings.
+// They will also have "." appended to them, ie "png,pdf" -> { ".png", ".pdf" }
+func splitExtensions(extStr string) *types.StringSet {
+	exts := types.NewStringSet()
+	for _, extension := range strings.Split(extStr, ",") {
+		extension = strings.TrimSpace(extension)
+		if len(extension) > 0 {
+			if !strings.HasPrefix(extension, ".") {
+				extension = "." + extension
+			}
+			exts.Add(extension)
+		}
+	}
+	return exts
 }
