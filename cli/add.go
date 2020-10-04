@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync/atomic"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 )
 
@@ -18,12 +20,17 @@ var Add = cmd.CMD{
 	Alias: "a",
 	Short: "Add a file or directory to AIT's tracked files.",
 	Args:  &AddArgs{},
+	Flags: &AddFlags{},
 	Run:   AddRun,
 }
 
 // AddArgs handles the specific arguments for the add command.
 type AddArgs struct {
 	Paths []string
+}
+
+type AddFlags struct {
+	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
 
 var threads int32 = 0
@@ -36,7 +43,7 @@ var threads int32 = 0
 // not be directly interacting with files in .ait anyway.
 func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
-	args := c.Args.(*AddArgs).Paths
+	args, exts := parseAddArgs(c)
 	contents := make(map[string]struct{}) //basically a set. empty struct has 0 width.
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
 	utils.FillMap(contents, file)
@@ -52,6 +59,9 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			fmt.Printf("Will not add files that are not in this ait repo," +
 				" skipping %v", userPath)
 		}
+	}
+	if exts.Size() > 0 {
+		addExtension(contents, exts)
 	}
 	//completely truncate the file to avoid duplicated filenames
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_TRUNC|os.O_WRONLY, 0644)
@@ -81,7 +91,7 @@ func addPath(userPath string, contents map[string]struct{}) {
 			contents[userPath] = struct{}{}
 		}
 	} else if os.IsNotExist(statErr) {
-		fmt.Printf("Path \"%v\" found. Continuing...\n", userPath)
+		fmt.Printf("Path \"%v\" not found. Continuing...\n", userPath)
 	}
 }
 
@@ -108,4 +118,87 @@ func processDir(dir string, c chan string) {
 			c <- filepath.Join(dir, info.Name())
 		}
 	}
+}
+
+// addExtension attempts to add ALL files within the current wd that have the
+// extension(s) contained in exts.
+func addExtension(contents map[string]struct{}, exts *types.StringSet) {
+	c := make(chan string)
+	atomic.AddInt32(&threads, 1)
+	go processDirExt(".", c, exts)
+	for msg := range c {
+		contents[msg] = struct{}{}
+	}
+}
+
+// processDirExt walks through the directory at dir and sends the path of all
+// regular files that have the desired file extensions back to the main thread
+// via c. If another directory is found, another goproc is called to
+// processDirExt that directory.
+func processDirExt(dir string, c chan string, exts *types.StringSet) {
+	defer func() {
+		atomic.AddInt32(&threads, -1)
+		if atomic.LoadInt32(&threads) <= 0 {
+			close(c)
+		}
+	}()
+	if dir == ".ait" {
+		return
+	}
+	files, err := ioutil.ReadDir(dir)
+	utils.CheckError(err)
+	for _, info := range files {
+		if info.IsDir() {
+			atomic.AddInt32(&threads, 1)
+			go processDirExt(filepath.Join(dir, info.Name()), c, exts)
+		} else if exts.Contains(filepath.Ext(info.Name())) {
+			c <- filepath.Join(dir, info.Name())
+		}
+	}
+}
+
+// parseAddArgs simply does some of the sanitization and extraction required to
+// get the desired data structures out of the cmd.CMD object, then returns said
+// useful data structures.
+func parseAddArgs(c *cmd.CMD) ([]string, *types.StringSet) {
+	var args []string
+	if c.Args != nil {
+		args = c.Args.(*AddArgs).Paths
+	}
+	var exts = types.NewStringSet()
+	ind := utils.IndexOf(os.Args, "-e")
+	if c.Flags != nil && ind == -1 {
+		//They used the "... -e=png,jpg ..." syntax
+		extStr := c.Flags.(*AddFlags).Extensions
+		exts = splitExtensions(extStr)
+	} else if ind > 0 && ind + 1 < len(os.Args) {
+		//They used the "... -e png,jpg ..." syntax
+		extStr := os.Args[ind + 1]
+		exts = splitExtensions(extStr)
+		ind = utils.IndexOf(args, extStr)
+		args = append(args[0:ind], args[ind + 1:]...)
+		//^remove the extension(s) from what cli-ng thinks is the args
+	}
+	if exts.Size() == 0 && len(args) == 0 {
+		fmt.Println("No files were given to add, please provide arguments")
+		os.Exit(0)
+	}
+	return args, exts
+}
+
+// splitExtensions takes a string like "png,pdf,jpg" and returns a sanitized set
+// of all extensions with no leading/trailing whitespace and no empty strings.
+// They will also have "." appended to them, ie "png,pdf" -> { ".png", ".pdf" }
+func splitExtensions(extStr string) *types.StringSet {
+	exts := types.NewStringSet()
+	for _, extension := range strings.Split(extStr, ",") {
+		extension = strings.TrimSpace(extension)
+		if len(extension) > 0 {
+			if !strings.HasPrefix(extension, ".") {
+				extension = "." + extension
+			}
+			exts.Add(extension)
+		}
+	}
+	return exts
 }

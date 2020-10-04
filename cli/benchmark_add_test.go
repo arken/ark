@@ -12,7 +12,7 @@ import (
 
 // This test adds every file in your documents folder and reports how long it
 // it took. it inits for itself and cleans up after itself.
-func TestBigAdd(t *testing.T) {
+func BenchmarkBigAdd(b *testing.B) {
 	u, _ := os.UserHomeDir()
 	testRoot := filepath.Join(u, "Documents/")
 	_ = os.Chdir(testRoot)
@@ -23,13 +23,13 @@ func TestBigAdd(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add all took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding all took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
 // This test adds every file in your documents folder by adding every folder
 // in the Documents folder individually.
-func TestAddManyDirs(t *testing.T) {
+func BenchmarkAddManyDirs(b *testing.B) {
 	u, _ := os.UserHomeDir()
 	testRoot := filepath.Join(u, "Documents/")
 	_ = os.Chdir(testRoot)
@@ -45,13 +45,30 @@ func TestAddManyDirs(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
+	_ = os.RemoveAll(testRoot + "/.ait")
+}
+
+func BenchmarkAddExtensionFlag(b *testing.B) {
+	u, _ := os.UserHomeDir()
+	testRoot := filepath.Join(u, "Documents/")
+	_ = os.Chdir(testRoot)
+	_ = os.RemoveAll(testRoot + "/.ait")
+	InitRun(nil, nil)
+	ext := "java,c,json,md,js"
+	addArgs := &cmd.CMD{
+		Args: &AddArgs{Paths: nil},
+		Flags: &AddFlags{Extensions: ext},
+	}
+	start := time.Now()
+	AddRun(nil, addArgs)
+	fmt.Println("\n\t******** Adding",ext,"files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
 // This test is for testing performance when adding many individual files.
 // Fill them in yourself if you wish to test.
-func TestAddManyFiles(t *testing.T) {
+func BenchmarkAddManyFiles(b *testing.B) {
 	u, _ := os.UserHomeDir()
 	testRoot := filepath.Join(u, "Documents/")
 	_ = os.Chdir(testRoot)
@@ -64,7 +81,7 @@ func TestAddManyFiles(t *testing.T) {
 	}
 	start := time.Now()
 	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Add files took", time.Since(start).Milliseconds(), "ms ********\n ")
+	fmt.Println("\n\t******** Adding files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
