@@ -49,9 +49,9 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		fmt.Println("All files unstaged")
 		return
 	}
-	contents := make(map[string]struct{})
+	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	file.Close()
 	numRMd := 0
 	if exts.Size() >0 && len(args) == 0 {
@@ -59,16 +59,16 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	for _, userPath := range args {
 		userPath = filepath.Clean(userPath)
-		for addedPath := range contents {
+		for addedPath := range contents.Underlying() {
 			if utils.IsInSubDir(addedPath, userPath) ||
 				exts.Contains(filepath.Ext(addedPath)) {
-				delete(contents, addedPath)
+				contents.Delete(addedPath)
 				numRMd++
 			}
 		}
 	}
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY|os.O_TRUNC, 0644)
-	err := utils.DumpMap(contents, file)
+	err := utils.DumpSet(contents, file)
 	file.Close()
 	utils.CheckError(err)
 	fmt.Println(numRMd, "file(s) unstaged")
@@ -77,13 +77,13 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // parseRmArgs simply does some of the sanitization and extraction required to
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
-func parseRmArgs(c *cmd.CMD) ([]string, *types.StringSet, bool) {
+func parseRmArgs(c *cmd.CMD) ([]string, *types.BasicStringSet, bool) {
 	var args []string
 	if c.Args != nil {
 		args = c.Args.(*RemoveArgs).Paths
 	}
 	rmAll := false
-	exts := types.NewStringSet()
+	exts := types.NewBasicStringSet()
 	ind := utils.IndexOf(os.Args, "-e")
 	if c.Flags != nil && ind == -1 {
 		//They used the "... -e=png,jpg ..." syntax

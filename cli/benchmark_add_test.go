@@ -84,19 +84,3 @@ func BenchmarkAddManyFiles(b *testing.B) {
 	fmt.Println("\n\t******** Adding files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
-
-//func TestUnicode(t *testing.T) {
-//	file, err := os.Create("日本語")
-//	utils.CheckError(err)
-//	info, _ := os.Stat(file.Name())
-//	s := info.Name()
-//	_ = os.Remove(file.Name())
-//	fmt.Println(s)
-//	file = utils.BasicFileOpen("utf8test",
-//		os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-//	m := map[string]struct{}{ s: {} }
-//	err = utils.DumpMap(m, file)
-//	utils.CheckError(err)
-//	//remember to delete utf8test after checking to make sure s was printed
-//	//right and isn't a bunch of gibberish.
-//}

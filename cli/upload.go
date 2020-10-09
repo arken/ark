@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"github.com/arkenproject/ait/types"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,9 +37,9 @@ type UploadFlags struct {
 // UploadRun handles the uploading and display of the upload command.
 func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*UploadFlags)
-	contents := make(map[string]struct{}) // basically a set. empty struct has 0 width.
+	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	file.Close()
 
 	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
@@ -55,11 +56,11 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	ipfs.Init()
 
 	fmt.Println("Adding Files to IPFS Store")
-	addBar := progressbar.Default(int64(len(contents)))
+	addBar := progressbar.Default(int64(contents.Size()))
 	addBar.RenderBlank()
 
-	input := make(chan string, len(contents))
-	for path := range contents {
+	input := make(chan string, contents.Size())
+	for path := range contents.Underlying() {
 		cid, err := ipfs.Add(filepath.Join(link, path))
 		utils.CheckError(err)
 
@@ -68,7 +69,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	}
 
 	fmt.Println("Uploading Files to Cluster")
-	ipfsBar := progressbar.Default(int64(len(contents)))
+	ipfsBar := progressbar.Default(int64(contents.Size()))
 	ipfsBar.RenderBlank()
 
 	for i := 0; i < workers; i++ {
