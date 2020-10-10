@@ -41,7 +41,7 @@ func PullRequest(url, forkOwner string) error {
 	ksPath := filepath.Join(repoPath, category, ksName)
 	// Full relative path from repo root ^
 
-	AddKeyset(repo, ksName, ksPath)
+	AddKeyset(repo, filepath.Join(category, ksName), ksPath)
 	CommitKeyset(repo)
 	PushKeyset(repo, url)
 	CreatePullRequest(client, upstreamOwner, upstreamRepo, forkOwner)
