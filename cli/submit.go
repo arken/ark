@@ -36,6 +36,7 @@ type SubmitArgs struct {
 	Args []string
 }
 
+// SubmitFlags handles the specific flags for the submit command.
 type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
