@@ -2,7 +2,6 @@ package display
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -56,9 +55,7 @@ func fetchApplicationTemplate(repoPath, destPath string) {
 	if !isValidAppTemplate(fromPath) { // false if the file does not exist
 		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
 		//       = ~/.ait/application.md
-		fmt.Println(`Either there was no application template file in the cloned repo, or 
-file was found to be invalid. using default instead
- `)
+		// application template in repo was invalid/missing, use default instead
 	}
 	if !isValidAppTemplate(fromPath) {
 		utils.FatalPrintf(`Your default application template stored in %v is invalid. 

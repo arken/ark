@@ -21,7 +21,7 @@ var Init = cmd.CMD{
 type InitArgs struct {
 }
 
-//InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
+// InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
 func InitRun(_ *cmd.RootCMD, _ *cmd.CMD) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
