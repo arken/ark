@@ -33,7 +33,6 @@ func Add(path string) (cid string, err error) {
 		return nil
 	})
 	if err != nil {
-		file.Close()
 		return cid, err
 	}
 	cid = output.Cid().String()

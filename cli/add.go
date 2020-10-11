@@ -30,6 +30,7 @@ type AddArgs struct {
 	Paths []string
 }
 
+// AddFlags handles the specific flags for the add command.
 type AddFlags struct {
 	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
@@ -57,8 +58,8 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		if withinRepo {
 			addPath(userPath, contents)
 		} else {
-			fmt.Printf("Will not add files that are not in this ait repo," +
-				" skipping %v\n", userPath)
+			fmt.Printf("Will not add files that are not in this ait repo,"+
+				" skipping %v", userPath)
 		}
 	}
 	if exts.Size() > 0 {
@@ -70,7 +71,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	//dump the set, which has to have unique values, into the file.
 	err := utils.DumpSet(contents, file)
 	utils.CheckError(err)
-	fmt.Println(contents.Size() - origLen, "file(s) added")
+	fmt.Println(contents.Size()-origLen, "file(s) added")
 }
 
 // addPath attempts to add the given path to the current collection of added
@@ -166,12 +167,12 @@ func parseAddArgs(c *cmd.CMD) ([]string, *types.BasicStringSet) {
 		//They used the "... -e=png,jpg ..." syntax
 		extStr := c.Flags.(*AddFlags).Extensions
 		exts = splitExtensions(extStr)
-	} else if ind > 0 && ind + 1 < len(os.Args) {
+	} else if ind > 0 && ind+1 < len(os.Args) {
 		//They used the "... -e png,jpg ..." syntax
-		extStr := os.Args[ind + 1]
+		extStr := os.Args[ind+1]
 		exts = splitExtensions(extStr)
 		ind = utils.IndexOf(args, extStr)
-		args = append(args[0:ind], args[ind + 1:]...)
+		args = append(args[0:ind], args[ind+1:]...)
 		//^remove the extension(s) from what cli-ng thinks is the args
 	}
 	if exts.Size() == 0 && len(args) == 0 {
