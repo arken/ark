@@ -29,7 +29,9 @@ func PullRequest(url, forkOwner string) error {
 	// ^Once a pull request is started, we don't need the old clone of the repo
 	if err != nil && utils.FileExists(repoPath) {
 		//I don't care if it failed because there was no repo there to begin with
-		utils.FatalWithCleanup(utils.SubmissionCleanup, "Unable to remove the old clone of", url)
+		utils.FatalWithCleanup(utils.SubmissionCleanup,
+			"Unable to remove the old clone of " + url + ", please delete the folder at\n" +
+			filepath.Join(".ait", "sources", upstreamRepo))
 	}
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
@@ -54,7 +56,8 @@ func fork(owner, name string) (*git.Repository, *github.Client, error) {
 	token := os.Getenv("GITHUB_AUTH_TOKEN")
 	if token == "" {
 		fmt.Print(
-			`You will now need a GitHub Oauth token. If you don't have one, you can make one
+			`You have chosen to submit a pull request.
+You will now need a GitHub Oauth token. If you don't have one, you can make one
 by following the steps at https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
 Enter your GitHub Oauth token: `)
 		byteToken, _ := terminal.ReadPassword(syscall.Stdin)
@@ -78,9 +81,16 @@ Enter your GitHub Oauth token: `)
 	// 202 means Github is processing the fork request, but this is ok.
 	// 202 seems to be the most common non-error status code.
 	if remoteRepo == nil || status != 202 && status != 200 {
-		return nil, nil, fmt.Errorf(
-			"Something went wrong when trying to fork %v's repo %v:\n%v",
-			owner, name, err)
+		var err error
+		if response != nil && response.Response.StatusCode == 401 {
+			err = fmt.Errorf(
+				"Your OAuth token didn't work, make sure you entered it correcty.")
+		} else {
+			err = fmt.Errorf(
+				"Something went wrong when trying to fork %v's repo %v:\n%v",
+				owner, name, err)
+		}
+		return nil, nil, err
 	}
 	target := filepath.Join(".ait", "sources", name)
 	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
