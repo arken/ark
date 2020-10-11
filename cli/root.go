@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"flag"
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/utils"
 	"os"
@@ -14,7 +15,9 @@ var Root *cmd.RootCMD
 
 // init creates the command interface and registers the possible commands.
 func init() {
-	if !utils.IsAITRepo() && utils.IndexOf(os.Args, "init") == -1 {
+	isInit := utils.IndexOf(os.Args, "init") > 0
+	isTesting := flag.Lookup("test.v") != nil //Don't force init when testing
+	if !utils.IsAITRepo() && !isInit && !isTesting {
 		utils.FatalPrintln(`This is not an AIT repository! Please run
 	ait init
 Before issuing any other commands.`)
