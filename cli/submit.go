@@ -108,8 +108,8 @@ to add files for submission.`)
 		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 		display.ShowApplication(repoPath)
 		app := display.ReadApplication()
-		ksName := app.GetKSName()
-		category := app.GetCategory()
+		ksName := app.KsName
+		category := app.Category
 		if !app.IsValid() {
 			utils.FatalWithCleanup(utils.SubmissionCleanup,
 				"Empty commit message and/or title, submission aborted.")
@@ -152,7 +152,7 @@ func CommitKeyset(repo *git.Repository) {
 	tree, err := repo.Worktree()
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	app := display.ReadApplication()
-	msg := app.GetTitle() + "\n\n" + app.GetCommit()
+	msg := app.Title + "\n\n" + app.Commit
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  config.Global.Git.Name,

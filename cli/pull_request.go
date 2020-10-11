@@ -36,8 +36,8 @@ func PullRequest(url, forkOwner string) error {
 	if display.ReadApplication() == nil {
 		display.ShowApplication(repoPath)
 	}
-	ksName := display.ReadApplication().GetKSName() // Just the name of the file
-	category := display.ReadApplication().GetCategory()
+	ksName := display.ReadApplication().KsName // Just the name of the file
+	category := display.ReadApplication().Category
 	ksPath := filepath.Join(repoPath, category, ksName)
 	// Full relative path from repo root ^
 
@@ -92,8 +92,8 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 	head := forkOwner + ":master"
 	application := display.ReadApplication()
 	pr := &github.NewPullRequest{
-		Title:               github.String(application.GetTitle()),
-		Body:                github.String(application.GetPRBody()),
+		Title:               github.String(application.Title),
+		Body:                github.String(application.PRBody),
 		Head:                github.String(head),
 		Base:                github.String("master"),
 		MaintainerCanModify: github.Bool(true),
