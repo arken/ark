@@ -58,7 +58,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 			addPath(userPath, contents)
 		} else {
 			fmt.Printf("Will not add files that are not in this ait repo," +
-				" skipping %v", userPath)
+				" skipping %v\n", userPath)
 		}
 	}
 	if exts.Size() > 0 {
