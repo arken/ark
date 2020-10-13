@@ -161,10 +161,22 @@ func ReadApplication() *types.ApplicationContents {
 		}
 	}
 	application.TrimFields()
-
+	sanitizeCategory()
 	if !strings.HasSuffix(application.KsName, ".ks") {
 		application.KsName += ".ks"
 	}
 	application.TimeFilled = time.Now()
 	return application
+}
+
+func sanitizeCategory() {
+	category := &application.Category
+	if strings.HasPrefix(*category, string(filepath.Separator)) {
+		*category = (*category)[1:]
+	}
+	*category = filepath.Clean(*category)
+	if strings.Contains(*category, "..") {
+		utils.FatalWithCleanup(utils.SubmissionCleanup,
+			"Path backtracking (\"..\") is not allowed in the Category.")
+	}
 }
