@@ -51,13 +51,12 @@ func PullRequest(url, forkOwner string) error {
 }
 
 // fork uses the github api to create a fork in the user's github account and
-// clone that fork into local storage. This is done using oauth2.
+// clone it into local storage. This is done using oauth2.
 func fork(owner, name string) (*git.Repository, *github.Client, error) {
 	token := os.Getenv("GITHUB_AUTH_TOKEN")
 	if token == "" {
 		fmt.Print(
-			`You have chosen to submit a pull request.
-You will now need a GitHub Oauth token. If you don't have one, you can make one
+			`You will now need a GitHub Oauth token. If you don't have one, you can make one
 by following the steps at https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
 Enter your GitHub Oauth token: `)
 		byteToken, _ := terminal.ReadPassword(syscall.Stdin)
@@ -70,8 +69,8 @@ Enter your GitHub Oauth token: `)
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 	client := github.NewClient(httpClient)
 
+	fmt.Printf("Attempting to fork %v's repository \"%v\" to your account...\n", owner, name)
 	remoteRepo, response, err := client.Repositories.CreateFork(ctx, owner, name, nil)
-
 	// A traditional if err != nil will not work here. See https://godoc.org/github.com/google/go-github/github#RepositoriesService.CreateFork
 	status := -1
 	if response != nil && remoteRepo != nil {
@@ -87,11 +86,12 @@ Enter your GitHub Oauth token: `)
 				"Your OAuth token didn't work, make sure you entered it correcty.")
 		} else {
 			err = fmt.Errorf(
-				"Something went wrong when trying to fork %v's repo %v:\n%v",
+				`Something went wrong when trying to fork %v's repo "%v":\n%v`,
 				owner, name, err)
 		}
 		return nil, nil, err
 	}
+	fmt.Printf("Fork creation successful. See it at %v\n\n", remoteRepo.GetHTMLURL())
 	target := filepath.Join(".ait", "sources", name)
 	localRepo, err := keysets.Clone(remoteRepo.GetHTMLURL(), target)
 	return localRepo, client, err
@@ -109,11 +109,11 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 		MaintainerCanModify: github.Bool(true),
 		Draft:               github.Bool(false),
 	}
-
+	fmt.Println("Attempting to create the pull request...\n")
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 
 	donePR, _, err := client.PullRequests.Create(ctx, upstreamOwner, upstreamRepo, pr)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
-	fmt.Println("Your new pull request can be found at:", donePR.GetHTMLURL())
+	fmt.Println("\nYour new pull request can be found at:", donePR.GetHTMLURL())
 }
