@@ -109,7 +109,7 @@ func CreatePullRequest(client *github.Client, upstreamOwner, upstreamRepo, forkO
 		MaintainerCanModify: github.Bool(true),
 		Draft:               github.Bool(false),
 	}
-	fmt.Println("Attempting to create the pull request...\n")
+	fmt.Println("Attempting to create the pull request...")
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 

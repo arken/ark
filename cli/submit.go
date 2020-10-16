@@ -118,7 +118,7 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // AddKeyset adds the keyset file at the given path to the repo.
 // Effectively: git add ksPath
 func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
-	fmt.Println("Adding keyset file to worktree...\n")
+	fmt.Println("Adding keyset file to worktree...")
 	var choice = &fields.ksGenMethod //want to keep this response saved in the struct
 	if utils.FileExists(ksPathFromWD) && *choice == "" {
 		reader := bufio.NewReader(os.Stdin)
@@ -142,7 +142,7 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 // CommitKeyset attempts to commit the file that was previously added. This
 // function expects a repo that already has a file added to the worktree.
 func CommitKeyset(repo *git.Repository) {
-	fmt.Println("Committing keyset file...\n")
+	fmt.Println("Committing keyset file...")
 	tree, err := repo.Worktree()
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	app := display.ReadApplication()
