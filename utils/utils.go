@@ -67,10 +67,7 @@ func DumpSet(contents types.StringSet, file *os.File) error {
 		return nil
 	})
 	_, err := file.Write(toDump)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
