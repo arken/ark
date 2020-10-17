@@ -6,5 +6,4 @@ type StringSet interface {
 	Delete(string)
 	Size() int
 	ForEach(func (string))
-	Underlying() map[string]struct{}
 }
