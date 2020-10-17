@@ -53,7 +53,7 @@ func createNew(path string) error {
 	err = os.Symlink(wd, link)
 	defer os.Remove(link)
 
-	contents := types.NewBasicStringSet()
+	contents := types.NewSortedStringSet()
 	utils.FillSet(contents, addedFiles)
 	addedFiles.Close()
 
@@ -66,7 +66,7 @@ func createNew(path string) error {
 		barPresent = true
 	}
 
-	for filePath := range contents.Underlying() {
+	err = contents.ForEach(func(filePath string) error {
 		linkPath := filepath.Join(link, filePath)
 		line := getKeySetLineFromPath(linkPath)
 		_, err = keySetFile.WriteString(line + "\n")
@@ -77,9 +77,10 @@ func createNew(path string) error {
 		if barPresent {
 			ipfsBar.Add(1)
 		}
-
-	}
-	return keySetFile.Close()
+		return nil
+	})
+	keySetFile.Close()
+	return err
 }
 
 // amendExisting looks at current files in added_files and adds any that aren't
