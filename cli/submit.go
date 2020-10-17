@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arkenproject/ait/ipfs"
-	"github.com/arkenproject/ait/keysets"
-
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/display"
+	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -78,18 +78,9 @@ var fields submitFields
 // repos directly at any point so it and the keyset file are basically ephemeral
 // and only exist on disk while this command is running.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
+	var url string
+	url, fields.isPR = parseSubmitArgs(c)
 	ipfs.Init()
-	args := c.Args.(*SubmitArgs).Args
-	if len(args) < 1 {
-		utils.FatalPrintln("Not enough arguments, expected repository url")
-	}
-	url := args[0]
-	fields.isPR = c.Flags.(*SubmitFlags).IsPR
-	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
-		utils.FatalPrintln(`No files are currently added, nothing to submit. Use
-    ait add <files>...
-to add files for submission.`)
-	}
 	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 	if utils.FileExists(repoPath) {
 		utils.FatalPrintf("A file/folder already exists at %v, "+
@@ -100,6 +91,7 @@ to add files for submission.`)
 		getNameEmail()
 	}
 	if fields.isPR { //-p flag was included
+		fmt.Println("You have chosen to create a pull request.")
 		collectUsername()
 		err := PullRequest(url, fields.username)
 		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
@@ -108,8 +100,8 @@ to add files for submission.`)
 		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 		display.ShowApplication(repoPath)
 		app := display.ReadApplication()
-		ksName := app.GetKSName()
-		category := app.GetCategory()
+		ksName := app.KsName
+		category := app.Category
 		if !app.IsValid() {
 			utils.FatalWithCleanup(utils.SubmissionCleanup,
 				"Empty commit message and/or title, submission aborted.")
@@ -126,6 +118,7 @@ to add files for submission.`)
 // AddKeyset adds the keyset file at the given path to the repo.
 // Effectively: git add ksPath
 func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
+	fmt.Println("Adding keyset file to worktree...")
 	var choice = &fields.ksGenMethod //want to keep this response saved in the struct
 	if utils.FileExists(ksPathFromWD) && *choice == "" {
 		reader := bufio.NewReader(os.Stdin)
@@ -149,10 +142,11 @@ func AddKeyset(repo *git.Repository, ksPathFromRepo, ksPathFromWD string) {
 // CommitKeyset attempts to commit the file that was previously added. This
 // function expects a repo that already has a file added to the worktree.
 func CommitKeyset(repo *git.Repository) {
+	fmt.Println("Committing keyset file...")
 	tree, err := repo.Worktree()
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	app := display.ReadApplication()
-	msg := app.GetTitle() + "\n\n" + app.GetCommit()
+	msg := app.Title + "\n\n" + app.Commit
 	opt := &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  config.Global.Git.Name,
@@ -171,6 +165,7 @@ func PushKeyset(repo *git.Repository, url string) {
 	var err error
 	var existingCreds, hasWriteAccess bool
 	for choice := "r"; choice == "r"; {
+		fmt.Printf("Attempting to push to %v...\n\n", url)
 		existingCreds, hasWriteAccess, err = tryPush(repo)
 		if err == nil { //push was successful
 			return
@@ -181,6 +176,7 @@ func PushKeyset(repo *git.Repository, url string) {
 		fmt.Print("\n")
 		if choice == "p" && !fields.isPR && existingCreds {
 			fields.isPR = true
+			fmt.Println("You have chosen to create a pull request.")
 			err = PullRequest(url, fields.username)
 			utils.CheckError(err)
 			return
@@ -252,10 +248,10 @@ func promptCredentials() {
 	fields.password = strings.TrimSpace(string(bytePassword))
 }
 
-// printSubmissionPrompt takes 3 boolean values and prints the appropriate
+// printSubmissionPrompt takes 2 boolean values and prints the appropriate
 // message for a select number of situations. Not all possibilities are covered,
 // but if they are not covered it's likely that it's an "impossible" scenario
-// (knock on wood). For example, an existingCredits cannot be false while
+// (knock on wood). For example, existingCreds cannot be false while
 // hasWriteAccess is true. If the account does not exist, it cannot have write
 // access.
 // These prompts establish the following inputs as meaning:
@@ -284,19 +280,19 @@ Re-enter your credentials (r) or abort (any other key)? `)
 // actual account that exists.
 func collectUsername() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("You've chosen to start a pull request.")
 	var choice string
 	for {
 		fmt.Print("Please enter your GitHub username: ")
 		username, _ := reader.ReadString('\n')
 		fields.username = strings.TrimSpace(username)
-		fmt.Printf("You entered \"%v\". Is this the correct username? Enter \"a\" to abort. y/[n]/a: ",
+		fmt.Printf(`You entered "%v", Is this correct? If so, continue (y), if
+not, try again (n), or abort (any other key). y/[n]: `,
 			fields.username)
 		choice, _ = reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		if choice == "y" {
 			break
-		} else if choice == "a" {
+		} else if choice != "n" && len(choice) > 0 {
 			utils.FatalPrintln("Submission aborted.")
 		}
 		fmt.Print("\n")
@@ -304,7 +300,7 @@ func collectUsername() {
 	fmt.Print("\n")
 }
 
-// getNameEmail asks teh user to enter their name and email for git purposes.
+// getNameEmail asks the user to enter their name and email for git purposes.
 // this is saved into the file at ~/.ait/ait.config
 func getNameEmail() {
 	reader := bufio.NewReader(os.Stdin)
@@ -315,4 +311,22 @@ func getNameEmail() {
 	input, _ = reader.ReadString('\n')
 	config.Global.Git.Email = strings.TrimSpace(input)
 	config.GenConf(config.Global)
+}
+
+// parseSubmitArgs simply does some of the sanitization and extraction required to
+// get the desired data structures out of the cmd.CMD object, then returns said
+// useful data structures.
+func parseSubmitArgs(c *cmd.CMD) (string, bool) {
+	args := c.Args.(*SubmitArgs).Args
+	if len(args) < 1 {
+		utils.FatalPrintln("Not enough arguments, expected repository url")
+	}
+	url := args[0]
+	fields.isPR = c.Flags.(*SubmitFlags).IsPR
+	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
+		utils.FatalPrintln(`No files are currently added, nothing to submit. Use
+    ait add <files>...
+to add files for submission.`)
+	}
+	return url, c.Flags.(*SubmitFlags).IsPR
 }

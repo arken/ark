@@ -2,7 +2,6 @@ package display
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,10 +9,11 @@ import (
 	"time"
 
 	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 )
 
-var application *ApplicationContents
+var application *types.ApplicationContents
 
 // ShowApplication pulls up our template application, currently stored in the
 // string above.
@@ -56,9 +56,7 @@ func fetchApplicationTemplate(repoPath, destPath string) {
 	if !isValidAppTemplate(fromPath) { // false if the file does not exist
 		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
 		//       = ~/.ait/application.md
-		fmt.Println(`Either there was no application template file in the cloned repo, or 
-file was found to be invalid. using default instead
- `)
+		// application template in repo was invalid/missing, use default instead
 	}
 	if !isValidAppTemplate(fromPath) {
 		utils.FatalPrintf(`Your default application template stored in %v is invalid. 
@@ -118,17 +116,17 @@ func isValidAppTemplate(path string) bool {
 // when the last time the commit file was modified, so after one read, this method
 // can be called at will without incurring slow file i/o, as long as the file isn't
 // modified. Return nil if the file does not exist.
-func ReadApplication() *ApplicationContents {
+func ReadApplication() *types.ApplicationContents {
 	appPath := filepath.Join(".ait", "commit")
 	if !utils.FileExists(appPath) {
 		return nil
 	}
 	lastMod, err := utils.GetFileModTime(appPath)
 
-	if application != nil && err == nil && application.timeFilled.After(lastMod) {
+	if application != nil && err == nil && application.TimeFilled.After(lastMod) {
 		return application
 	} else if application == nil {
-		application = &ApplicationContents{}
+		application = &types.ApplicationContents{}
 	}
 	appFile := utils.BasicFileOpen(appPath, os.O_RDONLY, 0644)
 	defer appFile.Close()
@@ -148,25 +146,37 @@ func ReadApplication() *ApplicationContents {
 		if !strings.HasPrefix(line, "#") && !isComment && ptr != nil {
 			*ptr += line + " \n"
 		} else if strings.HasPrefix(line, "# CATEGORY") {
-			ptr = &application.category
+			ptr = &application.Category
 		} else if strings.HasPrefix(line, "# FILENAME") {
-			ptr = &application.ksName
+			ptr = &application.KsName
 		} else if strings.HasPrefix(line, "# TITLE") {
-			ptr = &application.title
+			ptr = &application.Title
 		} else if strings.HasPrefix(line, "# COMMIT") {
-			ptr = &application.commit
+			ptr = &application.Commit
 		} else if strings.HasPrefix(line, "# PULL REQUEST") {
-			ptr = &application.prBody
+			ptr = &application.PRBody
 		}
 		if strings.Contains(line, "-->") {
 			isComment = false
 		}
 	}
 	application.TrimFields()
-
-	if !strings.HasSuffix(application.ksName, ".ks") {
-		application.ksName += ".ks"
+	sanitizeCategory()
+	if !strings.HasSuffix(application.KsName, ".ks") {
+		application.KsName += ".ks"
 	}
-	application.timeFilled = time.Now()
+	application.TimeFilled = time.Now()
 	return application
+}
+
+func sanitizeCategory() {
+	category := &application.Category
+	if strings.HasPrefix(*category, string(filepath.Separator)) {
+		*category = (*category)[1:]
+	}
+	*category = filepath.Clean(*category)
+	if strings.Contains(*category, "..") {
+		utils.FatalWithCleanup(utils.SubmissionCleanup,
+			"Path backtracking (\"..\") is not allowed in the Category.")
+	}
 }

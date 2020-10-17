@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/arkenproject/ait/config"
-
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
@@ -98,10 +97,10 @@ func amendExisting(ksPath string) error {
 	}
 	defer addedFiles.Close()
 	addedFilesContents := make(map[string]string)
-	// ^ cid -> filePATH
+	// ^ map of cid -> filePATH
 	fillMapWithCID(addedFilesContents, addedFiles)
 	ksContents := make(map[string]string)
-	// ^ cid -> fileNAME
+	// ^ map of cid -> fileNAME
 	fillMapWithCID(ksContents, keySetFile)
 	newFiles := make(map[string]string)
 

@@ -1,6 +1,7 @@
 package keysets
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -22,7 +23,9 @@ func Clone(url, path string) (*git.Repository, error) {
 	}
 	repo, err := git.PlainClone(path, false, opt)
 	if err != nil {
-		_ = os.RemoveAll(path)
+		if err.Error() == "repository not found" {
+			fmt.Println("The repository", `"` + url + `"`, "was not found. Please double check the URL.")
+		}
 		return nil, err
 	}
 	return repo, nil

@@ -15,7 +15,11 @@ const AddedFilesPath string = ".ait/added_files" //can later be put somewhere mo
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
 func IsAITRepo() bool {
-	return FileExists(".ait")
+	fs, err := os.Stat(".ait")
+	if err != nil {
+		return false
+	}
+	return fs.IsDir()
 }
 
 // FileExists is a test to check the existence of a file.
@@ -54,13 +58,13 @@ func FillSet(contents types.StringSet, file *os.File) {
 // newlines.
 func DumpSet(contents types.StringSet, file *os.File) error {
 	toDump := make([]byte, 0, 256)
-	for line := range contents.Underlying() {
+	contents.ForEach(func(line string) {
 		bLine := []byte(line)
 		for i := 0; i < len(bLine); i++ {
 			toDump = append(toDump, bLine[i])
 		}
 		toDump = append(toDump, '\n')
-	}
+	})
 	_, err := file.Write(toDump)
 	if err != nil {
 		return err
@@ -192,6 +196,7 @@ func IsWithinRepo(path string) (bool, error) {
 	return strings.HasPrefix(path, wd), nil
 }
 
+// IndexOf returns the index of key in slice, or -1 if it doesn't exist
 func IndexOf(slice []string, key string) int {
 	for i, s := range slice {
 		if s == key {
