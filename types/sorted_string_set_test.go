@@ -26,8 +26,9 @@ func TestSSSIteration(t *testing.T) {
 		expected = append(expected, string(c))
 	}
 	var got []string
-	set.ForEach(func(s string) {
+	_ = set.ForEach(func(s string) error {
 		got = append(got, s)
+		return nil
 	})
 	sort.Strings(expected)
 	assert.Equal(t, expected, got)

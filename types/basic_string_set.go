@@ -35,10 +35,15 @@ func (set *BasicStringSet) Size() int {
 }
 
 // Performs the given function on each element of the set
-func (set *BasicStringSet) ForEach(f func(s string)) {
+func (set *BasicStringSet) ForEach(f func(s string) error) error {
+    var err error = nil
     for str := range set.internal {
-        f(str)
+        err = f(str)
+        if err != nil {
+            break
+        }
     }
+    return err
 }
 
 func (set *BasicStringSet) Underlying() map[string]struct{} {

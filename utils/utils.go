@@ -58,12 +58,13 @@ func FillSet(contents types.StringSet, file *os.File) {
 // newlines.
 func DumpSet(contents types.StringSet, file *os.File) error {
 	toDump := make([]byte, 0, 256)
-	contents.ForEach(func(line string) {
+	_ = contents.ForEach(func(line string) error {
 		bLine := []byte(line)
 		for i := 0; i < len(bLine); i++ {
 			toDump = append(toDump, bLine[i])
 		}
 		toDump = append(toDump, '\n')
+		return nil
 	})
 	_, err := file.Write(toDump)
 	if err != nil {

@@ -40,11 +40,17 @@ func (set *SortedStringSet) Size() int {
 }
 
 // Performs the given function on each element of the set
-func (set *SortedStringSet) ForEach(f func(s string)) {
+func (set *SortedStringSet) ForEach(f func(s string) error) error {
+	var err error = nil
 	set.internal.Ascend(func(item btree.Item) bool {
 			str := item.(String)
-			f(str.s)
+			err = f(str.s)
+			if err != nil {
+				//stops the iteration
+				return false
+			}
 			return true
 			// ^ This makes it go through the whole tree
 	})
+	return err
 }
