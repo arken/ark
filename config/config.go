@@ -29,6 +29,7 @@ type general struct {
 type git struct {
 	Name  string
 	Email string
+	Remotes map[string]string
 }
 
 // ipfs defines the IPFS centric ait settings.

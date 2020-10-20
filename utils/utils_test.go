@@ -66,3 +66,12 @@ func TestIsInRepo(t *testing.T) {
 	in, _ = IsWithinRepo("../ait/")
 	assert.True(t, in)
 }
+
+func TestIsGithubRemote(t *testing.T) {
+	ok, _ := IsGithubRemote("https://github.com/arkenproject/ait.git")
+	assert.True(t, ok)
+	_, msg := IsGithubRemote("")
+	println(msg, "\n")
+	_, msg = IsGithubRemote("git@github.com:arkenproject/ait.git")
+	println(msg)
+}

@@ -29,6 +29,7 @@ Before issuing any other commands.`)
 	}
 	Root.RegisterCMD(&cmd.Help)
 	Root.RegisterCMD(&Add)
+	Root.RegisterCMD(&AddRemote)
 	Root.RegisterCMD(&Init)
 	Root.RegisterCMD(&Remove)
 	Root.RegisterCMD(&Status)
