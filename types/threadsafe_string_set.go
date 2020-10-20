@@ -46,20 +46,16 @@ func (set *ThreadSafeStringSet) Size() int {
 }
 
 // Performs the given function on each element of the set.
-// Lock and RLock.
-func (set *ThreadSafeStringSet) ForEach(f func(s string)) {
+// Write lock.
+func (set *ThreadSafeStringSet) ForEach(f func(s string) error) error {
+	var err error = nil
 	set.Lock()
-	set.RLock()
 	for str := range set.internal {
-		f(str)
+		err = f(str)
+		if err != nil {
+			break
+		}
 	}
 	set.Unlock()
-	set.RUnlock()
+	return err
 }
-
-// Underlying returns the underlying map. This is only meant for ranging purposes.
-// No lock (So don't call this in a multithreaded context).
-func (set *ThreadSafeStringSet) Underlying() map[string]struct{} {
-	return set.internal
-}
-

@@ -1,13 +1,12 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/utils"
 	"os"
-	"sort"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/types"
+	"github.com/arkenproject/ait/utils"
 )
 
 // Status prints out what files are currently staged for submission.
@@ -29,21 +28,14 @@ func StatusRun(*cmd.RootCMD, *cmd.CMD) {
 	if err == nil {
 		defer file.Close()
 	}
-	lines := make([]string, 0, 10)
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if len(line) > 0 {
-			lines = append(lines, line)
-		}
-	}
-	if len(lines) > 0 {
-		sort.Strings(lines)
-		fmt.Println(len(lines), "file(s) currently staged for submission:")
-		for _, line := range lines {
+	lines := types.NewSortedStringSet()
+	utils.FillSet(lines, file)
+	if lines.Size() > 0 {
+		fmt.Println(lines.Size(), "file(s) currently staged for submission:")
+		_ = lines.ForEach(func(line string) error {
 			fmt.Println("\t", line)
-		}
+			return nil
+		})
 	} else {
 		fmt.Println("No files are currently staged for submission.")
 	}

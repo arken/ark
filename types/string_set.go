@@ -5,6 +5,5 @@ type StringSet interface {
 	Add(string)
 	Delete(string)
 	Size() int
-	ForEach(func (string))
-	Underlying() map[string]struct{}
+	ForEach(func (string) error) error
 }

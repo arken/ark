@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
 	"os"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/types"
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/DataDrake/cli-ng/cmd"
 )
@@ -59,13 +60,13 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	for _, userPath := range args {
 		userPath = filepath.Clean(userPath)
-		for addedPath := range contents.Underlying() {
-			if utils.IsInSubDir(addedPath, userPath) ||
-				exts.Contains(filepath.Ext(addedPath)) {
+		_ = contents.ForEach(func(addedPath string) error {
+			if utils.IsInSubDir(addedPath, userPath) || exts.Contains(filepath.Ext(addedPath)) {
 				contents.Delete(addedPath)
 				numRMd++
 			}
-		}
+			return nil
+		})
 	}
 	file = utils.BasicFileOpen(utils.AddedFilesPath, os.O_WRONLY|os.O_TRUNC, 0644)
 	err := utils.DumpSet(contents, file)

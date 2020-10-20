@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"github.com/arkenproject/ait/types"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
 )
@@ -60,13 +60,14 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	addBar.RenderBlank()
 
 	input := make(chan string, contents.Size())
-	for path := range contents.Underlying() {
+	_ = contents.ForEach(func(path string) error {
 		cid, err := ipfs.Add(filepath.Join(link, path))
 		utils.CheckError(err)
 
 		addBar.Add(1)
 		input <- cid
-	}
+		return nil
+	})
 
 	fmt.Println("Uploading Files to Cluster")
 	ipfsBar := progressbar.Default(int64(contents.Size()))

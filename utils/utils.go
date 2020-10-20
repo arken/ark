@@ -3,12 +3,13 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/arkenproject/ait/types"
 )
 
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
@@ -58,18 +59,16 @@ func FillSet(contents types.StringSet, file *os.File) {
 // newlines.
 func DumpSet(contents types.StringSet, file *os.File) error {
 	toDump := make([]byte, 0, 256)
-	contents.ForEach(func(line string) {
+	_ = contents.ForEach(func(line string) error {
 		bLine := []byte(line)
 		for i := 0; i < len(bLine); i++ {
 			toDump = append(toDump, bLine[i])
 		}
 		toDump = append(toDump, '\n')
+		return nil
 	})
 	_, err := file.Write(toDump)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
