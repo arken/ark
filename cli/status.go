@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
-	"os"
 )
 
 // Status prints out what files are currently staged for submission.

@@ -2,14 +2,15 @@ package display
 
 import (
 	"fmt"
-    "github.com/arkenproject/ait/types"
-    "github.com/stretchr/testify/assert"
 	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/arkenproject/ait/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadApplicationModTiming(t *testing.T) {

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"github.com/arkenproject/ait/types"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
 )

@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/google/btree"
 	"strings"
+
+	"github.com/google/btree"
 )
 
 // String is for use in the sorted string set. It implements the btree.Item

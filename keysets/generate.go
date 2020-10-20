@@ -3,13 +3,13 @@ package keysets
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/types"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
 )

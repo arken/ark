@@ -3,12 +3,13 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/arkenproject/ait/types"
 )
 
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central

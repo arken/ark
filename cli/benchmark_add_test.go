@@ -2,12 +2,13 @@ package cli
 
 import (
 	"fmt"
-	"github.com/DataDrake/cli-ng/cmd"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // This test adds every file in your documents folder and reports how long it

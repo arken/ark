@@ -1,9 +1,10 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/utils"
-	"os"
 )
 
 //GlobalFlags contains the flags for commands.

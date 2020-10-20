@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
 	"os"
 	"path/filepath"
+
+	"github.com/arkenproject/ait/types"
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/DataDrake/cli-ng/cmd"
 )
