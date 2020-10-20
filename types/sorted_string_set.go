@@ -4,10 +4,8 @@ import (
 	"github.com/google/btree"
 )
 
-
-
 // SortedStringSet is a simple container around a B-tree. It has the
-//functionality and performance of a tree-based set, because it is one.
+// functionality and performance of a tree-based set, because it is one.
 type SortedStringSet struct {
 	internal *btree.BTree
 }

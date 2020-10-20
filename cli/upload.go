@@ -60,13 +60,14 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	addBar.RenderBlank()
 
 	input := make(chan string, contents.Size())
-	for path := range contents.Underlying() {
+	_ = contents.ForEach(func(path string) error {
 		cid, err := ipfs.Add(filepath.Join(link, path))
 		utils.CheckError(err)
 
 		addBar.Add(1)
 		input <- cid
-	}
+		return nil
+	})
 
 	fmt.Println("Uploading Files to Cluster")
 	ipfsBar := progressbar.Default(int64(contents.Size()))

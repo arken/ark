@@ -59,10 +59,3 @@ func (set *ThreadSafeStringSet) ForEach(f func(s string) error) error {
 	set.Unlock()
 	return err
 }
-
-// Underlying returns the underlying map. This is only meant for ranging purposes.
-// No lock (So don't call this in a multithreaded context).
-func (set *ThreadSafeStringSet) Underlying() map[string]struct{} {
-	return set.internal
-}
-
