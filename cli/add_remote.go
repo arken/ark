@@ -30,10 +30,15 @@ type AddRemoteArgs struct {
 func AddRemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	args := c.Args.(*AddRemoteArgs).Args
 	if len(args) < 2 {
-		utils.FatalPrintln(`Expected a URL and an alias:
-	ait add-remote alias https://github.com/...`)
+		utils.FatalPrintln(`Expected an alias and a URL:
+	ait add-remote MyAlias https://github.com/example-user/example-repo.git`)
 	}
 	alias, url := args[0], args[1]
+	aliasIsURL, _ := utils.IsGithubRemote(alias)
+	if aliasIsURL {
+		utils.FatalPrintln(`It appears that your alias is a URL. The alias should come first:
+	ait add-remote MyAlias https://github.com/example-user/example-repo.git`)
+	}
 	validateURL(url)
 	if config.Global.Git.Remotes == nil {
 		config.Global.Git.Remotes = make(map[string]string)

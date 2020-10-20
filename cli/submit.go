@@ -321,7 +321,11 @@ func parseSubmitArgs(c *cmd.CMD) (string, bool) {
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")
 	}
-	url := args[0]
+	url := config.GetRemote(args[0])
+	if url != args[0] {
+		fmt.Printf("Note: you used alias \"%v\" so you will be submitting" +
+			" to the remote at %v\n", args[0], url)
+	}
 	fields.isPR = c.Flags.(*SubmitFlags).IsPR
 	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {
 		utils.FatalPrintln(`No files are currently added, nothing to submit. Use

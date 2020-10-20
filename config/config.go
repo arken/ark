@@ -88,3 +88,15 @@ func createSwarmKey() (err error) {
 	err = ioutil.WriteFile(filepath.Join(Global.IPFS.Path, "swarm.key"), keyData, 0644)
 	return err
 }
+
+// GetRemote takes a string and returns what should be a URL. If the string is
+// a key in Global.Git.Remotes, then its value will be returned. If it itself
+// a url, it will be returned untouched. This is to allow the arbitrary
+// substitution of real remote URLs and remote aliases.
+func GetRemote(remote string) string {
+	url, ok := Global.Git.Remotes[remote]
+	if ok {
+		return url
+	}
+	return remote
+}

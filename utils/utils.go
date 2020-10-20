@@ -221,17 +221,19 @@ func IsGithubRemote(url string) (bool, string) {
 	}
 	// Go through some common mistakes
 	if len(url) < 26 { //It's shorter than "https://github.com/a/a.git"
-		msg += "The URL is not long enough to possibly be a full HTTPS Github remote.\n"
+		msg += "The URL is not long enough to possibly be a complete HTTPS Github remote.\n"
 	} else {
 		if !strings.Contains(url, "github.com") {
 			msg += "The URL does not contain \"github.com\". Currently, we only " +
-				"support GitHub remotes, but support for others may be added in the future.\n"
+				"support GitHub remotes.\n"
+		} else if strings.HasPrefix(url, "github.com/") {
+			msg += "The URL is not complete because it does not start with \"https://\"\n"
 		}
 		if strings.HasPrefix(url, "git@") {
-			msg += "The URL uses the SSH protocol which we do not support at the moment.\n"
+			msg += "The URL is for the SSH protocol which AIT does not support at the moment.\n"
 		}
 		if !strings.HasSuffix(url, ".git") {
-			msg += "The URL does not end in .git."
+			msg += "The URL does not end in \".git\"."
 		}
 	}
 	if strings.HasSuffix(msg, "\n") {
