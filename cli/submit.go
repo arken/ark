@@ -323,8 +323,7 @@ func parseSubmitArgs(c *cmd.CMD) (string, bool) {
 	}
 	url := config.GetRemote(args[0])
 	if url != args[0] {
-		fmt.Printf("Note: you used alias \"%v\" so you will be submitting" +
-			" to the remote at %v\n", args[0], url)
+		fmt.Printf("Submitting to the remote at %v\n", url)
 	}
 	fields.isPR = c.Flags.(*SubmitFlags).IsPR
 	if s, _ := utils.GetFileSize(utils.AddedFilesPath); s == 0 {

@@ -30,11 +30,16 @@ type RemoteArgs struct {
 
 type RemoteFlags struct {
 	IsAdd bool `short:"a" long:"add" desc:"Add a new remote alias"`
-	IsRm bool `short:"d" long:"remove" desc:"Remove a remote alias"`
+	IsRm bool `short:"d" long:"delete" desc:"Remove a remote alias"`
 	IsList bool `short:"l" long:"list" desc:"List your saved aliases"`
 }
 
-// RemoteRun handles saving aliases for GitHub remotes.
+const usageEx =
+	`	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git  # Saves an alias/URL pair for use later
+	ait remote --delete/-d MyAlias  # Removes an alias/URL pair
+	ait remote --list/-l            # See all your saved alias/URL pairs`
+
+// RemoteRun handles managing aliases for GitHub remotes.
 func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoteFlags)
 	validateFlags(flags.IsAdd, flags.IsRm, flags.IsList) //makes sure exactly one flag is present
@@ -51,7 +56,7 @@ func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		alias, url := args[0], args[1]
 		if aliasIsURL, _ := utils.IsGithubRemote(alias); aliasIsURL {
 			utils.FatalPrintln(`It appears that your alias is a URL. The alias should come first:
-	ait add-remote MyAlias https://github.com/example-user/example-repo.git`)
+	ait remote --add MyAlias https://github.com/example-user/example-repo.git`)
 		}
 		validateURL(url)
 		addRemote(alias, url)
@@ -64,6 +69,7 @@ func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	config.GenConf(config.Global)
 }
 
+// addRemote adds the given alias and url to the global config struct.
 func addRemote(alias, url string) {
 	if config.Global.Git.Remotes == nil {
 		config.Global.Git.Remotes = make(map[string]string)
@@ -84,6 +90,8 @@ Would you like to proceed regardless (y) or abort (any other key)? `,
 	fmt.Printf("Alias \"%v\" successfully mapped to %v.\n", alias, url)
 }
 
+// removeRemote tries to delete the given alias and url from the global config
+// struct.
 func removeRemote(alias string) {
 	remotes := config.Global.Git.Remotes
 	if remotes == nil || len(remotes) == 0 {
@@ -101,6 +109,7 @@ func removeRemote(alias string) {
 	}
 }
 
+// listRemotes lists aliases/url pairs in the global config struct.
 func listRemotes() {
 	remotes := config.Global.Git.Remotes
 	if len(remotes) == 0 {
@@ -145,16 +154,15 @@ func validateURL(url string) {
 	}
 }
 
+// validateFlags makes sure that exactly one of the flags was provided. If none
+// or more than one flag was provided, the program will terminate with an error
+// message.
 func validateFlags(isAdd, isRm, isList bool) {
 	if !isAdd && !isRm && !isList { //no flags provided
-		utils.FatalPrintln(`Expected a flag to indicate an operation:
-	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git
-	ait remote --remove/-d MyAlias
-	ait remote --list/-l`)
+		utils.FatalPrintln("Expected one flag to indicate an operation:\n" +
+			usageEx)
 	} else if (isAdd && isRm) || (isAdd && isList) || (isRm && isList) {
-		utils.FatalPrintln(`Too many flags! Please just pick one operation:
-	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git
-	ait remote --remove/-d MyAlias
-	ait remote --list/-l`)
+		utils.FatalPrintln("Too many flags! Please pick only one operation:\n" +
+			usageEx)
 	}
 }

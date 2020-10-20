@@ -206,9 +206,12 @@ func IndexOf(slice []string, key string) int {
 	return -1
 }
 
-// IsGithubRemote lexically checks if the given url appears to be an HTTPS url to a
-// Github repository. It returns true and an empty string if it is, and false
-// and an explanation of the problem if it is not.
+// IsGithubRemote lexically checks if the given url appears to be an HTTPS url
+// to a Github repository. It returns true and an empty string if it does, and
+// false and an explanation of the problem(s) if it is not. A true return does
+// not necessarily mean the url is valid, just that it passed some basic tests:
+// it is long enough, it is https, it contains "github.com/", and it ends in
+// ".git".
 func IsGithubRemote(url string) (bool, string) {
 	//https://github.com/a/a.git
 	re := regexp.MustCompile(`https://github\.com/([a-zA-Z1-9\-_]+)/([a-zA-Z1-9\-_]+)\.git`)
@@ -221,20 +224,19 @@ func IsGithubRemote(url string) (bool, string) {
 	}
 	// Go through some common mistakes
 	if len(url) < 26 { //It's shorter than "https://github.com/a/a.git"
-		msg += "The URL is not long enough to possibly be a complete HTTPS Github remote.\n"
-	} else {
-		if !strings.Contains(url, "github.com") {
-			msg += "The URL does not contain \"github.com\". Currently, we only " +
-				"support GitHub remotes.\n"
-		} else if strings.HasPrefix(url, "github.com/") {
-			msg += "The URL is not complete because it does not start with \"https://\"\n"
-		}
-		if strings.HasPrefix(url, "git@") {
-			msg += "The URL is for the SSH protocol which AIT does not support at the moment.\n"
-		}
-		if !strings.HasSuffix(url, ".git") {
-			msg += "The URL does not end in \".git\"."
-		}
+		msg += "The URL is not long enough to possibly be a complete HTTPS GitHub remote.\n"
+	}
+	if !strings.Contains(url, "github.com") {
+		msg += "The URL does not contain \"github.com\". Currently, we only " +
+			"support GitHub remotes.\n"
+	} else if strings.HasPrefix(url, "github.com/") {
+		msg += "The URL is not complete because it does not start with \"https://\"\n"
+	}
+	if strings.HasPrefix(url, "git@") {
+		msg += "The URL is for the SSH protocol which AIT does not support at the moment.\n"
+	}
+	if !strings.HasSuffix(url, ".git") {
+		msg += "The URL does not end in \".git\"."
 	}
 	if strings.HasSuffix(msg, "\n") {
 		msg = msg[0:len(msg) - 1] //cut off the newline.
