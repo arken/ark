@@ -6,15 +6,22 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
+
+	"github.com/arkenproject/ait/types"
 )
 
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
 func IsAITRepo() bool {
-	return FileExists(".ait")
+	fs, err := os.Stat(".ait")
+	if err != nil {
+		return false
+	}
+	return fs.IsDir()
 }
 
 // FileExists is a test to check the existence of a file.
@@ -35,38 +42,34 @@ func GetFileSize(filename string) (int64, error) {
 
 //IsInSubDir checks if pathToCheck is in a subdirectory of dir.
 func IsInSubDir(dir, pathToCheck string) bool {
-	pathAbs, _ := filepath.Abs(pathToCheck)
-	dirAbs, _ := filepath.Abs(dir)
-	return strings.HasPrefix(dirAbs, pathAbs)
+	return strings.HasPrefix(dir, pathToCheck)
 }
 
-// PathMatch checks if two paths match using wildcards, but it will also return
-// true if path is in a subdirectory of pattern.
-func PathMatch(pattern, path string) bool {
-	matched, _ := filepath.Match(pattern, path)
-	return matched || IsInSubDir(path, pattern)
-}
-
-// FillMap splits the given file by newline and adds each line to the given map.
-func FillMap(contents map[string]struct{}, file *os.File) {
+// FillSet splits the given file by newline and adds each line to the given set.
+func FillSet(contents types.StringSet, file *os.File) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		if len(scanner.Text()) > 0 {
-			contents[scanner.Text()] = struct{}{}
+			contents.Add(scanner.Text())
 		}
 	}
 }
 
-// Dumps all keys in the given map to the given file, separated by a newline.
-func DumpMap(contents map[string]struct{}, file *os.File) error {
-	for line := range contents {
-		_, err := file.WriteString(line + "\n")
-		if err != nil {
-			return err
+// DumpSet dumps all values in the given set into the given file, separated by
+// newlines.
+func DumpSet(contents types.StringSet, file *os.File) error {
+	toDump := make([]byte, 0, 256)
+	_ = contents.ForEach(func(line string) error {
+		bLine := []byte(line)
+		for i := 0; i < len(bLine); i++ {
+			toDump = append(toDump, bLine[i])
 		}
-	}
-	return nil
+		toDump = append(toDump, '\n')
+		return nil
+	})
+	_, err := file.Write(toDump)
+	return err
 }
 
 // GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
@@ -176,4 +179,66 @@ func FatalWithCleanup(cleanup func(), a ...interface{}) {
 func SubmissionCleanup() {
 	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
 	_ = os.Remove(".ait/commit")
+}
+
+// IsWithinRepo tests if the given path is within this current repo.
+func IsWithinRepo(path string) (bool, error) {
+	var err error
+	var wd string
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return false, err
+	}
+	wd, err = os.Getwd()
+	if err != nil {
+		return false, err
+	}
+	return strings.HasPrefix(path, wd), nil
+}
+
+// IndexOf returns the index of key in slice, or -1 if it doesn't exist
+func IndexOf(slice []string, key string) int {
+	for i, s := range slice {
+		if s == key {
+			return i
+		}
+	}
+	return -1
+}
+
+// IsGithubRemote lexically checks if the given url appears to be an HTTPS url
+// to a Github repository. It returns true and an empty string if it does, and
+// false and an explanation of the problem(s) if it doesn't. A true return does
+// not necessarily mean the url is valid, just that it passed some basic tests:
+// it is long enough, it is https, it contains "github.com/", it ends in ".git",
+// and it passed a basic regex test.
+func IsGithubRemote(url string) (bool, string) {
+	re := regexp.MustCompile(`https://github\.com/([a-zA-Z1-9\-_]+)/([a-zA-Z1-9\-_]+)\.git`)
+	// This is a naive check for remote url validity. It is not 100% correct,
+	// for example names can't start with -, there can't be two dashes in a row,
+	// and others. But it's good enough to catch common mistakes.
+	var msg string
+	if re.MatchString(url) {
+		return true, ""
+	}
+	// Go through some common mistakes
+	if len(url) < 26 { //It's shorter than "https://github.com/a/a.git"
+		msg += "The URL is not long enough to possibly be a complete HTTPS GitHub remote.\n"
+	}
+	if !strings.Contains(url, "github.com") {
+		msg += "The URL does not contain \"github.com\". Currently, we only " +
+			"support GitHub remotes.\n"
+	} else if strings.HasPrefix(url, "github.com/") {
+		msg += "The URL is not complete because it does not start with \"https://\"\n"
+	}
+	if strings.HasPrefix(url, "git@") {
+		msg += "The URL is for the SSH protocol which AIT does not support at the moment.\n"
+	}
+	if !strings.HasSuffix(url, ".git") {
+		msg += "The URL does not end in \".git\"."
+	}
+	if strings.HasSuffix(msg, "\n") {
+		msg = msg[0 : len(msg)-1] //cut off the newline.
+	}
+	return false, msg
 }

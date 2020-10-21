@@ -12,7 +12,6 @@ import (
 // Init configures AIT's local staging and configuration directory.
 var Init = cmd.CMD{
 	Name:  "init",
-	Alias: "i",
 	Short: "Initialize a dataset's local configuration.",
 	Args:  &InitArgs{},
 	Run:   InitRun,
@@ -22,8 +21,8 @@ var Init = cmd.CMD{
 type InitArgs struct {
 }
 
-//InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
-func InitRun(r *cmd.RootCMD, c *cmd.CMD) {
+// InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
+func InitRun(_ *cmd.RootCMD, _ *cmd.CMD) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
 		err := os.Mkdir(".ait", os.ModePerm)

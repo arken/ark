@@ -3,11 +3,14 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
 )
@@ -18,6 +21,7 @@ var Upload = cmd.CMD{
 	Name:  "upload",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
 	Args:  &UploadArgs{},
+	Flags: &UploadFlags{},
 	Run:   UploadRun,
 }
 
@@ -25,42 +29,66 @@ var Upload = cmd.CMD{
 type UploadArgs struct {
 }
 
+// UploadFlags handles the specific flags for the upload command.
+type UploadFlags struct {
+	Debug bool `short:"d" long:"debug" desc:"Print Debug information to the console."`
+}
+
 // UploadRun handles the uploading and display of the upload command.
 func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
-	contents := make(map[string]struct{}) // basically a set. empty struct has 0 width.
+	flags := c.Flags.(*UploadFlags)
+	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
-	utils.FillMap(contents, file)
+	utils.FillSet(contents, file)
 	file.Close()
 
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
 	workers := genNumWorkers()
+	ipfs.Init()
 
 	fmt.Println("Adding Files to IPFS Store")
-	addBar := progressbar.Default(int64(len(contents)))
+	addBar := progressbar.Default(int64(contents.Size()))
 	addBar.RenderBlank()
 
-	input := make(chan string, len(contents))
-	for path := range contents {
-		cid, err := ipfs.Add(path)
+	input := make(chan string, contents.Size())
+	_ = contents.ForEach(func(path string) error {
+		cid, err := ipfs.Add(filepath.Join(link, path))
 		utils.CheckError(err)
 
 		addBar.Add(1)
 		input <- cid
-	}
+		return nil
+	})
 
 	fmt.Println("Uploading Files to Cluster")
-	ipfsBar := progressbar.Default(int64(len(contents)))
+	ipfsBar := progressbar.Default(int64(contents.Size()))
 	ipfsBar.RenderBlank()
 
-	for i := 0; i < workers*2; i++ {
+	for i := 0; i < workers; i++ {
 		go func(bar *progressbar.ProgressBar, input chan string) {
 			for cid := range input {
-				replications, err := ipfs.FindProvs(cid, 3)
-				utils.CheckError(err)
-				if replications >= 2 {
+				replications, err := ipfs.FindProvs(cid, 20)
+				if flags.Debug {
+					fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+				}
+				if replications > 2 {
 					bar.Add(1)
 				} else {
 					bar.Add(0)
 					input <- cid
+				}
+				if replications == 0 {
+					err = ipfs.Pin(cid)
+					utils.CheckError(err)
 				}
 			}
 		}(ipfsBar, input)
@@ -72,7 +100,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			return
 		}
 		ipfsBar.Add(0)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 

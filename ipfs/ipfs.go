@@ -39,7 +39,8 @@ var (
 	AtRiskThreshhold int
 )
 
-func init() {
+// Init starts the embedded IPFS node.
+func Init() {
 	var err error
 	ctx, cancel = context.WithCancel(context.Background())
 
@@ -57,7 +58,7 @@ func init() {
 
 	go func() {
 		node.Provider.Run()
-		time.Sleep(5 * time.Minute)
+		time.Sleep(1 * time.Hour)
 	}()
 }
 
@@ -196,10 +197,16 @@ func createRepo(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
-	cfg.Reprovider.Strategy = "all"
+	cfg.Reprovider.Strategy = "roots"
 	cfg.Reprovider.Interval = "1h"
 	cfg.Routing.Type = "dhtserver"
 	cfg.Swarm.EnableAutoRelay = true
+	cfg.Experimental.FilestoreEnabled = true
+	bootstrapNodes := []string{
+		// Arken Bootstrapper node.
+		"/dns4/link.arken.io/tcp/4001/ipfs/QmP8krSfWWHLNL2eah6E1hr6TzoaGMEVRw2Fooy5og1Wpj",
+	}
+	cfg.Bootstrap = bootstrapNodes
 
 	// Create the repo with the config
 	err = fsrepo.Init(path, cfg)

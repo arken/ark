@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
 	"github.com/schollz/progressbar/v3"
 )
@@ -40,21 +42,33 @@ func createNew(path string) error {
 	if err != nil {
 		return err
 	}
-	contents := make(map[string]struct{})
-	utils.FillMap(contents, addedFiles)
+
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
+	contents := types.NewSortedStringSet()
+	utils.FillSet(contents, addedFiles)
 	addedFiles.Close()
 
 	// For large Datasets display a loading bar.
-	ipfsBar := progressbar.Default(int64(len(contents)))
+	ipfsBar := progressbar.Default(int64(contents.Size()))
 	barPresent := false
-	if len(contents) > 30 {
+	if contents.Size() > 30 {
 		fmt.Println("Adding Files to Embedded IPFS Node:")
 		ipfsBar.RenderBlank()
 		barPresent = true
 	}
 
-	for filePath := range contents {
-		line := getKeySetLineFromPath(filePath)
+	err = contents.ForEach(func(filePath string) error {
+		linkPath := filepath.Join(link, filePath)
+		line := getKeySetLineFromPath(linkPath)
 		_, err = keySetFile.WriteString(line + "\n")
 		if err != nil {
 			cleanup(keySetFile)
@@ -63,9 +77,10 @@ func createNew(path string) error {
 		if barPresent {
 			ipfsBar.Add(1)
 		}
-
-	}
-	return keySetFile.Close()
+		return nil
+	})
+	keySetFile.Close()
+	return err
 }
 
 // amendExisting looks at current files in added_files and adds any that aren't
@@ -83,10 +98,10 @@ func amendExisting(ksPath string) error {
 	}
 	defer addedFiles.Close()
 	addedFilesContents := make(map[string]string)
-	// ^ cid -> filePATH
+	// ^ map of cid -> filePATH
 	fillMapWithCID(addedFilesContents, addedFiles)
 	ksContents := make(map[string]string)
-	// ^ cid -> fileNAME
+	// ^ map of cid -> fileNAME
 	fillMapWithCID(ksContents, keySetFile)
 	newFiles := make(map[string]string)
 
@@ -163,6 +178,16 @@ func getKeySetLine(filename, cid string) string {
 // a keyset file, the values are filenames. If the file was just file paths, the
 // the values will be file paths.
 func fillMapWithCID(contents map[string]string, file *os.File) {
+	// In order to not copy files to ~/.ait/ipfs/ we need to create a workdir symlink
+	// in .ait
+	wd, err := os.Getwd()
+	if err != nil {
+		utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+	}
+	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
+	err = os.Symlink(wd, link)
+	defer os.Remove(link)
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	if filepath.Ext(file.Name()) == ".ks" {
@@ -182,7 +207,7 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			line := strings.TrimSpace(scanner.Text())
 			if len(line) > 0 {
 				filename := filepath.Base(line)
-				cid, err := ipfs.Add(line)
+				cid, err := ipfs.Add(filepath.Join(link, line))
 				utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 				contents[cid] = filename
 			}

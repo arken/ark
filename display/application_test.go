@@ -2,13 +2,15 @@ package display
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/arkenproject/ait/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadApplicationModTiming(t *testing.T) {
@@ -41,8 +43,8 @@ func TestIsValidApplication(t *testing.T) {
 	os.Remove("temp")
 }
 
-func printApp(app *ApplicationContents) {
-	fmt.Print(app.title, "\n\n", app.commit, "\n\n", app.prBody, "\n\n", app.ksName, "\n")
+func printApp(app *types.ApplicationContents) {
+	fmt.Print(app.Title, "\n\n", app.Commit, "\n\n", app.PRBody, "\n\n", app.KsName, "\n")
 }
 
 var commitTestPrompt = []byte(

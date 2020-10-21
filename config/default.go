@@ -18,7 +18,7 @@ func defaultConf() Config {
 			// Configuration version number. If a field is added or changed
 			// in this default, the version must be changed to tell the app
 			// to rebuild the users config files.
-			Version: "0.0.3",
+			Version: "0.1.0",
 			Editor:  "nano",
 		},
 		Git: git{
@@ -32,8 +32,8 @@ func defaultConf() Config {
 	return result
 }
 
-// genConf encodes the values of the Config struct back into a TOML file.
-func genConf(conf Config, appBytes []byte) {
+// GenConf encodes the values of the Config struct back into a TOML file.
+func GenConf(conf Config) {
 	os.MkdirAll(filepath.Dir(Path), os.ModePerm)
 	buf := new(bytes.Buffer)
 	err := toml.NewEncoder(buf).Encode(conf)
@@ -42,8 +42,13 @@ func genConf(conf Config, appBytes []byte) {
 	utils.CheckError(err)
 	defer f.Close()
 	f.Write(buf.Bytes())
+}
+
+// genApplication creates a default application.md file in ~/.ait/ using the
+// default definition returned by defaultApplication
+func genApplication(appBytes []byte) {
 	appPath := filepath.Join(filepath.Dir(Path), "application.md")
-	err = ioutil.WriteFile(appPath, appBytes, 0644)
+	err := ioutil.WriteFile(appPath, appBytes, 0644)
 	utils.CheckError(err)
 }
 
@@ -53,14 +58,14 @@ func reloadConf() {
 	result := defaultConf()
 	readConf(&result)
 	result.General.Version = defaultConf().General.Version
-	genConf(result, nil)
+	GenConf(result)
 }
 
 // defaultApplication defines the default file to be used as an application prompt
 // when attempting to submit files.
 func defaultApplication() []byte {
 	return []byte(
-`### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
+		`### Note: any text <!-- inside --> those arrows will be omitted from the submission. Same for lines that start with "#". 
 ### View this document as raw Markdown instead of rendered HTML to see the prompts.
 <!-- Where should your addition be located within the keyset repository?
 This line should be in the format of a path.
