@@ -28,6 +28,7 @@ type RemoteArgs struct {
 	Args []string
 }
 
+// RemoteFlags handles the specific flags for the add-remote command.
 type RemoteFlags struct {
 	IsAdd   bool `short:"a" long:"add" desc:"Add a new remote alias"`
 	IsRm    bool `short:"d" long:"delete" desc:"Remove a remote alias"`
