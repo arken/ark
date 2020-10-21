@@ -30,8 +30,8 @@ func PullRequest(url, forkOwner string) error {
 	if err != nil && utils.FileExists(repoPath) {
 		//I don't care if it failed because there was no repo there to begin with
 		utils.FatalWithCleanup(utils.SubmissionCleanup,
-			"Unable to remove the old clone of " + url + ", please delete the folder at\n" +
-			filepath.Join(".ait", "sources", upstreamRepo))
+			"Unable to remove the old clone of "+url+", please delete the folder at\n"+
+				filepath.Join(".ait", "sources", upstreamRepo))
 	}
 	repo, client, err := fork(upstreamOwner, upstreamRepo)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
@@ -83,7 +83,7 @@ Enter your GitHub Oauth token: `)
 		var err error
 		if response != nil && response.Response.StatusCode == 401 {
 			err = fmt.Errorf(
-				"Your OAuth token didn't work, make sure you entered it correcty.")
+				"your OAuth token didn't work, make sure you entered it correcty")
 		} else {
 			err = fmt.Errorf(
 				`Something went wrong when trying to fork %v's repo "%v":\n%v`,
