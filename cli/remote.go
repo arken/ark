@@ -31,18 +31,21 @@ type RemoteArgs struct {
 type RemoteFlags struct {
 	IsAdd bool `short:"a" long:"add" desc:"Add a new remote alias"`
 	IsRm bool `short:"d" long:"delete" desc:"Remove a remote alias"`
+	IsRmAll bool `short:"D" long:"delete-all" desc:"Remove a remote alias"`
 	IsList bool `short:"l" long:"list" desc:"List your saved aliases"`
 }
 
 const usageEx =
 	`	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git  # Saves an alias/URL pair for use later
-	ait remote --delete/-d MyAlias  # Removes an alias/URL pair
-	ait remote --list/-l            # See all your saved alias/URL pairs`
+	ait remote --delete/-d MyAlias      # Removes an alias/URL pair
+	ait remote --delete-all/-D MyAlias  # Removes all alias/URL pairs
+	ait remote --list/-l                # See all your saved alias/URL pairs`
 
 // RemoteRun handles managing aliases for GitHub remotes.
 func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	flags := c.Flags.(*RemoteFlags)
-	validateFlags(flags.IsAdd, flags.IsRm, flags.IsList) //makes sure exactly one flag is present
+	validateFlags(flags.IsAdd, flags.IsRm, flags.IsList, flags.IsRmAll)
+	// ^ makes sure exactly one flag is present
 	args := c.Args.(*RemoteArgs).Args
 	if len(args) < 2 && flags.IsAdd {
 		utils.FatalPrintln(`Expected an alias and a URL to add:
@@ -62,14 +65,16 @@ func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		addRemote(alias, url)
 	} else if flags.IsRm {
 		alias := args[0]
-		removeRemote(alias)
+		deleteRemote(alias)
 	} else if flags.IsList {
 		listRemotes()
+	} else { //remove all
+		deleteAllRemotes()
 	}
 	config.GenConf(config.Global)
 }
 
-// addRemote adds the given alias and url to the global config struct.
+// addRemote adds the given alias and url to the map config.Global.Git.Remotes.
 func addRemote(alias, url string) {
 	if config.Global.Git.Remotes == nil {
 		config.Global.Git.Remotes = make(map[string]string)
@@ -90,9 +95,9 @@ Would you like to proceed regardless (y) or abort (any other key)? `,
 	fmt.Printf("Alias \"%v\" successfully mapped to %v.\n", alias, url)
 }
 
-// removeRemote tries to delete the given alias and url from the global config
-// struct.
-func removeRemote(alias string) {
+// deleteRemote tries to delete the given alias and url from the the map
+// config.Global.Git.Remotes.
+func deleteRemote(alias string) {
 	remotes := config.Global.Git.Remotes
 	if remotes == nil || len(remotes) == 0 {
 		fmt.Println("No aliases are currently saved, nothing was done.")
@@ -109,13 +114,25 @@ func removeRemote(alias string) {
 	}
 }
 
-// listRemotes lists aliases/url pairs in the global config struct.
+// deleteAllRemotes clears the map config.Global.Git.Remotes.
+func deleteAllRemotes() {
+	remotes := config.Global.Git.Remotes
+	if remotes == nil || len(remotes) == 0 {
+		fmt.Println("No aliases are currently saved, nothing was done.")
+		return
+	}
+	oLen := len(remotes)
+	config.Global.Git.Remotes = make(map[string]string)
+	fmt.Println(oLen, "alias(es) removed.")
+}
+
+// listRemotes lists aliases/url pairs in the map config.Global.Git.Remotes.
 func listRemotes() {
 	remotes := config.Global.Git.Remotes
 	if len(remotes) == 0 {
 		fmt.Println("No saved remote aliases.")
 	} else {
-		fmt.Println(len(remotes), "saved aliases:")
+		fmt.Println(len(remotes), "saved alias(es):")
 		maxLen := 0
 		for alias := range config.Global.Git.Remotes {
 			maxLen = int(math.Max(float64(maxLen), float64(len(alias))))
@@ -157,12 +174,19 @@ func validateURL(url string) {
 // validateFlags makes sure that exactly one of the flags was provided. If none
 // or more than one flag was provided, the program will terminate with an error
 // message.
-func validateFlags(isAdd, isRm, isList bool) {
-	if !isAdd && !isRm && !isList { //no flags provided
+func validateFlags(flags... bool) {
+	oneTrue := false //At least one is true
+	for i, bool1 := range flags {
+		oneTrue = oneTrue || bool1
+		for j := i; j < len(flags); j++ {
+			if i != j && bool1 == true && flags[j] == true { //two flags are true
+				utils.FatalPrintln("Too many flags! Please pick only one operation:\n" +
+					usageEx)
+			}
+		}
+	}
+	if !oneTrue {
 		utils.FatalPrintln("Expected one flag to indicate an operation:\n" +
-			usageEx)
-	} else if (isAdd && isRm) || (isAdd && isList) || (isRm && isList) {
-		utils.FatalPrintln("Too many flags! Please pick only one operation:\n" +
 			usageEx)
 	}
 }
