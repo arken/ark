@@ -29,14 +29,13 @@ type RemoteArgs struct {
 }
 
 type RemoteFlags struct {
-	IsAdd bool `short:"a" long:"add" desc:"Add a new remote alias"`
-	IsRm bool `short:"d" long:"delete" desc:"Remove a remote alias"`
+	IsAdd   bool `short:"a" long:"add" desc:"Add a new remote alias"`
+	IsRm    bool `short:"d" long:"delete" desc:"Remove a remote alias"`
 	IsRmAll bool `short:"D" long:"delete-all" desc:"Remove a remote alias"`
-	IsList bool `short:"l" long:"list" desc:"List your saved aliases"`
+	IsList  bool `short:"l" long:"list" desc:"List your saved aliases"`
 }
 
-const usageEx =
-	`	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git  # Saves an alias/URL pair for use later
+const usageEx = `	ait remote --add/-a MyAlias https://github.com/example-user/example-repo.git  # Saves an alias/URL pair for use later
 	ait remote --delete/-d MyAlias      # Removes an alias/URL pair
 	ait remote --delete-all/-D MyAlias  # Removes all alias/URL pairs
 	ait remote --list/-l                # See all your saved alias/URL pairs`
@@ -174,7 +173,7 @@ func validateURL(url string) {
 // validateFlags makes sure that exactly one of the flags was provided. If none
 // or more than one flag was provided, the program will terminate with an error
 // message.
-func validateFlags(flags... bool) {
+func validateFlags(flags ...bool) {
 	oneTrue := false //At least one is true
 	for i, bool1 := range flags {
 		oneTrue = oneTrue || bool1

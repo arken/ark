@@ -208,12 +208,11 @@ func IndexOf(slice []string, key string) int {
 
 // IsGithubRemote lexically checks if the given url appears to be an HTTPS url
 // to a Github repository. It returns true and an empty string if it does, and
-// false and an explanation of the problem(s) if it is not. A true return does
+// false and an explanation of the problem(s) if it doesn't. A true return does
 // not necessarily mean the url is valid, just that it passed some basic tests:
-// it is long enough, it is https, it contains "github.com/", and it ends in
-// ".git".
+// it is long enough, it is https, it contains "github.com/", it ends in ".git",
+// and it passed a basic regex test.
 func IsGithubRemote(url string) (bool, string) {
-	//https://github.com/a/a.git
 	re := regexp.MustCompile(`https://github\.com/([a-zA-Z1-9\-_]+)/([a-zA-Z1-9\-_]+)\.git`)
 	// This is a naive check for remote url validity. It is not 100% correct,
 	// for example names can't start with -, there can't be two dashes in a row,
@@ -239,7 +238,7 @@ func IsGithubRemote(url string) (bool, string) {
 		msg += "The URL does not end in \".git\"."
 	}
 	if strings.HasSuffix(msg, "\n") {
-		msg = msg[0:len(msg) - 1] //cut off the newline.
+		msg = msg[0 : len(msg)-1] //cut off the newline.
 	}
 	return false, msg
 }
