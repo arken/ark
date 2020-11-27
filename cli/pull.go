@@ -83,10 +83,10 @@ func PullRun(r *cmd.RootCMD, c *cmd.CMD) {
 						return
 					}
 					i, err = strconv.Atoi(text)
-					if err != nil {
-						fmt.Printf("Select a number between 0 - %d\n", len(cids)-1)
-						continue
+					if err == nil {
+						break
 					}
+					fmt.Printf("Select a number between 0 - %d\n", len(cids)-1)
 				}
 			}
 			file, err := ipfs.Pull(cids[i])
