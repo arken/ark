@@ -81,11 +81,14 @@ var fields submitFields
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	var url string
 	url, fields.isPR = parseSubmitArgs(c)
-	ipfs.Init()
+	ipfs.Init(false)
 	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
 	if utils.FileExists(repoPath) {
-		utils.FatalPrintf("A file/folder already exists at %v, "+
-			"please delete it and try again\n", repoPath)
+		err := os.RemoveAll(repoPath)
+		if err != nil {
+			utils.FatalPrintln("Removing Previous Local Keyset Failed." +
+				"Do you have permission to access it?")
+		}
 	}
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		fmt.Println("You have not defined your name and email in", config.Path)

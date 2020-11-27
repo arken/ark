@@ -53,7 +53,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	defer os.Remove(link)
 
 	workers := genNumWorkers()
-	ipfs.Init()
+	ipfs.Init(true)
 
 	fmt.Println("Adding Files to IPFS Store")
 	addBar := progressbar.Default(int64(contents.Size()))
