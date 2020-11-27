@@ -19,6 +19,7 @@ import (
 // submission into the Keyset has been merged into the repository.
 var Upload = cmd.CMD{
 	Name:  "upload",
+	Alias: "up",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
 	Args:  &UploadArgs{},
 	Flags: &UploadFlags{},

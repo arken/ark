@@ -20,6 +20,7 @@ import (
 // Pull downloads files from the Arken cluster.
 var Pull = cmd.CMD{
 	Name:  "pull",
+	Alias: "pl",
 	Short: "Pull a file from the Arken Cluster.",
 	Args:  &PullArgs{},
 	Run:   PullRun,

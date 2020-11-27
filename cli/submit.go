@@ -25,6 +25,7 @@ import (
 // Submit creates and uploads the keyset definition file.
 var Submit = cmd.CMD{
 	Name:  "submit",
+	Alias: "sm",
 	Short: "Submit your Keyset to a git repository.",
 	Args:  &SubmitArgs{},
 	Flags: &SubmitFlags{},
