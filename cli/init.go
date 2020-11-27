@@ -12,6 +12,7 @@ import (
 // Init configures AIT's local staging and configuration directory.
 var Init = cmd.CMD{
 	Name:  "init",
+	Alias: "i",
 	Short: "Initialize a dataset's local configuration.",
 	Args:  &InitArgs{},
 	Run:   InitRun,

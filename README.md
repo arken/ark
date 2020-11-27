@@ -13,8 +13,8 @@ You can think of the Arken Import Tool or AIT as a git like upload client for Ar
 ## Usage
 ### Commands
 
-| Command           | Alias | Discription                                                                |
-| ----------------- | ----- | -------------------------------------------------------------------------- |
+| Command             |  Alias  | Discription                                                                |
+| ------------------- | ------- | -------------------------------------------------------------------------- |
 | `help`              | `?`     | Get help with a specific subcommand.                                       |
 | `add`               | `a`     | Add a file or directory to AIT's tracked files.                            |
 | `init`              | `i`     | Initialize a dataset's local configuration.                                |
@@ -23,6 +23,7 @@ You can think of the Arken Import Tool or AIT as a git like upload client for Ar
 | `status`            | `s`     | View what files are currently staged for submission.                       |
 | `submit`            | `sm`    | Submit your Keyset to a git keyset repository.                             |
 | `upload`            | `up`    | After Submitting Your Files upload Them to the Arken Cluster.              |
+| `pull`              | `pl`    | Pull one or many files from the Arken Cluster.                             |
 
 ### Tutorial
 #### Initializing a KeySet
