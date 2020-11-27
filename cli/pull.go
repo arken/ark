@@ -83,7 +83,7 @@ func PullRun(r *cmd.RootCMD, c *cmd.CMD) {
 						return
 					}
 					i, err = strconv.Atoi(text)
-					if err == nil {
+					if err == nil && i >= 0 && i < len(cids) {
 						break
 					}
 					fmt.Printf("Select a number between 0 - %d\n", len(cids)-1)
