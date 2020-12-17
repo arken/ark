@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/v32/github"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"os"
@@ -18,16 +16,16 @@ import (
 
 
 func GetToken() {
-	if GHInfo.token != "" {
+	if Cache.token != "" {
 		return
 	}
-	if GHInfo.clientID == "" {
+	if Cache.clientID == "" {
 		utils.FatalPrintln("Need a client ID in the environment!")
 	}
 	req, _ := http.NewRequest("POST", "https://github.com/login/device/code", nil)
 	req.Header.Add("Accept", "application/json")
 	params := req.URL.Query()
-	params.Add("client_id", GHInfo.clientID)
+	params.Add("client_id", Cache.clientID)
 	params.Add("scope", os.Getenv("repo"))
 	req.URL.RawQuery = params.Encode()
 	client := http.Client{}
@@ -57,27 +55,23 @@ You have %v minutes to do enter the code.
 			break
 		}
 	}
-	GHInfo.token = pollResults.Access_token
+	Cache.token = pollResults.Access_token
 	greet()
 }
 
 func greet() {
-	ctx := context.Background()
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: GHInfo.token},
-	)
-	client := github.NewClient(oauth2.NewClient(ctx, tokenSource))
-	auth, _, err := client.Authorizations.Check(ctx, GHInfo.clientID, GHInfo.token)
+	client := getClient()
+	auth, _, err := client.Authorizations.Check(context.Background(), Cache.clientID, Cache.token)
 	utils.CheckError(err)
 	fmt.Printf("Authenticated as %v\n", auth.User.Name)
-	GHInfo.User = auth.User
+	Cache.User = auth.User
 }
 
 func pollForToken(query *types.GHOAuthAppQuery, client http.Client, timeout int) (*types.OAuthAppPoll, error) {
 	pollReq, _ := http.NewRequest("POST", "https://github.com/login/oauth/access_token", nil)
 	pollReq.Header.Add("Accept", "application/json")
 	params := pollReq.URL.Query()
-	params.Add("client_id", GHInfo.clientID)
+	params.Add("client_id", Cache.clientID)
 	params.Add("device_code", query.Device_code)
 	params.Add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	pollReq.URL.RawQuery = params.Encode()
@@ -100,7 +94,7 @@ func pollForToken(query *types.GHOAuthAppQuery, client http.Client, timeout int)
 		}
 		elapsed += interval
 	}
-	GHInfo.token = pollResp.Access_token
+	Cache.token = pollResp.Access_token
 	return pollResp, err
 }
 

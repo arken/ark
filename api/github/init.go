@@ -1,6 +1,8 @@
 package github
 
 import (
+	"context"
+	"golang.org/x/oauth2"
 	"os"
 
 	"github.com/arkenproject/ait/config"
@@ -10,17 +12,33 @@ import (
 
 type Info struct {
 	User *github.User
-	URL string
+	Repo Repository
 	token string
 	OverwriteIfPresent bool
 	clientID string
 }
 
+type Repository struct {
+	URL string
+	Owner string
+	Name string
+}
+
 var (
-	GHInfo = Info{}
+	Cache = Info{}
 )
 
 func init() {
-	GHInfo.clientID = os.Getenv("GHA_CLIENT_ID")
-	GHInfo.token = config.Global.Git.PAT
+	Cache.clientID = os.Getenv("GHA_CLIENT_ID")
+	Cache.token = config.Global.Git.PAT
+}
+
+func getClient() *github.Client {
+	if Cache.token == "" {
+		panic("No token yet!")
+	}
+	tokenSource := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: Cache.token},
+	)
+	return github.NewClient(oauth2.NewClient(context.Background(), tokenSource))
 }
