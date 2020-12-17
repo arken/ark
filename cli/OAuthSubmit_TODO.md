@@ -36,6 +36,7 @@ client := github.NewClient(oauth2.NewClient(ctx, tokenSource))
 - Fetch the desired file's SHA by iterating over the files in the directory
 - Possible alternative is the Trees API? Not sure.
 - If the file does exist, ask the user if they want to update it or overwrite it
+- If they want to update it, download it
 - Delete the file if they said overwrite using `client.Repositories.DeleteFile()`
 
 ### 6. With the desired file's SHA, use `client.Repositories.UpdateFile()` or `client.Repositories.CreateFile()`

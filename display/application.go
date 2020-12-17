@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
+	aitgh "github.com/arkenproject/ait/apis/github"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
-	"github.com/arkenproject/ait/api/github"
 )
 
 var application *types.ApplicationContents
 
 // ShowApplication pulls up our template application, currently stored in the
 // string above.
-func ShowApplication(repoPath string) {
+func ShowApplication() {
 	appPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
 	if s, _ := utils.GetFileSize(appPath); s == 0 {
@@ -53,14 +53,22 @@ func ShowApplication(repoPath string) {
 // ./.ait/commit, so this function can cause the program to terminate if i/o
 // errors arise
 func fetchApplicationTemplate(destPath string) {
-	var fromPath string
-	//TODO: download the file from the repo if it exists
-	if !validateTemplate(github.GetRepoAppTemplates()) { // false if the file does not exist
-		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
-		//       = ~/.ait/application.md
-		// application template in repo was invalid/missing, use default instead
+	fromPath, err := aitgh.DownloadRepoAppTemplate()
+	// downloads the file into fromPath if it existed in the repo.
+	if err == nil && fileIsValidTemplate(fromPath) { // false if the file does not exist
+
+		_ = os.Remove(destPath)
+		_ = os.Rename(fromPath, destPath)
+		return
 	}
-	if !pathIsValidTemplate(fromPath) {
+	// application template in repo was invalid/missing, use default instead
+	fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
+	//       = ~/.ait/application.md
+	if fileIsValidTemplate(fromPath) {
+		err = utils.CopyFile(fromPath, destPath)
+		utils.CheckError(err)
+	} else {
+		_ = os.Remove(destPath)
 		utils.FatalPrintf(`Your default application template stored in %v is invalid. 
 This means you probably edited it such that it has duplicate labels or
 it is missing one or more of the required fields, Commit and Title. 
@@ -69,13 +77,9 @@ This will generate a default application template.
 In the future, please refrain from editing %v.
 `, fromPath, filepath.Dir(fromPath), filepath.Dir(fromPath), fromPath)
 	}
-	err := utils.CopyFile(fromPath, destPath)
-	if err != nil {
-		utils.FatalPrintln(err)
-	}
 }
 
-func pathIsValidTemplate(path string) bool {
+func fileIsValidTemplate(path string) bool {
 	commitFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
 	if err != nil {
 		return false

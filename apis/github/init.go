@@ -2,21 +2,24 @@ package github
 
 import (
 	"context"
-	"github.com/arkenproject/ait/utils"
-	"golang.org/x/oauth2"
 	"os"
 
 	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/google/go-github/v32/github"
+	"golang.org/x/oauth2"
 )
 
 type Info struct {
 	user      *github.User
-	repo      Repository
+	fork      *Repository
+	upstream  *Repository
 	token     string
 	clientID  string
 	keysetSHA string
+	isPR 	  bool
+	ctx 	  context.Context
 }
 
 type Repository struct {
@@ -32,6 +35,7 @@ var (
 func init() {
 	cache.clientID = os.Getenv("GHA_CLIENT_ID")
 	cache.token = config.Global.Git.PAT
+	cache.ctx = context.Background()
 }
 
 func getClient() *github.Client {
@@ -44,10 +48,12 @@ func getClient() *github.Client {
 	return github.NewClient(oauth2.NewClient(context.Background(), tokenSource))
 }
 
-func SetURL(URL string) {
-	cache.repo = Repository{
+func Init(URL string, isPR bool) {
+	cache.upstream = &Repository{
 		url:   URL,
 		owner: utils.GetRepoOwner(URL),
 		name:  utils.GetRepoName(URL),
 	}
+	cache.isPR = isPR
+	getToken()
 }
