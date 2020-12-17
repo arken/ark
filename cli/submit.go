@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/api"
 	"os"
 	"path/filepath"
 	"strings"
@@ -46,21 +47,8 @@ type SubmitFlags struct {
 // fields the user has to fill in/choose.
 type submitFields struct {
 	// ksGenMethod is whether to overwrite or amend to existing keyset files.
-	username, password, ksGenMethod string
-	isPR                            bool
-}
-
-// credsEmpty returns true if either of the credential fields is empty.
-func (c *submitFields) credsEmpty() bool {
-	return c.username == "" || c.password == ""
-}
-
-// clearCreds sets both credential fields to the empty string
-func (c *submitFields) clearCreds() {
-	if !c.isPR {
-		c.username = ""
-	}
-	c.password = ""
+	ksGenMethod string
+	isPR        bool
 }
 
 // doOverwrite returns false if the struct's ksGenMethod is equal to "a" (amend
@@ -83,38 +71,9 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	var url string
 	url, fields.isPR = parseSubmitArgs(c)
 	ipfs.Init(false)
-	repoPath := filepath.Join(".ait", "sources", utils.GetRepoName(url))
-	if utils.FileExists(repoPath) {
-		err := os.RemoveAll(repoPath)
-		if err != nil {
-			utils.FatalPrintln("Removing Previous Local Keyset Failed." +
-				"Do you have permission to access it?")
-		}
-	}
-	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
-		fmt.Println("You have not defined your name and email in", config.Path)
-		getNameEmail()
-	}
-	if fields.isPR { //-p flag was included
-		fmt.Println("You have chosen to create a pull request.")
-		collectUsername()
-		err := PullRequest(url, fields.username)
-		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
-	} else {
-		repo, err := keysets.Clone(url, repoPath)
-		utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
-		display.ShowApplication(repoPath)
-		app := display.ReadApplication()
-		ksName := app.KsName
-		category := app.Category
-		if !app.IsValid() {
-			utils.FatalWithCleanup(utils.SubmissionCleanup,
-				"Empty commit message and/or title, submission aborted.")
-		}
-		ksPath := filepath.Join(repoPath, category, ksName)
-		AddKeyset(repo, filepath.Join(category, ksName), ksPath)
-		CommitKeyset(repo)
-		PushKeyset(repo, url)
+	token := config.Global.Git.PAT
+	if token == "" {
+		token = api.GetToken()
 	}
 	utils.SubmissionCleanup()
 	fmt.Println("Submission successful!")
@@ -231,28 +190,6 @@ func tryPush(repo *git.Repository) (existingCreds bool, hasWriteAccess bool, err
 	return existingCreds, hasWriteAccess, err
 }
 
-// promptCredentials gets the user's github username and password. When the user
-// types their password, it does not appear on screen by use of the terminal
-// package.
-func promptCredentials() {
-	fmt.Print("Enter your GitHub username: ")
-	reader := bufio.NewReader(os.Stdin)
-	if len(fields.username) == 0 {
-		username, _ := reader.ReadString('\n')
-		fields.username = strings.TrimSpace(username)
-	} else {
-		fmt.Println(fields.username)
-	}
-	fmt.Print("Enter your GitHub password: ")
-	bytePassword, err := terminal.ReadPassword(syscall.Stdin)
-	if err != nil {
-		utils.FatalWithCleanup(utils.SubmissionCleanup,
-			"\nSomething went wrong when collecting your password:", err.Error())
-	}
-	fmt.Print("\n") //necessary
-	fields.password = strings.TrimSpace(string(bytePassword))
-}
-
 // printSubmissionPrompt takes 2 boolean values and prints the appropriate
 // message for a select number of situations. Not all possibilities are covered,
 // but if they are not covered it's likely that it's an "impossible" scenario
@@ -277,32 +214,6 @@ Re-enter your credentials (r), submit a pull request (p), or abort (any other ke
 That account does not have the privileges to write to the requested repo.
 Re-enter your credentials (r) or abort (any other key)? `)
 	}
-}
-
-// collectUsername prompts the user for their github username and puts it in the
-// fields struct. It asks the user to verify that their username is entered
-// correctly, because the rest of the pull request chain depends on it being an
-// actual account that exists.
-func collectUsername() {
-	reader := bufio.NewReader(os.Stdin)
-	var choice string
-	for {
-		fmt.Print("Please enter your GitHub username: ")
-		username, _ := reader.ReadString('\n')
-		fields.username = strings.TrimSpace(username)
-		fmt.Printf(`You entered "%v", Is this correct? If so, continue (y), if
-not, try again (n), or abort (any other key). y/[n]: `,
-			fields.username)
-		choice, _ = reader.ReadString('\n')
-		choice = strings.TrimSpace(choice)
-		if choice == "y" {
-			break
-		} else if choice != "n" && len(choice) > 0 {
-			utils.FatalPrintln("Submission aborted.")
-		}
-		fmt.Print("\n")
-	}
-	fmt.Print("\n")
 }
 
 // getNameEmail asks the user to enter their name and email for git purposes.
