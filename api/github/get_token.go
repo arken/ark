@@ -16,16 +16,16 @@ import (
 
 
 func GetToken() {
-	if Cache.token != "" {
+	if cache.token != "" {
 		return
 	}
-	if Cache.clientID == "" {
+	if cache.clientID == "" {
 		utils.FatalPrintln("Need a client ID in the environment!")
 	}
 	req, _ := http.NewRequest("POST", "https://github.com/login/device/code", nil)
 	req.Header.Add("Accept", "application/json")
 	params := req.URL.Query()
-	params.Add("client_id", Cache.clientID)
+	params.Add("client_id", cache.clientID)
 	params.Add("scope", os.Getenv("repo"))
 	req.URL.RawQuery = params.Encode()
 	client := http.Client{}
@@ -55,23 +55,23 @@ You have %v minutes to do enter the code.
 			break
 		}
 	}
-	Cache.token = pollResults.Access_token
+	cache.token = pollResults.Access_token
 	greet()
 }
 
 func greet() {
 	client := getClient()
-	auth, _, err := client.Authorizations.Check(context.Background(), Cache.clientID, Cache.token)
+	auth, _, err := client.Authorizations.Check(context.Background(), cache.clientID, cache.token)
 	utils.CheckError(err)
 	fmt.Printf("Authenticated as %v\n", auth.User.Name)
-	Cache.User = auth.User
+	cache.user = auth.User
 }
 
 func pollForToken(query *types.GHOAuthAppQuery, client http.Client, timeout int) (*types.OAuthAppPoll, error) {
 	pollReq, _ := http.NewRequest("POST", "https://github.com/login/oauth/access_token", nil)
 	pollReq.Header.Add("Accept", "application/json")
 	params := pollReq.URL.Query()
-	params.Add("client_id", Cache.clientID)
+	params.Add("client_id", cache.clientID)
 	params.Add("device_code", query.Device_code)
 	params.Add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	pollReq.URL.RawQuery = params.Encode()
@@ -94,7 +94,7 @@ func pollForToken(query *types.GHOAuthAppQuery, client http.Client, timeout int)
 		}
 		elapsed += interval
 	}
-	Cache.token = pollResp.Access_token
+	cache.token = pollResp.Access_token
 	return pollResp, err
 }
 

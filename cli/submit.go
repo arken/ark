@@ -61,10 +61,11 @@ var fields submitFields
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	var url string
 	url, fields.isPR = parseSubmitArgs(c)
+	AITGH.SetURL(url)
 	ipfs.Init(false)
 	AITGH.GetToken()
 	//display.ShowApplication()
-	AITGH.UploadFile(url, "")
+	AITGH.UploadFile("")
 	utils.SubmissionCleanup()
 	fmt.Println("Submission successful!")
 }
