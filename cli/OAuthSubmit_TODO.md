@@ -26,17 +26,20 @@ client := github.NewClient(oauth2.NewClient(ctx, tokenSource))
 ```
 - Ask the user if they want to stay logged in. If so, save the PAT to the config.
 
-### 3. Fork the repository. Should still work the same, I think.
+### 3. Use the API to check for `application.md`s in the repo
+- Only in the root of the repo
+
+### 4. Fork the repository. Should still work the same, I think.
 - Get all user info from the API, not the user
 
-### 4. Use `client.Repositories.GetContents()` to get the contents of ***the parent directory of*** `remotePath`
+### 5. Use `client.Repositories.GetContents()` to get the contents of ***the parent directory of*** `remotePath`
 - Fetch the desired file's SHA by iterating over the files in the directory
 - Possible alternative is the Trees API? Not sure.
 - If the file does exist, ask the user if they want to update it or overwrite it
 - Delete the file if they said overwrite using `client.Repositories.DeleteFile()`
 
-### 5. With the desired file's SHA, use `client.Repositories.UpdateFile()` or `client.Repositories.CreateFile()`
+### 6. With the desired file's SHA, use `client.Repositories.UpdateFile()` or `client.Repositories.CreateFile()`
 - Create/update the file within the fork
 
-### 6. Make the pull request. Should also work the same.
+### 7. Make the pull request. Should also work the same.
 
