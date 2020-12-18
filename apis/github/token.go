@@ -1,9 +1,9 @@
 package github
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
+	"golang.org/x/oauth2"
+	"math"
 	"net/http"
 	"os"
 	"time"
@@ -15,12 +15,12 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
-func getToken() {
+func collectToken() {
 	if cache.token != "" {
 		return
 	}
 	if cache.clientID == "" {
-		utils.FatalPrintln("Need a client ID in the environment!")
+		utils.FatalPrintln("Need a client ID in the environment if no token is provided!")
 	}
 	req, _ := http.NewRequest("POST", "https://github.com/login/device/code", nil)
 	req.Header.Add("Accept", "application/json")
@@ -28,24 +28,16 @@ func getToken() {
 	params.Add("client_id", cache.clientID)
 	params.Add("scope", os.Getenv("repo"))
 	req.URL.RawQuery = params.Encode()
-	client := http.Client{}
 	var pollResults *types.OAuthAppPoll
 	for {
-		resp, err := client.Do(req)
+		query := &types.GHOAuthAppQuery{}
+		_, err := client.Do(cache.ctx, req, query)
 		if err != nil {
 			utils.FatalPrintln(`Something went wrong while trying to contact GitHub.
 Is this computer connected to the internet?`)
 		}
-		query := &types.GHOAuthAppQuery{}
-		scanJsonToStruct(resp.Body, query)
-		expireTime := time.Now().Add(time.Duration(query.Expires_in) * time.Second)
-		fmt.Println("Go to https://github.com/login/device and enter the following code")
-		fmt.Printf(`=================================================================
-                            %s
-=================================================================
-This code will expire at %v.
-`, query.User_code, expireTime.Format(time.RFC822))
-		pollResults = pollForToken(query, client)
+		printCode(query.User_code, query.Expires_in)
+		pollResults = pollForToken(query)
 		if pollResults.Error == "authorization_pending" {
 			break
 		}
@@ -59,7 +51,7 @@ This code will expire at %v.
 	greet()
 }
 
-func pollForToken(query *types.GHOAuthAppQuery, client http.Client) *types.OAuthAppPoll {
+func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 	pollReq, _ := http.NewRequest("POST", "https://github.com/login/oauth/access_token", nil)
 	pollReq.Header.Add("Accept", "application/json")
 	params := pollReq.URL.Query()
@@ -67,26 +59,29 @@ func pollForToken(query *types.GHOAuthAppQuery, client http.Client) *types.OAuth
 	params.Add("device_code", query.Device_code)
 	params.Add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	pollReq.URL.RawQuery = params.Encode()
-	var resp *http.Response
 	var err error = nil
 	pollResp := &types.OAuthAppPoll{}
 	interval := query.Interval
 	elapsed := 0
-	for i := 0; i == 0 || pollResp.Access_token == "" &&
-		pollResp.Error == "authorization_pending"; i++ {
+	for i := 0; i == 0 || pollResp.Access_token == ""; i++ {
 		if pollResp.Error == "slow_down" {
 			interval += 5 //to avoid further rate limiting
 		}
 		// Must wait a certain amount of time or else the API will rate limit me
 		time.Sleep(time.Duration(interval) * time.Second)
-		resp, err = client.Do(pollReq)
+		_, err = client.Do(cache.ctx, pollReq, pollResp)
 		utils.CheckError(err)
-		if resp != nil {
-			scanJsonToStruct(resp.Body, pollResp)
-		}
 		elapsed += interval
 	}
 	cache.token = pollResp.Access_token
+	if cache.token == "" {
+		panic("No token yet!")
+	}
+	tokenSource := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: cache.token},
+	)
+	client = github.NewClient(oauth2.NewClient(cache.ctx, tokenSource))
+	//now with the token we can use a real authenticated client
 	return pollResp
 }
 
@@ -109,8 +104,6 @@ func disambiguateError(errMsg string) (string, bool) {
 	case "incorrect_client_credentials":
 		msg = "Incorrect client credentials! Please let the AIT devs know you got this error."
 		break
-	case "timed_out":
-		msg = ""
 	default:
 		msg = fmt.Sprintf("Unexpected error: %v. Please let the AIT devs know about this.", errMsg)
 	}
@@ -118,23 +111,29 @@ func disambiguateError(errMsg string) (string, bool) {
 }
 
 func greet() {
-	client := getClient()
 	req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
 	user := &github.User{}
 	_, err := client.Do(cache.ctx, req, user)
 	if err != nil {
-		utils.FatalPrintln("Unable to authenticate user:", err)
+		utils.FatalPrintln("Unable to authenticate user!")
 	}
-	fmt.Println("Authenticated as user", *user.Login)
+	fmt.Println("Successfully authenticated as user", *user.Login)
 	cache.user = user
 }
 
-func scanJsonToStruct(jData io.Reader, toFill interface{}) {
-	decoder := json.NewDecoder(jData)
-	err := decoder.Decode(toFill)
-	if err != nil {
-		utils.FatalPrintln("Received malformed JSON:", err)
-	}
+func printCode(code string, expiry int) {
+	now := time.Now()
+	expireTime := now.Add(time.Duration(expiry) * time.Second)
+	minutes := math.Round(float64(expiry) / 60.0)
+	fmt.Printf(
+`Go to https://github.com/login/device and enter the following code. You should
+see a request to authorize "AIT GitHub Worker". Please authorize this request, but 
+not if it's from anyone other than AIT GitHub Worker by arkenproject!
+=================================================================
+                            %v
+=================================================================
+This code will expire in about %v minutes at %v.
+`, code, int(minutes), expireTime.Format("3:04 PM"))
 }
 
 func SaveToken() {

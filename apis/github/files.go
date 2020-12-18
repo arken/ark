@@ -10,7 +10,6 @@ import (
 )
 
 func CreateFile(localPath, repoPath, commit string, isPR bool) {
-	client := getClient()
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
@@ -29,7 +28,6 @@ func CreateFile(localPath, repoPath, commit string, isPR bool) {
 }
 
 func UpdateFile(localPath, repoPath, commit string, isPR bool) {
-	client := getClient()
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
@@ -47,7 +45,6 @@ func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 }
 
 func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
-	client := getClient()
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
@@ -74,7 +71,6 @@ func getKeysetSHA(ksPath string) string {
 	}
 	dir := filepath.Dir(ksPath)
 	base := filepath.Base(ksPath)
-	client := getClient()
 	opts := &github.RepositoryContentGetOptions{}
 	_, contents, _, err := client.Repositories.GetContents(cache.ctx, cache.upstream.owner,
 		cache.upstream.name, dir, opts)
@@ -102,7 +98,6 @@ func DownloadRepoAppTemplate() (string, error) {
 // DownloadFile downloads the file at repoPath from the upstream repository to
 // the given localPath
 func DownloadFile(repoPath, localPath string) error {
-	client := getClient()
 	opts := &github.RepositoryContentGetOptions{}
 	reader, err := client.Repositories.DownloadContents(cache.ctx, cache.upstream.owner,
 		cache.upstream.name, repoPath, opts)

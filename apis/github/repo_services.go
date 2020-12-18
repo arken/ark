@@ -14,7 +14,6 @@ func Fork() {
 	owner, name := cache.upstream.owner, cache.upstream.name
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	client := getClient()
 	fmt.Printf("Attempting to fork %v's repository \"%v\" to your account...\n", owner, name)
 	remoteRepo, response, err := client.Repositories.CreateFork(ctx, owner, name, nil)
 	// A traditional if err != nil will not work here. See https://godoc.org/github.com/google/go-github/github#RepositoriesService.CreateFork
@@ -59,7 +58,6 @@ func CreatePullRequest(title, prBody string) {
 	fmt.Println("Attempting to create the pull request...")
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	client := getClient()
 	donePR, _, err := client.PullRequests.Create(ctx, cache.upstream.owner,
 		cache.upstream.name, pr)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
@@ -67,7 +65,6 @@ func CreatePullRequest(title, prBody string) {
 }
 
 func getDefaultBranch() string {
-	client := getClient()
 	repo, _, err := client.Repositories.Get(cache.ctx, cache.upstream.owner, cache.upstream.name)
 	if err != nil {
 		return "master" //change this as main gets adopted more

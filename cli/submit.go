@@ -38,21 +38,6 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
-// submitFields is a simple struct to hold github username and password and other
-// fields the user has to fill in/choose.
-type submitFields struct {
-	// ksGenMethod is whether to overwrite or amend to existing keyset files.
-	ksGenMethod string
-}
-
-// doOverwrite returns false if the struct's ksGenMethod is equal to "a" (amend
-// or append), false otherwise.
-func (c *submitFields) doOverwrite() bool {
-	return c.ksGenMethod != "a"
-}
-
-var fields submitFields
-
 // SubmitRun generates a keyset file and then clones the Github repo at the given
 // url, adds the keyset file, commits it, and pushes it, and then deletes the repo
 // once everything is done or if anything goes wrong before completion. With all
@@ -101,12 +86,20 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 }
 
 func promptSaveToken() {
-	fmt.Println("Would you like to save your personal access token for future submits? (y/[n])")
+	fmt.Println("Would you like to save your personal access token for future submissions? (y/[n]) ")
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
 	if input == "y" {
-		aitgh.SaveToken()
+		fmt.Print(`Please note that the token will be stored in plain text. It can be utilized by a 
+savvy attacker to modify your GitHub account and take actions on your behalf.
+Saving the token is not recommended if you share this computer with other people.
+Are you sure you want to save it? (y/[n]) `)
+		input, _ = reader.ReadString('\n')
+		input = strings.ToLower(strings.TrimSpace(input))
+		if input == "y" {
+			aitgh.SaveToken()
+		}
 	}
 }
 
@@ -134,9 +127,9 @@ overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? 
 // promptNameEmail asks the user to enter their name and email for git purposes.
 // this is saved into the file at ~/.ait/ait.config
 func promptNameEmail() {
-	fmt.Println("We don't appear to have an identity saved for you.")
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Please enter your name (spaces are ok): ")
+	fmt.Print("We don't appear to have an identity saved for you."+
+				  "Please enter your name (spaces are ok): ")
 	input, _ := reader.ReadString('\n')
 	config.Global.Git.Name = strings.TrimSpace(input)
 	fmt.Print("Please enter your email: ")
