@@ -19,11 +19,11 @@ func CreateFile(localPath, repoPath, commit string, isPR bool) {
 	}
 	owner := cache.upstream.owner
 	if isPR {
-		owner = *cache.user.Name
+		owner = *cache.user.Login
 		// if it's a PR, the repo belongs to our user and not what we pulled out
 		// of the original URL.
 	}
-	_, _, err = client.Repositories.CreateFile(cache.ctx, owner, cache.fork.name,
+	_, _, err = client.Repositories.CreateFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
 	utils.CheckError(err)
 }
@@ -41,7 +41,7 @@ func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	if isPR {
 		owner = *cache.user.Name
 	}
-	_, _, err = client.Repositories.UpdateFile(cache.ctx, owner, cache.fork.name,
+	_, _, err = client.Repositories.UpdateFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
 	utils.CheckError(err)
 }
@@ -59,11 +59,11 @@ func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 	if isPR {
 		owner = *cache.user.Name
 	}
-	_, _, err = client.Repositories.DeleteFile(cache.ctx, owner, cache.fork.name,
+	_, _, err = client.Repositories.DeleteFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
 	utils.CheckError(err)
 	opts.SHA = nil
-	_, _, err = client.Repositories.CreateFile(cache.ctx, owner, cache.fork.name,
+	_, _, err = client.Repositories.CreateFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
 }
 
@@ -95,7 +95,7 @@ func KeysetExistsInRepo(path string) bool {
 }
 
 func DownloadRepoAppTemplate() (string, error) {
-	path := filepath.Join(".ait", cache.fork.name + "_application.md")
+	path := filepath.Join(".ait", cache.upstream.name + "_application.md")
 	return path, DownloadFile("application.md", path)
 }
 
@@ -104,8 +104,8 @@ func DownloadRepoAppTemplate() (string, error) {
 func DownloadFile(repoPath, localPath string) error {
 	client := getClient()
 	opts := &github.RepositoryContentGetOptions{}
-	reader, err := client.Repositories.DownloadContents(cache.ctx, cache.fork.owner,
-		cache.fork.name, repoPath, opts)
+	reader, err := client.Repositories.DownloadContents(cache.ctx, cache.upstream.owner,
+		cache.upstream.name, repoPath, opts)
 	if err != nil {
 		return err //probably means the file didn't exist in the fork
 	}

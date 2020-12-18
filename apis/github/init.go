@@ -32,10 +32,17 @@ var (
 	cache = Info{}
 )
 
-func init() {
+func Init(URL string, isPR bool) {
 	cache.clientID = os.Getenv("GHA_CLIENT_ID")
 	cache.token = config.Global.Git.PAT
 	cache.ctx = context.Background()
+	cache.upstream = &Repository{
+		url:   URL,
+		owner: utils.GetRepoOwner(URL),
+		name:  utils.GetRepoName(URL),
+	}
+	cache.isPR = isPR
+	getToken()
 }
 
 func getClient() *github.Client {
@@ -46,14 +53,4 @@ func getClient() *github.Client {
 		&oauth2.Token{AccessToken: cache.token},
 	)
 	return github.NewClient(oauth2.NewClient(context.Background(), tokenSource))
-}
-
-func Init(URL string, isPR bool) {
-	cache.upstream = &Repository{
-		url:   URL,
-		owner: utils.GetRepoOwner(URL),
-		name:  utils.GetRepoName(URL),
-	}
-	cache.isPR = isPR
-	getToken()
 }
