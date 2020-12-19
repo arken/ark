@@ -52,7 +52,7 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 	if isPR {
 		fmt.Println("You chose to submit via pull request.")
-		aitgh.Fork()
+		aitgh.CreateFork()
 	}
 	display.ShowApplication()
 	overwrite := true
@@ -77,6 +77,9 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		}
 	}
 	utils.SubmissionCleanup()
+	if isPR {
+		aitgh.CreatePullRequest(app.Title, app.PRBody)
+	}
 	fmt.Println("Submission successful!")
 	if config.Global.Git.PAT == "" {
 		promptSaveToken()

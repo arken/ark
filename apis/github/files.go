@@ -74,9 +74,15 @@ func getKeysetSHA(ksPath string) string {
 	dir := filepath.Dir(ksPath)
 	base := filepath.Base(ksPath)
 	opts := &github.RepositoryContentGetOptions{}
-	_, contents, _, err := client.Repositories.GetContents(cache.ctx, cache.upstream.owner,
+	_, contents, resp, err := client.Repositories.GetContents(cache.ctx, cache.upstream.owner,
 		cache.upstream.name, dir, opts)
-	utils.CheckError(err)
+	if err != nil {
+		if resp != nil && (resp.Response.StatusCode == 404 || resp.Response.StatusCode == 403) {
+			return ""
+		} else {
+			utils.FatalPrintln(err)
+		}
+	}
 	for _, file := range contents {
 		// fetch the metadata of all the files in the directory the keyset file
 		// is supposed to go into.

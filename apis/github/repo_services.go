@@ -8,9 +8,8 @@ import (
 	"time"
 )
 
-// fork uses the github api to create a fork in the user's github account and
-// clone it into local storage.
-func Fork() {
+// CreateFork uses the github api to create a fork in the user's github account
+func CreateFork() {
 	owner, name := cache.upstream.owner, cache.upstream.name
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
@@ -37,7 +36,7 @@ func Fork() {
 	fmt.Printf("Fork creation successful. See it at %v\n\n", remoteRepo.GetHTMLURL())
 	cache.fork = &Repository{
 		url:   remoteRepo.GetHTMLURL(),
-		owner: owner,
+		owner: *cache.user.Login,
 		name:  name,
 	}
 }
@@ -58,8 +57,8 @@ func CreatePullRequest(title, prBody string) {
 	fmt.Println("Attempting to create the pull request...")
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	donePR, _, err := client.PullRequests.Create(ctx, cache.upstream.owner,
-		cache.upstream.name, pr)
+	donePR, _, err := client.PullRequests.Create(ctx, cache.fork.owner,
+		cache.fork.name, pr)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	fmt.Println("\nYour new pull request can be found at:", donePR.GetHTMLURL())
 }
@@ -79,7 +78,7 @@ func hasWritePermission() bool {
 		cache.ctx, cache.upstream.owner, cache.upstream.name, *cache.user.Login,
 	)
 	if resp != nil && resp.Response.StatusCode != 200 {
-		if resp.Response.StatusCode == 404 {
+		if resp.Response.StatusCode == 404 || resp.Response.StatusCode == 403 {
 			utils.FatalPrintln("The repository", cache.upstream.url,
 				"doesn't appear to exist.")
 		} else {

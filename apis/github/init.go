@@ -53,6 +53,9 @@ func Init(URL string, isPR bool) bool {
 		collectToken()
 		correctUser = promptIsCorrectUser()
 	}
+	if isPR {
+		return true
+	}
 	return hasWritePermission()
 }
 
@@ -70,7 +73,7 @@ func promptIsCorrectUser() bool {
 		reader := bufio.NewReader(os.Stdin)
 		input, _ := reader.ReadString('\n')
 		input = strings.ToLower(strings.TrimSpace(input))
-		if input != "y" {
+		if input == "n" {
 			cache.token = ""
 			SaveToken() //clear the token from config
 			return false
