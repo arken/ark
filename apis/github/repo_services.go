@@ -57,8 +57,8 @@ func CreatePullRequest(title, prBody string) {
 	fmt.Println("Attempting to create the pull request...")
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
-	donePR, _, err := client.PullRequests.Create(ctx, cache.fork.owner,
-		cache.fork.name, pr)
+	donePR, _, err := client.PullRequests.Create(ctx, cache.upstream.owner,
+		cache.upstream.name, pr)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	fmt.Println("\nYour new pull request can be found at:", donePR.GetHTMLURL())
 }

@@ -34,11 +34,11 @@ func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	opts := &github.RepositoryContentFileOptions{
 		Message:   github.String(commit),
 		Content:   file,
-		SHA: 	   github.String(getKeysetSHA(repoPath)),
+		SHA: 	   github.String(getKeysetSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
-		owner = *cache.user.Name
+		owner = *cache.user.Login
 	}
 	_, _, err = client.Repositories.UpdateFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
@@ -51,11 +51,11 @@ func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 	opts := &github.RepositoryContentFileOptions{
 		Message:   github.String(commit),
 		Content:   file,
-		SHA: 	   github.String(getKeysetSHA(repoPath)),
+		SHA: 	   github.String(getKeysetSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
-		owner = *cache.user.Name
+		owner = *cache.user.Login
 	}
 	_, _, err = client.Repositories.DeleteFile(cache.ctx, owner, cache.upstream.name,
 		repoPath, opts)
@@ -66,7 +66,11 @@ func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 }
 
 // path should be the path to the file in the fork, not locally
-func getKeysetSHA(ksPath string) string {
+func getKeysetSHA(ksPath string, isPR bool) string {
+	owner := cache.upstream.owner
+	if isPR {
+		owner = *cache.user.Login
+	}
 	sha, ok := cache.shas[ksPath]
 	if ok && sha != "" {
 		return sha
@@ -74,7 +78,7 @@ func getKeysetSHA(ksPath string) string {
 	dir := filepath.Dir(ksPath)
 	base := filepath.Base(ksPath)
 	opts := &github.RepositoryContentGetOptions{}
-	_, contents, resp, err := client.Repositories.GetContents(cache.ctx, cache.upstream.owner,
+	_, contents, resp, err := client.Repositories.GetContents(cache.ctx, owner,
 		cache.upstream.name, dir, opts)
 	if err != nil {
 		if resp != nil && (resp.Response.StatusCode == 404 || resp.Response.StatusCode == 403) {
@@ -94,8 +98,8 @@ func getKeysetSHA(ksPath string) string {
 	return "" //if the file didn't exist return empty string
 }
 
-func KeysetExistsInRepo(path string) bool {
-	return getKeysetSHA(path) != ""
+func KeysetExistsInRepo(path string, isPR bool) bool {
+	return getKeysetSHA(path, isPR) != ""
 }
 
 func DownloadRepoAppTemplate() (string, error) {

@@ -57,13 +57,13 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	display.ShowApplication()
 	overwrite := true
 	app := display.ReadApplication()
-	fileExists := aitgh.KeysetExistsInRepo(app.FullPath())
+	fileExists := aitgh.KeysetExistsInRepo(app.FullPath(), isPR)
 	for fileExists {
 		var resolved bool
 		overwrite, resolved = promptOverwriteConflict(app.FullPath())
 		if resolved { break }
 		app = display.ReadApplication()
-		fileExists = aitgh.KeysetExistsInRepo(app.FullPath())
+		fileExists = aitgh.KeysetExistsInRepo(app.FullPath(), false)
 	}
 	ksPath := filepath.Join(".ait", "keysets", "generated.ks")
 	utils.CheckError(keysets.Generate(ksPath, overwrite))
