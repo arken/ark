@@ -75,7 +75,7 @@ func promptIsCorrectUser() bool {
 	if err != nil {
 		utils.FatalPrintln("Unable to authenticate user!")
 	}
-	fmt.Println("Successfully authenticated as user", *user.Login)
+	fmt.Println("\nSuccessfully authenticated as user", *user.Login)
 	cache.user = user
 	fmt.Printf("Is this correct? ([y]/n) ")
 	reader := bufio.NewReader(os.Stdin)

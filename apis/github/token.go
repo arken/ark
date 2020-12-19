@@ -14,6 +14,11 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+var (
+	frames = []string {"|", "/", "-", "\\"}
+	fc = 0 //frame counter
+)
+
 // collectToken gets a personal access token for the user. If there is one saved
 // in the config then it'll use that and ask the user if that's the token they
 // want to use. If there isn't a token saved, it goes through the steps of
@@ -80,13 +85,28 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 			interval += 5 //to avoid further rate limiting
 		}
 		// Must wait a certain amount of time or else the API will rate limit me
-		time.Sleep(time.Duration(interval) * time.Second)
+		wait(interval)
 		_, err = client.Do(cache.ctx, pollReq, pollResp)
 		utils.CheckError(err)
 	}
 	cache.token = pollResp.AccessToken
 	//now with the token we can use a real authenticated client
 	return pollResp
+}
+
+// wait prints a pretty little animation while AIT waits for the user's to
+// authenticate the app on GitHub.
+func wait(interval int) {
+	for i := 0; i < interval; i++ {
+		s := "s"
+		if interval - i == 1 {
+			s = ""
+		}
+		fmt.Printf("\r[%v] Checking in %v second%v...",
+			frames[fc % len(frames)], interval - i, s)
+		time.Sleep(time.Second)
+		fc++
+	}
 }
 
 // disambiguateError given an errMsg from GitHub, returns a more thorough
