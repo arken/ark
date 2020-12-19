@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -45,8 +46,12 @@ func (app *ApplicationContents) IsValid() bool {
 	return len(app.Title) != 0 && len(app.Commit) != 0
 }
 
-// FullPath returns the full path of the keyset **in the repo**, separated by
-// "/" regardless of OS.
+// FullPath returns the full path of the keyset **in the repo.
 func (app *ApplicationContents) FullPath() string {
-	return fmt.Sprintf("%v/%v", app.Category, app.KsName)
+	// TODO: This won't work on windows because it'll replace / with \
+	path := filepath.Clean(fmt.Sprintf("%v/%v", app.Category, app.KsName))
+	if strings.HasPrefix(path, "/") {
+		path = path[1:]
+	}
+	return path
 }

@@ -3,16 +3,16 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/display"
-	"github.com/arkenproject/ait/keysets"
 	"os"
 	"path/filepath"
 	"strings"
 
+	//vv to differentiate between go-github and our github package
 	aitgh "github.com/arkenproject/ait/apis/github"
-	//^ to differentiate between go-github and our github package
 	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/display"
 	"github.com/arkenproject/ait/ipfs"
+	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -38,21 +38,17 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
-// SubmitRun generates a keyset file and then clones the Github repo at the given
-// url, adds the keyset file, commits it, and pushes it, and then deletes the repo
-// once everything is done or if anything goes wrong before completion. With all
-// of those steps, there are MANY possible points of failure. If anything goes
-// wrong, the error will be PrintFatal'd and the repo will we deleted from
-// its temporary location at .ait/sources. Users are not meant to deal with the
-// repos directly at any point so it and the keyset file are basically ephemeral
-// and only exist on disk while this command is running.
+// TODO: rewrite
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	url, isPR := parseSubmitArgs(c)
-	fmt.Println("Initiating IPFS...")
+	fmt.Print("Initiating IPFS...\n\n")
 	ipfs.Init(false)
-	aitgh.Init(url, isPR)
+	hasWritePerm := aitgh.Init(url, isPR)
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		promptNameEmail()
+	}
+	if !hasWritePerm && !isPR {
+		isPR = promptDoPullRequest(url)
 	}
 	if isPR {
 		fmt.Println("You chose to submit via pull request.")
@@ -63,19 +59,21 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	app := display.ReadApplication()
 	fileExists := aitgh.KeysetExistsInRepo(app.FullPath())
 	for fileExists {
-		overwrite = promptOverwriteConflict(app.FullPath())
-		// User can rewrite application in ^ so I have to refresh the app
+		var resolved bool
+		overwrite, resolved = promptOverwriteConflict(app.FullPath())
+		if resolved { break }
 		app = display.ReadApplication()
+		fileExists = aitgh.KeysetExistsInRepo(app.FullPath())
 	}
 	ksPath := filepath.Join(".ait", "keysets", "generated.ks")
+	utils.CheckError(keysets.Generate(ksPath, overwrite))
 	if !fileExists {
-		utils.CheckError(keysets.Generate(ksPath, overwrite))
 		aitgh.CreateFile(ksPath, app.FullPath(), app.Commit, isPR)
 	} else {
 		if overwrite {
-			aitgh.UpdateFile(ksPath, app.FullPath(), app.Commit, isPR)
-		} else {
 			aitgh.ReplaceFile(ksPath, app.FullPath(), app.Commit, isPR)
+		} else {
+			aitgh.UpdateFile(ksPath, app.FullPath(), app.Commit, isPR)
 		}
 	}
 	utils.SubmissionCleanup()
@@ -85,25 +83,19 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 }
 
-func promptSaveToken() {
-	fmt.Println("Would you like to save your personal access token for future submissions? (y/[n]) ")
+func promptDoPullRequest(url string) bool {
+	fmt.Printf(
+`You don't appear to have write permissions for the %v.
+Do you want to submit a pull request to the repository instead? This is the 
+only way to continue the submission. (y/[n]) `, url)
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
-	if input == "y" {
-		fmt.Print(`Please note that the token will be stored in plain text. It can be utilized by a 
-savvy attacker to modify your GitHub account and take actions on your behalf.
-Saving the token is not recommended if you share this computer with other people.
-Are you sure you want to save it? (y/[n]) `)
-		input, _ = reader.ReadString('\n')
-		input = strings.ToLower(strings.TrimSpace(input))
-		if input == "y" {
-			aitgh.SaveToken()
-		}
-	}
+
+	return input == "y"
 }
 
-func promptOverwriteConflict(path string) bool {
+func promptOverwriteConflict(path string) (bool, bool) {
 	fmt.Printf(
 `A file already exists at %v in the repo. Do you want to 
 overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? `, path)
@@ -111,17 +103,17 @@ overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? 
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
 	if input == "o" {
-		return true
-	} else if input == "u" {
-		localPath := filepath.Join(".ait", "keysets", filepath.Base(path))
-		aitgh.DownloadFile(path, localPath)
-		return false
+		return true, true
+	} else if input == "a" {
+		localPath := filepath.Join(".ait", "keysets", "generated.ks")
+		utils.CheckError(aitgh.DownloadFile(path, localPath))
+		return false, true
 	} else if input == "r" {
 		display.ShowApplication()
 	} else {
 		utils.FatalPrintln("Submission aborted.")
 	}
-	return false
+	return true, false
 }
 
 // promptNameEmail asks the user to enter their name and email for git purposes.
@@ -136,6 +128,24 @@ func promptNameEmail() {
 	input, _ = reader.ReadString('\n')
 	config.Global.Git.Email = strings.TrimSpace(input)
 	config.GenConf(config.Global)
+}
+
+func promptSaveToken() {
+	fmt.Print("\nWould you like to save your personal access token for future submissions? (y/[n]) ")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.ToLower(strings.TrimSpace(input))
+	if input == "y" {
+		fmt.Print(`Please note that the token will be stored in plain text. It can be utilized by a 
+savvy attacker to modify your GitHub account and take actions on your behalf.
+Saving the token is not recommended if you share this computer with other people.
+Are you sure you want to save it? (y/[n]) `)
+		input, _ = reader.ReadString('\n')
+		input = strings.ToLower(strings.TrimSpace(input))
+		if input == "y" {
+			aitgh.SaveToken()
+		}
+	}
 }
 
 // parseSubmitArgs simply does some of the sanitization and extraction required to

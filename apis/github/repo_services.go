@@ -71,3 +71,20 @@ func getDefaultBranch() string {
 	}
 	return *repo.DefaultBranch
 }
+
+// hasWritePermission checks if the authenticated user has write permissions to
+// the repo at the upstream URL
+func hasWritePermission() bool {
+	perm, resp, err := client.Repositories.GetPermissionLevel(
+		cache.ctx, cache.upstream.owner, cache.upstream.name, *cache.user.Login,
+	)
+	if resp != nil && resp.Response.StatusCode != 200 {
+		if resp.Response.StatusCode == 404 {
+			utils.FatalPrintln("The repository", cache.upstream.url,
+				"doesn't appear to exist.")
+		} else {
+			utils.FatalPrintln(err)
+		}
+	}
+	return *perm.Permission == "admin" || *perm.Permission == "write"
+}

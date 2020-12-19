@@ -2,6 +2,7 @@ package github
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/arkenproject/ait/utils"
@@ -66,8 +67,9 @@ func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 
 // path should be the path to the file in the fork, not locally
 func getKeysetSHA(ksPath string) string {
-	if cache.keysetSHA != "" {
-		return cache.keysetSHA
+	sha, ok := cache.shas[ksPath]
+	if ok && sha != "" {
+		return sha
 	}
 	dir := filepath.Dir(ksPath)
 	base := filepath.Base(ksPath)
@@ -79,7 +81,7 @@ func getKeysetSHA(ksPath string) string {
 		// fetch the metadata of all the files in the directory the keyset file
 		// is supposed to go into.
 		if *file.Name == base {
-			cache.keysetSHA = *file.SHA
+			cache.shas[ksPath] = *file.SHA
 			return *file.SHA
 		}
 	}
@@ -98,6 +100,13 @@ func DownloadRepoAppTemplate() (string, error) {
 // DownloadFile downloads the file at repoPath from the upstream repository to
 // the given localPath
 func DownloadFile(repoPath, localPath string) error {
+	if ok, _ :=utils.IsWithinRepo(localPath); ok {
+		dir := filepath.Dir(localPath)
+		err := os.MkdirAll(dir, 0751)
+		if err != nil {
+			return err
+		}
+	}
 	opts := &github.RepositoryContentGetOptions{}
 	reader, err := client.Repositories.DownloadContents(cache.ctx, cache.upstream.owner,
 		cache.upstream.name, repoPath, opts)
@@ -108,5 +117,5 @@ func DownloadFile(repoPath, localPath string) error {
 	utils.CheckError(err)
 	err = ioutil.WriteFile(localPath, data, 0644)
 	reader.Close()
-	return nil
+	return err
 }

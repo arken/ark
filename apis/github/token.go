@@ -5,7 +5,6 @@ import (
 	"golang.org/x/oauth2"
 	"math"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/arkenproject/ait/config"
@@ -16,6 +15,12 @@ import (
 )
 
 func collectToken() {
+	defer func() {
+		tokenSource := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: cache.token},
+		)
+		client = github.NewClient(oauth2.NewClient(cache.ctx, tokenSource))
+	}()
 	if cache.token != "" {
 		return
 	}
@@ -26,7 +31,7 @@ func collectToken() {
 	req.Header.Add("Accept", "application/json")
 	params := req.URL.Query()
 	params.Add("client_id", cache.clientID)
-	params.Add("scope", os.Getenv("repo"))
+	params.Add("scope", "repo")
 	req.URL.RawQuery = params.Encode()
 	var pollResults *types.OAuthAppPoll
 	for {
@@ -48,7 +53,6 @@ Is this computer connected to the internet?`)
 		fmt.Println(msg)
 	}
 	cache.token = pollResults.Access_token
-	greet()
 }
 
 func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
@@ -62,8 +66,8 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 	var err error = nil
 	pollResp := &types.OAuthAppPoll{}
 	interval := query.Interval
-	elapsed := 0
-	for i := 0; i == 0 || pollResp.Access_token == ""; i++ {
+	for i := 0; i == 0 || pollResp.Access_token == "" &&
+		pollResp.Error == "authorization_pending"; i++ {
 		if pollResp.Error == "slow_down" {
 			interval += 5 //to avoid further rate limiting
 		}
@@ -71,16 +75,8 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 		time.Sleep(time.Duration(interval) * time.Second)
 		_, err = client.Do(cache.ctx, pollReq, pollResp)
 		utils.CheckError(err)
-		elapsed += interval
 	}
 	cache.token = pollResp.Access_token
-	if cache.token == "" {
-		panic("No token yet!")
-	}
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cache.token},
-	)
-	client = github.NewClient(oauth2.NewClient(cache.ctx, tokenSource))
 	//now with the token we can use a real authenticated client
 	return pollResp
 }
@@ -110,17 +106,6 @@ func disambiguateError(errMsg string) (string, bool) {
 	return msg, fatal
 }
 
-func greet() {
-	req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
-	user := &github.User{}
-	_, err := client.Do(cache.ctx, req, user)
-	if err != nil {
-		utils.FatalPrintln("Unable to authenticate user!")
-	}
-	fmt.Println("Successfully authenticated as user", *user.Login)
-	cache.user = user
-}
-
 func printCode(code string, expiry int) {
 	now := time.Now()
 	expireTime := now.Add(time.Duration(expiry) * time.Second)
@@ -133,6 +118,7 @@ not if it's from anyone other than AIT GitHub Worker by arkenproject!
                             %v
 =================================================================
 This code will expire in about %v minutes at %v.
+
 `, code, int(minutes), expireTime.Format("3:04 PM"))
 }
 
