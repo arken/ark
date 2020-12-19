@@ -38,7 +38,8 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
-// TODO: rewrite
+// SubmitRun authenticates the user through our OAuth app and uses that to
+// upload a keyset file generated locally, or makes a pull request if necessary.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	url, isPR := parseSubmitArgs(c)
 	fmt.Print("Initiating IPFS...\n\n")
@@ -86,6 +87,8 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	}
 }
 
+// promptDoPullRequest asks the user if they want to switch over to submitting
+// a pull request instead of pushing directly to their repo.
 func promptDoPullRequest(url string) bool {
 	fmt.Printf(
 `You don't appear to have write permissions for the %v.
@@ -98,6 +101,8 @@ only way to continue the submission. (y/[n]) `, url)
 	return input == "y"
 }
 
+// promptOverwriteConflict asks the user what to do in the event that a keyset
+// the user is trying to submit a keyset that already exists
 func promptOverwriteConflict(path string) (bool, bool) {
 	fmt.Printf(
 `A file already exists at %v in the repo. Do you want to 
@@ -133,6 +138,8 @@ func promptNameEmail() {
 	config.GenConf(config.Global)
 }
 
+// promptSaveToken asks the user if they want to save their token for the next
+// submission.
 func promptSaveToken() {
 	fmt.Print("\nWould you like to save your personal access token for future submissions? (y/[n]) ")
 	reader := bufio.NewReader(os.Stdin)

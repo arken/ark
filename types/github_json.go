@@ -1,17 +1,17 @@
 package types
 
 type GHOAuthAppQuery struct {
-	Device_code      string
-	User_code        string
-	Verification_uri string
-	Expires_in       int
-	Interval         int
+	DeviceCode      string `json:"device_code"`
+	UserCode        string `json:"user_code"`
+	VerificationUri string `json:"verification_uri"`
+	ExpiresIn       int    `json:"expires_in"`
+	Interval        int    `json:"interval"`
 }
 
 type OAuthAppPoll struct {
-	Access_token string
-	Token_type   string
-	Scope        string
-	Error        string
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	Scope       string `json:"scope"`
+	Error       string `json:"error"`
 }
 

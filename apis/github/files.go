@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+// CreateFile attempts to upload the file at localPath to the current repo at
+// the path repoPath.
 func CreateFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
@@ -28,13 +30,15 @@ func CreateFile(localPath, repoPath, commit string, isPR bool) {
 	utils.CheckError(err)
 }
 
+// CreateFile attempts to upload the file at localPath to the current repo at
+// the path repoPath. The file is expected to exist in the repo.
 func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
 		Message:   github.String(commit),
 		Content:   file,
-		SHA: 	   github.String(getKeysetSHA(repoPath, isPR)),
+		SHA: 	   github.String(getFileSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
@@ -45,13 +49,16 @@ func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	utils.CheckError(err)
 }
 
+// CreateFile attempts to upload the file at localPath to the current repo at
+// the path repoPath. The file is expected to exist in the repo. It deletes the
+// old version and uploads the new one.
 func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
 		Message:   github.String(commit),
 		Content:   file,
-		SHA: 	   github.String(getKeysetSHA(repoPath, isPR)),
+		SHA: 	   github.String(getFileSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
@@ -65,18 +72,20 @@ func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 		repoPath, opts)
 }
 
-// path should be the path to the file in the fork, not locally
-func getKeysetSHA(ksPath string, isPR bool) string {
+// getFileSHA returns the sha of a file in the current repo. Returns "" if the
+// file doesn't exist. path should be the path to the file in the repo, not
+// locally
+func getFileSHA(path string, isPR bool) string {
 	owner := cache.upstream.owner
 	if isPR {
 		owner = *cache.user.Login
 	}
-	sha, ok := cache.shas[ksPath]
+	sha, ok := cache.shas[path]
 	if ok && sha != "" {
 		return sha
 	}
-	dir := filepath.Dir(ksPath)
-	base := filepath.Base(ksPath)
+	dir := filepath.Dir(path)
+	base := filepath.Base(path)
 	opts := &github.RepositoryContentGetOptions{}
 	_, contents, resp, err := client.Repositories.GetContents(cache.ctx, owner,
 		cache.upstream.name, dir, opts)
@@ -91,17 +100,21 @@ func getKeysetSHA(ksPath string, isPR bool) string {
 		// fetch the metadata of all the files in the directory the keyset file
 		// is supposed to go into.
 		if *file.Name == base {
-			cache.shas[ksPath] = *file.SHA
+			cache.shas[path] = *file.SHA
 			return *file.SHA
 		}
 	}
 	return "" //if the file didn't exist return empty string
 }
 
+// KeysetExistsInRepo returns true if the file at path exists in repo, false
+// otherwise. isPR is to know whether to check the upstream or the fork.
 func KeysetExistsInRepo(path string, isPR bool) bool {
-	return getKeysetSHA(path, isPR) != ""
+	return getFileSHA(path, isPR) != ""
 }
 
+// DownloadRepoAppTemplate looks for a file called "application.md" in the root
+// of the repo and downloads it if such a file exists.
 func DownloadRepoAppTemplate() (string, error) {
 	path := filepath.Join(".ait", cache.upstream.name + "_application.md")
 	return path, DownloadFile("application.md", path)

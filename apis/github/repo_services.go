@@ -3,9 +3,11 @@ package github
 import (
 	"context"
 	"fmt"
-	"github.com/arkenproject/ait/utils"
-	"github.com/google/go-github/v32/github"
 	"time"
+
+	"github.com/arkenproject/ait/utils"
+
+	"github.com/google/go-github/v32/github"
 )
 
 // CreateFork uses the github api to create a fork in the user's github account
@@ -63,6 +65,7 @@ func CreatePullRequest(title, prBody string) {
 	fmt.Println("\nYour new pull request can be found at:", donePR.GetHTMLURL())
 }
 
+// getDefaultBranch returns the default branch in use in the current repo.
 func getDefaultBranch() string {
 	repo, _, err := client.Repositories.Get(cache.ctx, cache.upstream.owner, cache.upstream.name)
 	if err != nil {

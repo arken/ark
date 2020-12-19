@@ -14,8 +14,13 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+// collectToken gets a personal access token for the user. If there is one saved
+// in the config then it'll use that and ask the user if that's the token they
+// want to use. If there isn't a token saved, it goes through the steps of
+// authenticating with our GitHub OAuth app via the device flow
+// https://docs.github.com/en/free-pro-team@latest/developers/apps/authorizing-oauth-apps#device-flow
 func collectToken() {
-	defer func() {
+	defer func() { // make sure the client gets placed with the authenticated one
 		tokenSource := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: cache.token},
 		)
@@ -41,7 +46,7 @@ func collectToken() {
 			utils.FatalPrintln(`Something went wrong while trying to contact GitHub.
 Is this computer connected to the internet?`)
 		}
-		printCode(query.User_code, query.Expires_in)
+		printCode(query.UserCode, query.ExpiresIn)
 		pollResults = pollForToken(query)
 		if pollResults.Error == "authorization_pending" {
 			break
@@ -52,21 +57,24 @@ Is this computer connected to the internet?`)
 		}
 		fmt.Println(msg)
 	}
-	cache.token = pollResults.Access_token
+	cache.token = pollResults.AccessToken
 }
 
+// pollForToken polls GitHub for the user's PAT. If I poll faster than
+// query.Interval, GitHub will rate limit me. As of writing, the interval is
+// 5 seconds, and abusing the rate limit adds 5 seconds.
 func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 	pollReq, _ := http.NewRequest("POST", "https://github.com/login/oauth/access_token", nil)
 	pollReq.Header.Add("Accept", "application/json")
 	params := pollReq.URL.Query()
 	params.Add("client_id", cache.clientID)
-	params.Add("device_code", query.Device_code)
+	params.Add("device_code", query.DeviceCode)
 	params.Add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	pollReq.URL.RawQuery = params.Encode()
 	var err error = nil
 	pollResp := &types.OAuthAppPoll{}
 	interval := query.Interval
-	for i := 0; i == 0 || pollResp.Access_token == "" &&
+	for i := 0; i == 0 || pollResp.AccessToken == "" &&
 		pollResp.Error == "authorization_pending"; i++ {
 		if pollResp.Error == "slow_down" {
 			interval += 5 //to avoid further rate limiting
@@ -76,11 +84,13 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 		_, err = client.Do(cache.ctx, pollReq, pollResp)
 		utils.CheckError(err)
 	}
-	cache.token = pollResp.Access_token
+	cache.token = pollResp.AccessToken
 	//now with the token we can use a real authenticated client
 	return pollResp
 }
 
+// disambiguateError given an errMsg from GitHub, returns a more thorough
+// explanation of the error and whether or not it is recoverable.
 func disambiguateError(errMsg string) (string, bool) {
 	var msg string
 	fatal := true
@@ -106,6 +116,7 @@ func disambiguateError(errMsg string) (string, bool) {
 	return msg, fatal
 }
 
+// printCode prints the user's code in a pretty format.
 func printCode(code string, expiry int) {
 	now := time.Now()
 	expireTime := now.Add(time.Duration(expiry) * time.Second)
@@ -122,6 +133,7 @@ This code will expire in about %v minutes at %v.
 `, code, int(minutes), expireTime.Format("3:04 PM"))
 }
 
+// SaveToken saves the user's PAT to the global config and writes the file.
 func SaveToken() {
 	config.Global.Git.PAT = cache.token
 	config.GenConf(config.Global)

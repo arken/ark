@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/utils"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/arkenproject/ait/config"
+	"github.com/arkenproject/ait/utils"
 
 	"github.com/google/go-github/v32/github"
 )
@@ -35,6 +36,8 @@ var (
 	client *github.Client
 )
 
+// Init sets up the github portion of AIT with the context it needs going
+// forward, including the url and client id.
 func Init(URL string, isPR bool) bool {
 	cache = Info{
 		upstream: &Repository{
@@ -59,6 +62,12 @@ func Init(URL string, isPR bool) bool {
 	return hasWritePermission()
 }
 
+// promptIsCorrectUser asks the user if the user we authenticated is correct.
+// This is necessary for if a user chooses to save their token, but then comes
+// back and wants to be a different user. Also, if someone else is already
+// logged into GitHub on the user's browser, the login page doesn't give users
+// a chance to log in as the account they want and some users may just click
+// through without realizing it's not their GH account.
 func promptIsCorrectUser() bool {
 	req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
 	user := &github.User{}
@@ -68,16 +77,14 @@ func promptIsCorrectUser() bool {
 	}
 	fmt.Println("Successfully authenticated as user", *user.Login)
 	cache.user = user
-	if config.Global.Git.PAT != "" {
-		fmt.Printf("Is this correct? ([y]/n) ")
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-		input = strings.ToLower(strings.TrimSpace(input))
-		if input == "n" {
-			cache.token = ""
-			SaveToken() //clear the token from config
-			return false
-		}
+	fmt.Printf("Is this correct? ([y]/n) ")
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.ToLower(strings.TrimSpace(input))
+	if input == "n" {
+		cache.token = ""
+		SaveToken() //clear the token from config
+		return false
 	}
 	return true
 }
