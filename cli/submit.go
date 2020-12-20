@@ -3,15 +3,17 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"github.com/arkenproject/ait/ipfs"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	//vv to differentiate between go-github and our github package
 	aitgh "github.com/arkenproject/ait/apis/github"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/display"
-	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
 
@@ -38,12 +40,17 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
+var(
+	frames = []string{"", ".", "..", "...", "..", "."}
+	fc = 0
+	wg = sync.WaitGroup{}
+)
+
 // SubmitRun authenticates the user through our OAuth app and uses that to
 // upload a keyset file generated locally, or makes a pull request if necessary.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	url, isPR := parseSubmitArgs(c)
-	fmt.Print("Initiating IPFS...\n\n")
-	ipfs.Init(false)
+	prettyIPFSInit()
 	hasWritePerm := aitgh.Init(url, isPR)
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		promptNameEmail()
@@ -176,4 +183,33 @@ func parseSubmitArgs(c *cmd.CMD) (string, bool) {
 to add files for submission.`)
 	}
 	return url, c.Flags.(*SubmitFlags).IsPR
+}
+
+// prettyIPFSInit spins a routine to show a spinner while IPFS initializes
+func prettyIPFSInit() {
+	doneChan := make(chan int, 1)
+	go wait(doneChan)
+	ipfs.Init(false)
+	doneChan <- 0
+	wg.Wait()
+	close(doneChan)
+}
+
+// wait displays the actual spinner
+func wait(done chan int) {
+	wg.Add(1)
+	ticker := time.Tick(time.Millisecond * 128)
+	for {
+		<-ticker
+		ind := fc % len(utils.Spinner)
+		fmt.Printf("\r[%v] Initializing IPFS...", utils.Spinner[ind])
+		fc++
+		if len(done) > 0 {
+			fmt.Print("\rInitializing IPFS: Done!")
+			fmt.Println()
+			_ = <-done
+			wg.Done()
+			return
+		}
+	}
 }

@@ -14,6 +14,8 @@ import (
 )
 
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
+var Spinner = []string {"|", "/", "-", "\\"}
+
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
 func IsAITRepo() bool {

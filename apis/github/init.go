@@ -75,13 +75,14 @@ func promptIsCorrectUser() bool {
 	if err != nil {
 		utils.FatalPrintln("Unable to authenticate user!")
 	}
-	fmt.Println("\nSuccessfully authenticated as user", *user.Login)
+	fmt.Println("Successfully authenticated as user", *user.Login)
 	cache.user = user
 	fmt.Printf("Is this correct? ([y]/n) ")
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
 	if input == "n" {
+		fmt.Println("NNNN")
 		cache.token = ""
 		SaveToken() //clear the token from config
 		return false

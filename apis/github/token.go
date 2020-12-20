@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	frames = []string {"|", "/", "-", "\\"}
 	fc = 0 //frame counter
 )
 
@@ -89,6 +88,7 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 		_, err = client.Do(cache.ctx, pollReq, pollResp)
 		utils.CheckError(err)
 	}
+	fmt.Print("\r")
 	cache.token = pollResp.AccessToken
 	//now with the token we can use a real authenticated client
 	return pollResp
@@ -96,15 +96,12 @@ func pollForToken(query *types.GHOAuthAppQuery) *types.OAuthAppPoll {
 
 // wait prints a pretty little animation while AIT waits for the user's to
 // authenticate the app on GitHub.
-func wait(interval int) {
-	for i := 0; i < interval; i++ {
-		s := "s"
-		if interval - i == 1 {
-			s = ""
-		}
-		fmt.Printf("\r[%v] Checking in %v second%v...",
-			frames[fc % len(frames)], interval - i, s)
-		time.Sleep(time.Second)
+func wait(seconds int) {
+	ticker := time.Tick(time.Second)
+	for i := 0; i < seconds; i++ {
+		fmt.Printf("\r[%v] Checking in %v second(s)...",
+			utils.Spinner[fc % len(utils.Spinner)], seconds- i)
+		<-ticker
 		fc++
 	}
 }
