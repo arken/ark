@@ -24,6 +24,7 @@ func defaultConf() Config {
 		Git: git{
 			Name:  "",
 			Email: "",
+			PAT: "",
 		},
 		IPFS: ipfs{
 			Path: filepath.Join(filepath.Dir(Path), "ipfs"),

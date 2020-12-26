@@ -2,12 +2,14 @@ package display
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
+	aitgh "github.com/arkenproject/ait/apis/github"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
@@ -17,13 +19,13 @@ var application *types.ApplicationContents
 
 // ShowApplication pulls up our template application, currently stored in the
 // string above.
-func ShowApplication(repoPath string) {
+func ShowApplication() {
 	appPath := filepath.Join(".ait", "commit")
 	// Don't overwrite the commit file if it already exists.
 	if s, _ := utils.GetFileSize(appPath); s == 0 {
 		//^ if the commit file is empty and/or does not exist, one must be
 		//fetched from the appropriate source
-		fetchApplicationTemplate(repoPath, appPath)
+		fetchApplicationTemplate(appPath)
 	}
 	execPath, err := exec.LookPath(config.Global.General.Editor)
 	if err != nil {
@@ -50,15 +52,23 @@ func ShowApplication(repoPath string) {
 // will be used instead. The appropriate template is deep-copied into
 // ./.ait/commit, so this function can cause the program to terminate if i/o
 // errors arise
-func fetchApplicationTemplate(repoPath, destPath string) {
-	fromPath := filepath.Join(repoPath, "application.md")
-	//       := ./.ait/sources/<repo-name>/application.md
-	if !isValidAppTemplate(fromPath) { // false if the file does not exist
-		fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
-		//       = ~/.ait/application.md
-		// application template in repo was invalid/missing, use default instead
+func fetchApplicationTemplate(destPath string) {
+	fromPath, err := aitgh.DownloadRepoAppTemplate()
+	// downloads the file into fromPath if it existed in the repo.
+	if err == nil && fileIsValidTemplate(fromPath) { // false if the file does not exist
+
+		_ = os.Remove(destPath)
+		_ = os.Rename(fromPath, destPath)
+		return
 	}
-	if !isValidAppTemplate(fromPath) {
+	// application template in repo was invalid/missing, use default instead
+	fromPath = filepath.Join(filepath.Dir(config.Path), "application.md")
+	//       = ~/.ait/application.md
+	if fileIsValidTemplate(fromPath) {
+		err = utils.CopyFile(fromPath, destPath)
+		utils.CheckError(err)
+	} else {
+		_ = os.Remove(destPath)
 		utils.FatalPrintf(`Your default application template stored in %v is invalid. 
 This means you probably edited it such that it has duplicate labels or
 it is missing one or more of the required fields, Commit and Title. 
@@ -67,26 +77,23 @@ This will generate a default application template.
 In the future, please refrain from editing %v.
 `, fromPath, filepath.Dir(fromPath), filepath.Dir(fromPath), fromPath)
 	}
-	err := utils.CopyFile(fromPath, destPath)
-	if err != nil {
-		utils.FatalPrintln(err)
-	}
 }
 
-// isValidAppTemplate makes sure the application template at the given path meets
-// the following standards:
-//   1. Must not have ANY duplicate labels ("# COMMIT" is an example of a label)
-//   2. Must contain at least a title and commit field
-// Returns false if any error occurs when opening the file at the given path.
-func isValidAppTemplate(path string) bool {
+func fileIsValidTemplate(path string) bool {
 	commitFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
 	if err != nil {
 		return false
 	}
-	defer commitFile.Close()
-	scanner := bufio.NewScanner(commitFile)
-	scanner.Split(bufio.ScanLines)
+	return validateTemplate(commitFile)
+}
 
+// validateTemplate makes sure the application template at the given path meets
+// the following standards:
+//   1. Must not have ANY duplicate labels ("# COMMIT" is an example of a label)
+//   2. Must contain at least a title and commit field
+// Returns false if any error occurs when opening the file at the given path.
+func validateTemplate(reader io.ReadCloser) bool {
+	defer reader.Close()
 	reqs := map[string]bool{
 		"# LOCATION":     false,
 		"# FILENAME":     false,
@@ -94,12 +101,13 @@ func isValidAppTemplate(path string) bool {
 		"# COMMIT":       false,
 		"# PULL REQUEST": false,
 	}
-
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		line := scanner.Text()
 		for key := range reqs {
 			if strings.HasPrefix(line, key) {
-				if reqs[key] { // this means the label was already found in
+				if reqs[key] {   // this means the label was already found in
 					return false // the file, meaning there's a duplicate label
 				}
 				reqs[key] = true

@@ -27,9 +27,10 @@ type general struct {
 
 // git defines git specific config settings.
 type git struct {
-	Name  string
-	Email string
+	Name    string
+	Email   string
 	Remotes map[string]string
+	PAT     string
 }
 
 // ipfs defines the IPFS centric ait settings.

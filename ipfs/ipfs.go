@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	arkenConf "github.com/arkenproject/arken/config"
+	aitConf "github.com/arkenproject/ait/config"
 
 	config "github.com/ipfs/go-ipfs-config"
 	serialize "github.com/ipfs/go-ipfs-config/serialize"
@@ -45,7 +45,7 @@ func Init(online bool) {
 	var err error
 	ctx, cancel = context.WithCancel(context.Background())
 
-	ctx, ipfs, err = spawnNode(arkenConf.Global.Sources.Storage, online)
+	ctx, ipfs, err = spawnNode(aitConf.Global.IPFS.Path, online)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,8 +54,7 @@ func Init(online bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg.Datastore.StorageMax = arkenConf.Global.General.PoolSize
-
+	cfg.Experimental.FilestoreEnabled = true
 	peers := []string{
 		// Arken Bootstrapper node.
 		"/dns4/link.arken.io/tcp/4001/ipfs/QmP8krSfWWHLNL2eah6E1hr6TzoaGMEVRw2Fooy5og1Wpj",
