@@ -38,4 +38,5 @@ Before issuing any other commands.`)
 	Root.RegisterCMD(&Status)
 	Root.RegisterCMD(&Submit)
 	Root.RegisterCMD(&Upload)
+	Root.RegisterCMD(&Pull)
 }

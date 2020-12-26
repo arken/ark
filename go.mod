@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/DataDrake/cli-ng v1.1.0
 	github.com/arkenproject/arken v0.0.0-20201126164427-622c3c60adec
+	github.com/go-git/go-git/v5 v5.1.0
 	github.com/google/btree v1.0.0
 	github.com/google/go-github/v32 v32.1.0
 	github.com/ipfs/go-ipfs v0.7.0
