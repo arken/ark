@@ -67,8 +67,8 @@ func createNew(path string) error {
 	}
 
 	err = contents.ForEach(func(filePath string) error {
-		//linkPath := filepath.Join(link, filePath)
-		line := getKeySetLineFromPath(filePath)
+		linkPath := filepath.Join(link, filePath)
+		line := getKeySetLineFromPath(linkPath)
 		_, err = keySetFile.WriteString(line + "\n")
 		if err != nil {
 			cleanup(keySetFile)
