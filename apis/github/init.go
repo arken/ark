@@ -14,17 +14,19 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+// Info is a structure of properties from Github.
 type Info struct {
 	user     *github.User
 	fork     *Repository
 	upstream *Repository
 	token    string
 	clientID string
-	shas	 map[string]string
+	shas     map[string]string
 	isPR     bool
 	ctx      context.Context
 }
 
+// Repository defines a respository response from Github.
 type Repository struct {
 	url   string
 	owner string
@@ -32,7 +34,7 @@ type Repository struct {
 }
 
 var (
-	cache Info
+	cache  Info
 	client *github.Client
 )
 

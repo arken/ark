@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
@@ -89,11 +90,24 @@ func PullRun(r *cmd.RootCMD, c *cmd.CMD) {
 					fmt.Printf("Select a number between 0 - %d\n", len(cids)-1)
 				}
 			}
+
+			// Display Spinner when pulling a file.
+			doneChan := make(chan int, 1)
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+
+			go utils.SpinnerWait(doneChan, "Pulling "+filename+"...", &wg)
 			file, err := ipfs.Pull(cids[i])
 			err = files.WriteTo(file, filepath.Join(currentwd, filename))
 			if err != nil {
 				panic(fmt.Errorf("Could not write out the fetched CID: %s", err))
 			}
+
+			doneChan <- 0
+			wg.Wait()
+
+			fmt.Println()
+			close(doneChan)
 		}
 	}
 

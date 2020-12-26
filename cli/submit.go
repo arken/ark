@@ -3,12 +3,12 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"github.com/arkenproject/ait/ipfs"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
+
+	"github.com/arkenproject/ait/ipfs"
 
 	//vv to differentiate between go-github and our github package
 	aitgh "github.com/arkenproject/ait/apis/github"
@@ -40,10 +40,8 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
-var(
+var (
 	frames = []string{"", ".", "..", "...", "..", "."}
-	fc = 0
-	wg = sync.WaitGroup{}
 )
 
 // SubmitRun authenticates the user through our OAuth app and uses that to
@@ -69,7 +67,9 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	for fileExists {
 		var resolved bool
 		overwrite, resolved = promptOverwriteConflict(app.FullPath())
-		if resolved { break }
+		if resolved {
+			break
+		}
 		app = display.ReadApplication()
 		fileExists = aitgh.KeysetExistsInRepo(app.FullPath(), false)
 	}
@@ -98,7 +98,7 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // a pull request instead of pushing directly to their repo.
 func promptDoPullRequest(url string) bool {
 	fmt.Printf(
-`You don't appear to have write permissions for the %v.
+		`You don't appear to have write permissions for the %v.
 Do you want to submit a pull request to the repository instead? This is the 
 only way to continue the submission. (y/[n]) `, url)
 	reader := bufio.NewReader(os.Stdin)
@@ -112,7 +112,7 @@ only way to continue the submission. (y/[n]) `, url)
 // the user is trying to submit a keyset that already exists
 func promptOverwriteConflict(path string) (bool, bool) {
 	fmt.Printf(
-`A file already exists at %v in the repo. Do you want to 
+		`A file already exists at %v in the repo. Do you want to 
 overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? `, path)
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
@@ -135,8 +135,8 @@ overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? 
 // this is saved into the file at ~/.ait/ait.config
 func promptNameEmail() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("We don't appear to have an identity saved for you.\n"+
-				  "Please enter your name (spaces are ok): ")
+	fmt.Print("We don't appear to have an identity saved for you.\n" +
+		"Please enter your name (spaces are ok): ")
 	input, _ := reader.ReadString('\n')
 	config.Global.Git.Name = strings.TrimSpace(input)
 	fmt.Print("Please enter your email: ")
@@ -188,28 +188,15 @@ to add files for submission.`)
 // prettyIPFSInit spins a routine to show a spinner while IPFS initializes
 func prettyIPFSInit() {
 	doneChan := make(chan int, 1)
-	go wait(doneChan)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go utils.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
 	ipfs.Init(false)
 	doneChan <- 0
 	wg.Wait()
-	close(doneChan)
-}
 
-// wait displays the actual spinner
-func wait(done chan int) {
-	wg.Add(1)
-	ticker := time.Tick(time.Millisecond * 128)
-	for {
-		<-ticker
-		ind := fc % len(utils.Spinner)
-		fmt.Printf("\r[%v] Initializing IPFS...", utils.Spinner[ind])
-		fc++
-		if len(done) > 0 {
-			fmt.Print("\rInitializing IPFS: Done!")
-			fmt.Println()
-			_ = <-done
-			wg.Done()
-			return
-		}
-	}
+	fmt.Print("\rInitializing IPFS: Done!")
+	fmt.Println()
+	close(doneChan)
 }
