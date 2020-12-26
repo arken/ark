@@ -16,8 +16,8 @@ func CreateFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
-		Message:   github.String(commit),
-		Content:   file,
+		Message: github.String(commit),
+		Content: file,
 	}
 	owner := cache.upstream.owner
 	if isPR {
@@ -30,15 +30,15 @@ func CreateFile(localPath, repoPath, commit string, isPR bool) {
 	utils.CheckError(err)
 }
 
-// CreateFile attempts to upload the file at localPath to the current repo at
+// UpdateFile attempts to upload the file at localPath to the current repo at
 // the path repoPath. The file is expected to exist in the repo.
 func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
-		Message:   github.String(commit),
-		Content:   file,
-		SHA: 	   github.String(getFileSHA(repoPath, isPR)),
+		Message: github.String(commit),
+		Content: file,
+		SHA:     github.String(getFileSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
@@ -49,16 +49,16 @@ func UpdateFile(localPath, repoPath, commit string, isPR bool) {
 	utils.CheckError(err)
 }
 
-// CreateFile attempts to upload the file at localPath to the current repo at
+// ReplaceFile attempts to upload the file at localPath to the current repo at
 // the path repoPath. The file is expected to exist in the repo. It deletes the
 // old version and uploads the new one.
 func ReplaceFile(localPath, repoPath, commit string, isPR bool) {
 	file, err := ioutil.ReadFile(localPath)
 	utils.CheckError(err)
 	opts := &github.RepositoryContentFileOptions{
-		Message:   github.String(commit),
-		Content:   file,
-		SHA: 	   github.String(getFileSHA(repoPath, isPR)),
+		Message: github.String(commit),
+		Content: file,
+		SHA:     github.String(getFileSHA(repoPath, isPR)),
 	}
 	owner := cache.upstream.owner
 	if isPR {
@@ -92,9 +92,8 @@ func getFileSHA(path string, isPR bool) string {
 	if err != nil {
 		if resp != nil && (resp.Response.StatusCode == 404 || resp.Response.StatusCode == 403) {
 			return ""
-		} else {
-			utils.FatalPrintln(err)
 		}
+		utils.FatalPrintln(err)
 	}
 	for _, file := range contents {
 		// fetch the metadata of all the files in the directory the keyset file
@@ -116,14 +115,14 @@ func KeysetExistsInRepo(path string, isPR bool) bool {
 // DownloadRepoAppTemplate looks for a file called "application.md" in the root
 // of the repo and downloads it if such a file exists.
 func DownloadRepoAppTemplate() (string, error) {
-	path := filepath.Join(".ait", cache.upstream.name + "_application.md")
+	path := filepath.Join(".ait", cache.upstream.name+"_application.md")
 	return path, DownloadFile("application.md", path)
 }
 
 // DownloadFile downloads the file at repoPath from the upstream repository to
 // the given localPath
 func DownloadFile(repoPath, localPath string) error {
-	if ok, _ :=utils.IsWithinRepo(localPath); ok {
+	if ok, _ := utils.IsWithinRepo(localPath); ok {
 		dir := filepath.Dir(localPath)
 		err := os.MkdirAll(dir, 0751)
 		if err != nil {

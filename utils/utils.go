@@ -13,8 +13,8 @@ import (
 	"github.com/arkenproject/ait/types"
 )
 
+// AddedFilesPath is the location of the ait working memory file.
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
-
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
 func IsAITRepo() bool {
@@ -83,9 +83,8 @@ func GetRepoName(url string) string {
 	start := strings.LastIndex(url, "/") + 1
 	if start < 0 || len(url)-4 < 0 || start > len(url)-end {
 		return ""
-	} else {
-		return url[start : len(url)-end]
 	}
+	return url[start : len(url)-end]
 }
 
 // GetRepoOwner returns the owner of a repo given its HTTPS. If

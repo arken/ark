@@ -2,15 +2,15 @@ package github
 
 import (
 	"fmt"
-	"golang.org/x/oauth2"
 	"math"
 	"net/http"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
-
 	"github.com/google/go-github/v32/github"
 )
 
@@ -100,7 +100,7 @@ func wait(seconds int) {
 	ticker := time.Tick(time.Second)
 	for i := 0; i < seconds; i++ {
 		fmt.Printf("\r[%v] Checking in %v second(s)...",
-			utils.Spinner[fc % len(utils.Spinner)], seconds- i)
+			utils.Spinner[fc%len(utils.Spinner)], seconds-i)
 		<-ticker
 		fc++
 	}
@@ -139,7 +139,7 @@ func printCode(code string, expiry int) {
 	expireTime := now.Add(time.Duration(expiry) * time.Second)
 	minutes := math.Round(float64(expiry) / 60.0)
 	fmt.Printf(
-`Go to https://github.com/login/device and enter the following code. You should
+		`Go to https://github.com/login/device and enter the following code. You should
 see a request to authorize "AIT GitHub Worker". Please authorize this request, but 
 not if it's from anyone other than AIT GitHub Worker by arkenproject!
 =================================================================

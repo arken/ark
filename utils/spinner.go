@@ -1,4 +1,4 @@
-package display
+package utils
 
 import (
 	"fmt"
@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-var spinner = []string{"|", "/", "-", "\\"}
+// Spinner is an array of the progression of the spinner.
+var Spinner = []string{"|", "/", "-", "\\"}
 
 // SpinnerWait displays the actual spinner
 func SpinnerWait(done chan int, message string, wg *sync.WaitGroup) {
@@ -19,8 +20,8 @@ func SpinnerWait(done chan int, message string, wg *sync.WaitGroup) {
 			return
 		default:
 			<-ticker
-			ind := frameCounter % len(spinner)
-			fmt.Printf("\r[%v] "+message, spinner[ind])
+			ind := frameCounter % len(Spinner)
+			fmt.Printf("\r[%v] "+message, Spinner[ind])
 			frameCounter++
 		}
 	}

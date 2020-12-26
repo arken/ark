@@ -10,7 +10,6 @@ import (
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/display"
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
@@ -62,7 +61,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	wg.Add(1)
 
 	// Display Spinner on IPFS Init.
-	go display.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
+	go utils.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
 	ipfs.Init(true)
 	doneChan <- 0
 	wg.Wait()

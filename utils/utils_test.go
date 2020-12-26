@@ -77,7 +77,8 @@ func TestIsGithubRemote(t *testing.T) {
 	ok, _ := IsGithubRemote("https://github.com/arkenproject/ait.git")
 	assert.True(t, ok)
 	_, msg := IsGithubRemote("")
-	fmt.Println(msg, "\n")
+	fmt.Println(msg)
+	fmt.Println()
 	_, msg = IsGithubRemote("git@github.com:arkenproject/ait.git")
 	fmt.Println(msg)
 }

@@ -191,7 +191,7 @@ func prettyIPFSInit() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	go display.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
+	go utils.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
 	ipfs.Init(false)
 	doneChan <- 0
 	wg.Wait()
