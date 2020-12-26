@@ -135,7 +135,7 @@ overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? 
 // this is saved into the file at ~/.ait/ait.config
 func promptNameEmail() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("We don't appear to have an identity saved for you."+
+	fmt.Print("We don't appear to have an identity saved for you.\n"+
 				  "Please enter your name (spaces are ok): ")
 	input, _ := reader.ReadString('\n')
 	config.Global.Git.Name = strings.TrimSpace(input)

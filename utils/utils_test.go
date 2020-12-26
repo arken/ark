@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,13 +21,18 @@ func TestGetRepoName(t *testing.T) {
 	assert.Equal(t, "ait", GetRepoName("git@github.com:arkenproject/ait.git"))
 	assert.Equal(t, "", GetRepoName(""))
 	assert.Equal(t, "", GetRepoName("/"))
+	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arkenproject/core-keyset"))
+	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arkenproject/core-keyset.git"))
 }
 
 func TestGetRepoOwner(t *testing.T) {
 	assert.Equal(t, "arkenproject", GetRepoOwner("https://github.com/arkenproject/ait.git"))
+	assert.Equal(t, "arkenproject", GetRepoOwner("https://github.com/arkenproject/ait"))
 	assert.Equal(t, "google", GetRepoOwner("https://github.com/google/go-github.git"))
 	assert.Equal(t, "go-git", GetRepoOwner("https://github.com/go-git/go-git.git"))
+	assert.Equal(t, "go-git", GetRepoOwner("https://github.com/go-git/go-git"))
 	assert.Equal(t, "torvalds", GetRepoOwner("https://github.com/torvalds/linux.git"))
+	assert.Equal(t, "torvalds", GetRepoOwner("https://github.com/torvalds/linux"))
 	assert.Equal(t, "", GetRepoOwner("https://github.com//linux.git"))
 	assert.Equal(t, "", GetRepoOwner(""))
 	assert.Equal(t, "a", GetRepoOwner("123456789012345678/a/"))
@@ -71,7 +77,7 @@ func TestIsGithubRemote(t *testing.T) {
 	ok, _ := IsGithubRemote("https://github.com/arkenproject/ait.git")
 	assert.True(t, ok)
 	_, msg := IsGithubRemote("")
-	println(msg, "\n")
+	fmt.Println(msg, "\n")
 	_, msg = IsGithubRemote("git@github.com:arkenproject/ait.git")
-	println(msg)
+	fmt.Println(msg)
 }
