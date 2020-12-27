@@ -34,8 +34,9 @@ type Repository struct {
 }
 
 var (
-	cache  Info
-	client *github.Client
+	cache    Info
+	client   *github.Client
+	clientID string
 )
 
 // Init sets up the github portion of AIT with the context it needs going
@@ -48,13 +49,13 @@ func Init(URL string, isPR bool) bool {
 			name:  utils.GetRepoName(URL),
 		},
 		token:    config.Global.Git.PAT,
-		clientID: os.Getenv("GHA_CLIENT_ID"),
+		clientID: clientID,
 		shas:     make(map[string]string),
 		isPR:     isPR,
 		ctx:      context.Background(),
 	}
 	for correctUser := false; !correctUser; {
-		client = github.NewClient(&http.Client{}) //basic client for setting up app
+		client = github.NewClient(&http.Client{}) // basic client for setting up app
 		collectToken()
 		correctUser = promptIsCorrectUser()
 	}
