@@ -13,6 +13,7 @@ import (
 	"github.com/arkenproject/ait/types"
 )
 
+// AddedFilesPath is the location of the ait working memory file.
 const AddedFilesPath string = ".ait/added_files" //can later be put somewhere more central
 
 // IsAITRepo is a trivial check to see if the program's working dir is an ait repo.
@@ -72,18 +73,21 @@ func DumpSet(contents types.StringSet, file *os.File) error {
 	return err
 }
 
-// GetRepoName returns the name of a repo given its HTTPS or SSH address. If no
+// GetRepoName returns the name of a repo given its HTTPS. If no
 // name was found, the empty string is returned.
 func GetRepoName(url string) string {
-	index := strings.LastIndex(url, "/") + 1
-	if index < 0 || len(url)-4 < 0 || index > len(url)-4 {
-		return ""
-	} else {
-		return url[index : len(url)-4]
+	end := 0
+	if strings.HasSuffix(url, ".git") {
+		end = 4
 	}
+	start := strings.LastIndex(url, "/") + 1
+	if start < 0 || len(url)-4 < 0 || start > len(url)-end {
+		return ""
+	}
+	return url[start : len(url)-end]
 }
 
-// GetRepoOwner returns the owner of a repo given its HTTPS or SSH address. If
+// GetRepoOwner returns the owner of a repo given its HTTPS. If
 // no name was found, the empty string is returned.
 func GetRepoOwner(url string) string {
 	if len(url) < 19 {
@@ -177,7 +181,7 @@ func FatalWithCleanup(cleanup func(), a ...interface{}) {
 // SubmissionCleanup attempts to delete the sources and commit file. Nothing
 // is done if either of those operations is unsuccessful
 func SubmissionCleanup() {
-	_ = os.RemoveAll(filepath.Join(".ait", "sources"))
+	_ = os.RemoveAll(filepath.Join(".ait", "keysets"))
 	_ = os.Remove(".ait/commit")
 }
 
@@ -232,10 +236,7 @@ func IsGithubRemote(url string) (bool, string) {
 		msg += "The URL is not complete because it does not start with \"https://\"\n"
 	}
 	if strings.HasPrefix(url, "git@") {
-		msg += "The URL is for the SSH protocol which AIT does not support at the moment.\n"
-	}
-	if !strings.HasSuffix(url, ".git") {
-		msg += "The URL does not end in \".git\"."
+		msg += "The URL is for the SSH protocol which AIT not support.\n"
 	}
 	if strings.HasSuffix(msg, "\n") {
 		msg = msg[0 : len(msg)-1] //cut off the newline.

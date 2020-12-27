@@ -31,15 +31,15 @@ func TestReadApplicationModTiming(t *testing.T) {
 
 func TestIsValidApplication(t *testing.T) {
 	_ = ioutil.WriteFile("temp", commitTestPrompt, 0644)
-	assert.True(t, isValidAppTemplate("temp"))
+	assert.True(t, fileIsValidTemplate("temp"))
 	_ = ioutil.WriteFile("temp", []byte(""), 0644)
-	assert.False(t, isValidAppTemplate("temp"))
+	assert.False(t, fileIsValidTemplate("temp"))
 	_ = ioutil.WriteFile("temp", []byte(`# COMMIT
 #TITLE`), 0644)
-	assert.False(t, isValidAppTemplate("temp"))
+	assert.False(t, fileIsValidTemplate("temp"))
 	_ = ioutil.WriteFile("temp", []byte(`# COMMIT
 # TITLE`), 0644)
-	assert.True(t, isValidAppTemplate("temp"))
+	assert.True(t, fileIsValidTemplate("temp"))
 	os.Remove("temp")
 }
 

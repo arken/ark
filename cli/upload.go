@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/DataDrake/cli-ng/cmd"
@@ -19,6 +20,7 @@ import (
 // submission into the Keyset has been merged into the repository.
 var Upload = cmd.CMD{
 	Name:  "upload",
+	Alias: "up",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
 	Args:  &UploadArgs{},
 	Flags: &UploadFlags{},
@@ -53,7 +55,20 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	defer os.Remove(link)
 
 	workers := genNumWorkers()
-	ipfs.Init()
+
+	doneChan := make(chan int, 1)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// Display Spinner on IPFS Init.
+	go utils.SpinnerWait(doneChan, "Initializing IPFS...", &wg)
+	ipfs.Init(true)
+	doneChan <- 0
+	wg.Wait()
+
+	fmt.Print("\rInitializing IPFS: Done!")
+	fmt.Println()
+	close(doneChan)
 
 	fmt.Println("Adding Files to IPFS Store")
 	addBar := progressbar.Default(int64(contents.Size()))

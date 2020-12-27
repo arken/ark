@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -42,4 +44,14 @@ func (app *ApplicationContents) Clear() {
 // IsValid return true only if both the Title and Commit fields are not empty.
 func (app *ApplicationContents) IsValid() bool {
 	return len(app.Title) != 0 && len(app.Commit) != 0
+}
+
+// FullPath returns the full path of the keyset **in the repo.
+func (app *ApplicationContents) FullPath() string {
+	// TODO: This won't work on windows because it'll replace / with \
+	path := filepath.Clean(fmt.Sprintf("%v/%v", app.Category, app.KsName))
+	if strings.HasPrefix(path, "/") {
+		path = path[1:]
+	}
+	return path
 }

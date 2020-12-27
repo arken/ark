@@ -18,15 +18,32 @@ func Clone(url, path string) (*git.Repository, error) {
 			return nil, err
 		}
 	}
-	var opt = &git.CloneOptions{
-		URL: url,
-	}
-	repo, err := git.PlainClone(path, false, opt)
-	if err != nil {
-		if err.Error() == "repository not found" {
-			fmt.Println("The repository", `"` + url + `"`, "was not found. Please double check the URL.")
+
+	r, err := git.PlainOpen(path)
+	if err != nil && err.Error() == "repository does not exist" {
+		r, err = git.PlainClone(path, false, &git.CloneOptions{
+			URL:               url,
+			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		})
+
+		if err != nil {
+			return r, err
 		}
-		return nil, err
+
+	} else {
+		if err != nil {
+			fmt.Println("The repository", `"`+url+`"`, "was not found. Please double check the URL.")
+			return r, err
+		}
+		w, err := r.Worktree()
+		if err != nil {
+			return r, err
+		}
+		err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+		if err != nil && err.Error() != "already up-to-date" {
+			return r, err
+		}
 	}
-	return repo, nil
+
+	return r, nil
 }
