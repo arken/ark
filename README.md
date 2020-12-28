@@ -13,7 +13,7 @@ Arken that indexes, generates, and submits Keyset additions as pull requests.
 ## Installation
 
 1. Go to AIT Releases
-2. Copy the link to your coorisponding OS and Architecture.
+2. Copy the link to your corresponding OS and Architecture.
 3. Run sudo curl -L "PATH-TO-RELEASE" -o /usr/local/bin/ait
 4. sudo chmod a+x /usr/local/bin/ait
 5. (Optional) sudo ln -s /usr/local/bin/ait /usr/bin/ait
