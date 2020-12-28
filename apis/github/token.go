@@ -41,7 +41,7 @@ func collectToken() {
 	req.Header.Add("Accept", "application/json")
 	params := req.URL.Query()
 	params.Add("client_id", cache.clientID)
-	params.Add("scope", "repo")
+	params.Add("scope", "public_repo")
 	req.URL.RawQuery = params.Encode()
 	var pollResults *types.OAuthAppPoll
 	for {
