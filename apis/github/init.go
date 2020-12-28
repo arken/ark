@@ -54,8 +54,15 @@ func Init(URL string, isPR bool) bool {
 		isPR:     isPR,
 		ctx:      context.Background(),
 	}
+	client = github.NewClient(&http.Client{}) // basic client for setting up app
+	if !repoExists() {
+		utils.FatalPrintf(
+			`Could not stat the repository %v. 
+Make sure that there are no typos in the URL, the repository is public, and this
+computer has an internet connection.
+`, cache.upstream.url)
+	}
 	for correctUser := false; !correctUser; {
-		client = github.NewClient(&http.Client{}) // basic client for setting up app
 		collectToken()
 		correctUser = promptIsCorrectUser()
 	}
@@ -85,7 +92,6 @@ func promptIsCorrectUser() bool {
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
 	if input == "n" {
-		fmt.Println("NNNN")
 		cache.token = ""
 		SaveToken() //clear the token from config
 		return false

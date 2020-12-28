@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
-	"github.com/google/go-github/v32/github"
 )
 
 var (
@@ -24,7 +24,8 @@ var (
 // authenticating with our GitHub OAuth app via the device flow
 // https://docs.github.com/en/free-pro-team@latest/developers/apps/authorizing-oauth-apps#device-flow
 func collectToken() {
-	defer func() { // make sure the client gets placed with the authenticated one
+	defer func() {
+		// make sure the basic client gets replaced with the authenticated one
 		tokenSource := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: cache.token},
 		)

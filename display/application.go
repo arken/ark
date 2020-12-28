@@ -107,7 +107,7 @@ func validateTemplate(reader io.ReadCloser) bool {
 		line := scanner.Text()
 		for key := range reqs {
 			if strings.HasPrefix(line, key) {
-				if reqs[key] {   // this means the label was already found in
+				if reqs[key] { // this means the label was already found in
 					return false // the file, meaning there's a duplicate label
 				}
 				reqs[key] = true

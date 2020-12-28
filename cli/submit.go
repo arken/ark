@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/arkenproject/ait/ipfs"
-
 	//vv to differentiate between go-github and our github package
 	aitgh "github.com/arkenproject/ait/apis/github"
 	"github.com/arkenproject/ait/config"
@@ -40,16 +39,15 @@ type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
 
-var (
-	frames = []string{"", ".", "..", "...", "..", "."}
-)
-
 // SubmitRun authenticates the user through our OAuth app and uses that to
 // upload a keyset file generated locally, or makes a pull request if necessary.
 func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	url, isPR := parseSubmitArgs(c)
 	prettyIPFSInit()
 	hasWritePerm := aitgh.Init(url, isPR)
+	if config.Global.Git.PAT == "" {
+		promptSaveToken()
+	}
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		promptNameEmail()
 	}
@@ -89,9 +87,6 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		aitgh.CreatePullRequest(app.Title, app.PRBody)
 	}
 	fmt.Println("Submission successful!")
-	if config.Global.Git.PAT == "" {
-		promptSaveToken()
-	}
 }
 
 // promptDoPullRequest asks the user if they want to switch over to submitting

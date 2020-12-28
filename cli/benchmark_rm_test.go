@@ -21,20 +21,20 @@ func BenchmarkBigRm(b *testing.B) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: []string{"."}},
+		Args: &StageArgs{Paths: []string{"."}},
 	}
-	AddRun(nil, addArgs)
+	StageRun(nil, addArgs)
 	files, _ := ioutil.ReadDir(testRoot)
 	var fileNames []string
 	for _, fi := range files {
 		fileNames = append(fileNames, fi.Name())
 	}
 	rmArgs := &cmd.CMD{
-		Args: &RemoveArgs{Paths: fileNames},
-		Flags: &RemoveFlags{All: false},
+		Args:  &UnstageArgs{Paths: fileNames},
+		Flags: &UnstageFlags{All: false},
 	}
 	start := time.Now()
-	RemoveRun(nil, rmArgs)
+	UnstageRun(nil, rmArgs)
 	fmt.Println("\n\t******** Rm all folders took",
 		time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
@@ -47,18 +47,18 @@ func BenchmarkRmExtensions(b *testing.B) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: []string{"."}},
+		Args: &StageArgs{Paths: []string{"."}},
 	}
-	AddRun(nil, addArgs)
+	StageRun(nil, addArgs)
 	ext := "java,c,json,md,js"
 	rmArgs := &cmd.CMD{
-		Flags: &RemoveFlags{
+		Flags: &UnstageFlags{
 			All:        false,
 			Extensions: ext,
 		},
 	}
 	start := time.Now()
-	RemoveRun(nil, rmArgs)
+	UnstageRun(nil, rmArgs)
 	fmt.Println("\n\t******** Rm", ext, "took",
 		time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")

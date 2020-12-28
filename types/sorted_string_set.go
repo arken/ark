@@ -12,7 +12,7 @@ type SortedStringSet struct {
 
 // NewSortedStringSet returns a pointer to a new SortedStringSet object
 func NewSortedStringSet() *SortedStringSet {
-	return  &SortedStringSet{
+	return &SortedStringSet{
 		internal: btree.New(2),
 	}
 }
@@ -41,14 +41,14 @@ func (set *SortedStringSet) Size() int {
 func (set *SortedStringSet) ForEach(f func(s string) error) error {
 	var err error = nil
 	set.internal.Ascend(func(item btree.Item) bool {
-			str := item.(String)
-			err = f(str.s)
-			if err != nil {
-				//stops the iteration
-				return false
-			}
-			return true
-			// ^ This makes it go through the whole tree
+		str := item.(String)
+		err = f(str.s)
+		if err != nil {
+			//stops the iteration
+			return false
+		}
+		return true
+		// ^ This makes it go through the whole tree
 	})
 	return err
 }

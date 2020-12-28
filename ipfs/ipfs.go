@@ -64,7 +64,7 @@ func Init(online bool) {
 
 }
 
-// SpawnNode creates and tests and IPFS node for public reachability.
+// spawnNode creates and tests and IPFS node for public reachability.
 func spawnNode(path string, online bool) (ctx context.Context, api icore.CoreAPI, err error) {
 	// Create IPFS node
 	ctx, cancel = context.WithCancel(context.Background())
@@ -120,6 +120,7 @@ func spawnNode(path string, online bool) (ctx context.Context, api icore.CoreAPI
 	return ctx, api, nil
 }
 
+// setRelay
 func setRelay(relay bool, path string) (err error) {
 	cfg, err := fsrepo.ConfigAt(path)
 	if err != nil {
@@ -176,6 +177,7 @@ func GetID() (result string) {
 	return node.Identity.Pretty()
 }
 
+// setupPlugins loads an initializes any external plugins
 func setupPlugins(externalPluginsPath string) error {
 	// Load any external plugins if available on externalPluginsPath
 	plugins, err := loader.NewPluginLoader(filepath.Join(externalPluginsPath, "plugins"))
@@ -195,7 +197,7 @@ func setupPlugins(externalPluginsPath string) error {
 	return nil
 }
 
-// Spawns an IPFS node creating the config/storage repository if it doesn't already exist.
+// setupNode spawns an IPFS node creating the config/storage repository if it doesn't already exist.
 func setupNode(ctx context.Context, path string) (icore.CoreAPI, error) {
 
 	if err := setupPlugins(path); err != nil {
@@ -213,7 +215,7 @@ func setupNode(ctx context.Context, path string) (icore.CoreAPI, error) {
 	return ipfs, err
 }
 
-// Creates an IPFS node and returns its coreAPI
+// createNode creates an IPFS node and returns its coreAPI
 func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 	// Open the repo
 	repo, err := fsrepo.Open(repoPath)
@@ -249,7 +251,7 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 	return coreapi.NewCoreAPI(node)
 }
 
-// Bootstraps the initial system by connecting the node to known IPFS peers.
+// connectToPeers bootstraps the initial system by connecting the node to known IPFS peers.
 func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) error {
 	var wg sync.WaitGroup
 	peerInfos := make(map[peer.ID]*peerstore.PeerInfo, len(peers))
@@ -284,7 +286,7 @@ func connectToPeers(ctx context.Context, ipfs icore.CoreAPI, peers []string) err
 	return nil
 }
 
-// creates the IPFS configuration repository
+// createRepo creates the IPFS configuration repository
 func createRepo(ctx context.Context, path string) (string, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir(path, os.ModePerm)

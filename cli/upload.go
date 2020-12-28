@@ -8,11 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/schollz/progressbar/v3"
 )
 

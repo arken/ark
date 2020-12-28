@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/ipfs/interface-go-ipfs-core/options"
-	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
 
 	files "github.com/ipfs/go-ipfs-files"
+	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
 )
 
 // Pin a file to local storage.

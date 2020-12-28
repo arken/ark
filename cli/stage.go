@@ -8,42 +8,40 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"sync/atomic"
 
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
-// Add imports a file or directory to AIT's local staging file.
-var Add = cmd.CMD{
-	Name:  "add",
-	Alias: "a",
-	Short: "Add a file or directory to AIT's tracked files.",
-	Args:  &AddArgs{},
-	Flags: &AddFlags{},
-	Run:   AddRun,
+// Stage imports a file or directory to AIT's local staging file.
+var Stage = cmd.CMD{
+	Name:  "stage",
+	Alias: "st",
+	Short: "Stage for later submission.",
+	Args:  &StageArgs{},
+	Flags: &StageFlags{},
+	Run:   StageRun,
 }
 
-// AddArgs handles the specific arguments for the add command.
-type AddArgs struct {
+// StageArgs handles the specific arguments for the add command.
+type StageArgs struct {
 	Paths []string
 }
 
-// AddFlags handles the specific flags for the add command.
-type AddFlags struct {
-	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
+// StageFlags handles the specific flags for the add command.
+type StageFlags struct {
+	Extensions string `short:"e" long:"extension" desc:"Stage all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
 
-var threads int32 = 0
-
-// AddRun Similar to "git add", this function adds files that match a given list of
+// StageRun Similar to "git add", this function adds files that match a given list of
 // file matching patterns (can include *, ? wildcards) to a file. Currently this
 // file is in .ait/added_files, and it contains paths relative to the program's
 // working directory. Along the way, the filenames are put into a set, so the
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
-func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func StageRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
 	args, exts := parseAddArgs(c)
 	contents := types.NewThreadSafeStringSet()
@@ -58,7 +56,7 @@ func AddRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		if withinRepo {
 			addPath(userPath, contents)
 		} else {
-			fmt.Printf("Will not add files that are not in this ait repo,"+
+			fmt.Printf("Will not stage files that are not in this AIT repo,"+
 				" skipping %v", userPath)
 		}
 	}
@@ -121,7 +119,6 @@ func processDir(dir string, contents *types.ThreadSafeStringSet, wg *sync.WaitGr
 // addExtension attempts to add ALL files within the current wd that have the
 // extension(s) contained in exts.
 func addExtension(contents *types.ThreadSafeStringSet, exts *types.BasicStringSet) {
-	atomic.AddInt32(&threads, 1)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go processDirExt(".", exts, contents, &wg)
@@ -159,13 +156,13 @@ func processDirExt(dir string, exts *types.BasicStringSet, contents *types.Threa
 func parseAddArgs(c *cmd.CMD) ([]string, *types.BasicStringSet) {
 	var args []string
 	if c.Args != nil {
-		args = c.Args.(*AddArgs).Paths
+		args = c.Args.(*StageArgs).Paths
 	}
 	var exts = types.NewBasicStringSet()
 	ind := utils.IndexOf(os.Args, "-e")
 	if c.Flags != nil && ind == -1 {
 		//They used the "... -e=png,jpg ..." syntax
-		extStr := c.Flags.(*AddFlags).Extensions
+		extStr := c.Flags.(*StageFlags).Extensions
 		exts = splitExtensions(extStr)
 	} else if ind > 0 && ind+1 < len(os.Args) {
 		//They used the "... -e png,jpg ..." syntax
@@ -176,7 +173,7 @@ func parseAddArgs(c *cmd.CMD) ([]string, *types.BasicStringSet) {
 		//^remove the extension(s) from what cli-ng thinks is the args
 	}
 	if exts.Size() == 0 && len(args) == 0 {
-		fmt.Println("No files were given to add, please provide arguments")
+		fmt.Println("No files were given to stage, please provide arguments")
 		os.Exit(0)
 	}
 	return args, exts
