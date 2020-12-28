@@ -50,6 +50,9 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	url, isPR := parseSubmitArgs(c)
 	prettyIPFSInit()
 	hasWritePerm := aitgh.Init(url, isPR)
+	if config.Global.Git.PAT == "" {
+		promptSaveToken()
+	}
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		promptNameEmail()
 	}
@@ -89,9 +92,6 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		aitgh.CreatePullRequest(app.Title, app.PRBody)
 	}
 	fmt.Println("Submission successful!")
-	if config.Global.Git.PAT == "" {
-		promptSaveToken()
-	}
 }
 
 // promptDoPullRequest asks the user if they want to switch over to submitting

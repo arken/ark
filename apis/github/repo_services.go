@@ -13,7 +13,7 @@ import (
 // CreateFork uses the github api to create a fork in the user's github account
 func CreateFork() {
 	owner, name := cache.upstream.owner, cache.upstream.name
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	fmt.Printf("Attempting to fork %v's repository \"%v\" to your account...\n", owner, name)
 	remoteRepo, response, err := client.Repositories.CreateFork(ctx, owner, name, nil)
@@ -67,7 +67,8 @@ func CreatePullRequest(title, prBody string) {
 
 // getDefaultBranch returns the default branch in use in the current repo.
 func getDefaultBranch() string {
-	repo, _, err := client.Repositories.Get(cache.ctx, cache.upstream.owner, cache.upstream.name)
+	repo, _, err := client.Repositories.Get(
+		cache.ctx, cache.upstream.owner, cache.upstream.name)
 	if err != nil {
 		return "master" //change this as main gets adopted more
 	}
@@ -89,4 +90,12 @@ func hasWritePermission() bool {
 		}
 	}
 	return *perm.Permission == "admin" || *perm.Permission == "write"
+}
+
+// repoExists returns whether or not the given repository exists. It will
+// return false if the
+func repoExists() bool {
+	_, resp, _ := client.Repositories.Get(
+		cache.ctx, cache.upstream.owner, cache.upstream.name)
+	return resp != nil && resp.Response.StatusCode != 404
 }
