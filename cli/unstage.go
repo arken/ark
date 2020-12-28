@@ -14,13 +14,13 @@ import (
 // Remove is the reverse of the add method. Given a set of file patterns, it
 // un-stages all files that match any of the patterns. It also takes a special arg
 // "--all" which will un-stage ALL files currently staged. This is the same
-//behavior as "ait rm ." Note: this is NOT the same behavior as "ait rm *",
+//behavior as "ait r ." Note: this is NOT the same behavior as "ait r *",
 //since your shell will probably expand "*" into all non-hidden files (files
 //that don't start with "."). So if you've added hidden files, to remove them
 //use . or the --all flag.
 var Remove = cmd.CMD{
 	Name:  "remove",
-	Alias: "rm",
+	Alias: "r",
 	Short: "Remove a file or directory from AIT's tracked files.",
 	Args:  &RemoveArgs{},
 	Flags: &RemoveFlags{},
