@@ -12,8 +12,11 @@ Arken that indexes, generates, and submits Keyset additions as pull requests.
 
 ## Installation
 
-1. Install Go(lang)
-2. go get github.com/arkenproject/ait
+1. Go to AIT Releases
+2. Copy the link to your coorisponding OS and Architecture.
+3. Run sudo curl -L "PATH-TO-RELEASE" -o /usr/local/bin/ait
+4. sudo chmod a+x /usr/local/bin/ait
+5. (Optional) sudo ln -s /usr/local/bin/ait /usr/bin/ait
 
 ## Usage
 
@@ -47,7 +50,7 @@ ait init
 Still within the location of your data add specific files or folders.
 
 ```bash
-ait add <LOCATION>
+ait stage <LOCATION>
 ```
 
 ##### ex.
@@ -55,13 +58,13 @@ ait add <LOCATION>
 Stage the example.csv file into your Arken Submission.
 
 ```bash
-ait add example.csv
+ait stage example.csv
 ```
 
 or to stage everything within the folder containing your data.
 
 ```bash
-ait add .
+ait stage .
 ```
 
 #### Submit Your Data to the KeySet
