@@ -30,6 +30,7 @@ Arken that indexes, generates, and submits Keyset additions as pull requests.
 | `submit`            | `sm`    | Submit your Keyset to a git keyset repository.                             |
 | `upload`            | `up`    | After Submitting Your Files upload Them to the Arken Cluster.              |
 | `pull`              | `pl`    | Pull one or many files from the Arken Cluster.                             |
+| `update`            | `upd`   | Have AIT update its own binary.                                            |
 
 ### Tutorial
 
