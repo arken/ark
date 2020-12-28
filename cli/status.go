@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // Status prints out what files are currently staged for submission.

@@ -11,36 +11,36 @@ import (
 	"github.com/DataDrake/cli-ng/cmd"
 )
 
-// Remove is the reverse of the add method. Given a set of file patterns, it
+// Unstage is the reverse of the stage method. Given a set of file patterns, it
 // un-stages all files that match any of the patterns. It also takes a special arg
 // "--all" which will un-stage ALL files currently staged. This is the same
-//behavior as "ait r ." Note: this is NOT the same behavior as "ait r *",
-//since your shell will probably expand "*" into all non-hidden files (files
-//that don't start with "."). So if you've added hidden files, to remove them
-//use . or the --all flag.
-var Remove = cmd.CMD{
-	Name:  "remove",
-	Alias: "r",
-	Short: "Remove a file or directory from AIT's tracked files.",
-	Args:  &RemoveArgs{},
-	Flags: &RemoveFlags{},
-	Run:   RemoveRun,
+// behavior as "ait un ." Note: this is NOT the same behavior as "ait un *",
+// since your shell will probably expand "*" into all non-hidden files (files
+// that don't start with "."). So if you've added hidden files, to remove them
+// use . or the --all flag.
+var Unstage = cmd.CMD{
+	Name:  "unstage",
+	Alias: "un",
+	Short: "Unstage a file or directory from AIT's tracked files.",
+	Args:  &UnstageArgs{},
+	Flags: &UnstageFlags{},
+	Run:   UnstageRun,
 }
 
-// RemoveArgs handles the specific arguments for the remove command.
-type RemoveArgs struct {
+// UnstageArgs handles the specific arguments for the remove command.
+type UnstageArgs struct {
 	Paths []string
 }
 
-// RemoveFlags handles the specific flags for the remove command.
-type RemoveFlags struct {
-	All        bool   `long:"all" desc:"remove all staged files."`
-	Extensions string `short:"e" long:"extension" desc:"Add all files with the given file extension. For multiple extensions, separate each with a comma"`
+// UnstageFlags handles the specific flags for the remove command.
+type UnstageFlags struct {
+	All        bool   `long:"all" desc:"unstage all currently staged files"`
+	Extensions string `short:"e" long:"extension" desc:"Unstage all files with the given file extension. For multiple extensions, separate each with a comma"`
 }
 
-// RemoveRun executes the remove function.
-func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
-	args, exts, rmAll := parseRmArgs(c)
+// UnstageRun executes the remove function.
+func UnstageRun(_ *cmd.RootCMD, c *cmd.CMD) {
+	args, exts, rmAll := parseUnstageArgs(c)
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
 		utils.FatalPrintln("No files currently staged, nothing was done")
@@ -55,7 +55,7 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	utils.FillSet(contents, file)
 	file.Close()
 	numRMd := 0
-	if exts.Size() >0 && len(args) == 0 {
+	if exts.Size() > 0 && len(args) == 0 {
 		args = append(args, ".")
 	}
 	for _, userPath := range args {
@@ -75,28 +75,28 @@ func RemoveRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	fmt.Println(numRMd, "file(s) unstaged")
 }
 
-// parseRmArgs simply does some of the sanitization and extraction required to
+// parseUnstageArgs simply does some of the sanitization and extraction required to
 // get the desired data structures out of the cmd.CMD object, then returns said
 // useful data structures.
-func parseRmArgs(c *cmd.CMD) ([]string, *types.BasicStringSet, bool) {
+func parseUnstageArgs(c *cmd.CMD) ([]string, *types.BasicStringSet, bool) {
 	var args []string
 	if c.Args != nil {
-		args = c.Args.(*RemoveArgs).Paths
+		args = c.Args.(*UnstageArgs).Paths
 	}
 	rmAll := false
 	exts := types.NewBasicStringSet()
 	ind := utils.IndexOf(os.Args, "-e")
 	if c.Flags != nil && ind == -1 {
 		//They used the "... -e=png,jpg ..." syntax
-		rmAll = c.Flags.(*RemoveFlags).All
-		extStr := c.Flags.(*RemoveFlags).Extensions
+		rmAll = c.Flags.(*UnstageFlags).All
+		extStr := c.Flags.(*UnstageFlags).Extensions
 		exts = splitExtensions(extStr)
-	} else if ind > 0 && ind + 1 < len(os.Args) {
+	} else if ind > 0 && ind+1 < len(os.Args) {
 		//They used the "... -e png,jpg ..." syntax
-		extStr := os.Args[ind + 1]
+		extStr := os.Args[ind+1]
 		exts = splitExtensions(extStr)
 		ind = utils.IndexOf(args, extStr)
-		args = append(args[0:ind], args[ind + 1:]...)
+		args = append(args[0:ind], args[ind+1:]...)
 		//^remove the extension(s) from what cli-ng thinks is the args
 	}
 	if len(args) == 0 && !rmAll && exts.Size() == 0 {

@@ -20,10 +20,10 @@ func BenchmarkBigAdd(b *testing.B) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: []string{"."}},
+		Args: &StageArgs{Paths: []string{"."}},
 	}
 	start := time.Now()
-	AddRun(nil, addArgs)
+	StageRun(nil, addArgs)
 	fmt.Println("\n\t******** Adding all took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
@@ -42,10 +42,10 @@ func BenchmarkAddManyDirs(b *testing.B) {
 		fileNames = append(fileNames, fi.Name())
 	}
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: fileNames},
+		Args: &StageArgs{Paths: fileNames},
 	}
 	start := time.Now()
-	AddRun(nil, addArgs)
+	StageRun(nil, addArgs)
 	fmt.Println("\n\t******** Adding dirs took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
@@ -58,12 +58,12 @@ func BenchmarkAddExtensionFlag(b *testing.B) {
 	InitRun(nil, nil)
 	ext := "java,c,json,md,js"
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: nil},
-		Flags: &AddFlags{Extensions: ext},
+		Args:  &StageArgs{Paths: nil},
+		Flags: &StageFlags{Extensions: ext},
 	}
 	start := time.Now()
-	AddRun(nil, addArgs)
-	fmt.Println("\n\t******** Adding",ext,"files took", time.Since(start).Milliseconds(), "ms ********\n ")
+	StageRun(nil, addArgs)
+	fmt.Println("\n\t******** Adding", ext, "files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }
 
@@ -76,12 +76,12 @@ func BenchmarkAddManyFiles(b *testing.B) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	addArgs := &cmd.CMD{
-		Args: &AddArgs{Paths: []string{
+		Args: &StageArgs{Paths: []string{
 			//put the paths to a bunch of individual files in here for testing
 		}},
 	}
 	start := time.Now()
-	AddRun(nil, addArgs)
+	StageRun(nil, addArgs)
 	fmt.Println("\n\t******** Adding files took", time.Since(start).Milliseconds(), "ms ********\n ")
 	_ = os.RemoveAll(testRoot + "/.ait")
 }

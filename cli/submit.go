@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/arkenproject/ait/ipfs"
-
 	//vv to differentiate between go-github and our github package
 	aitgh "github.com/arkenproject/ait/apis/github"
 	"github.com/arkenproject/ait/config"
@@ -39,10 +38,6 @@ type SubmitArgs struct {
 type SubmitFlags struct {
 	IsPR bool `short:"p" long:"pull-request" desc:"Jump straight into submitting a pull request"`
 }
-
-var (
-	frames = []string{"", ".", "..", "...", "..", "."}
-)
 
 // SubmitRun authenticates the user through our OAuth app and uses that to
 // upload a keyset file generated locally, or makes a pull request if necessary.

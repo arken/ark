@@ -5,5 +5,5 @@ type StringSet interface {
 	Add(string)
 	Delete(string)
 	Size() int
-	ForEach(func (string) error) error
+	ForEach(func(string) error) error
 }

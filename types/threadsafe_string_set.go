@@ -11,7 +11,7 @@ type ThreadSafeStringSet struct {
 
 // NewThreadSafeStringSet returns a pointer to a new ThreadSafeStringSet object
 func NewThreadSafeStringSet() *ThreadSafeStringSet {
-	return  &ThreadSafeStringSet{
+	return &ThreadSafeStringSet{
 		internal: make(map[string]struct{}),
 	}
 }

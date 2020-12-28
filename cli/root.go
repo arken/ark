@@ -3,8 +3,9 @@ package cli
 import (
 	"os"
 
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 //GlobalFlags contains the flags for commands.
@@ -16,7 +17,7 @@ var Root *cmd.RootCMD
 // init creates the command interface and registers the possible commands.
 func init() {
 	isHelp := len(os.Args) < 2 || utils.IndexOf(os.Args, "help") > 0
-	isInit := utils.IndexOf(os.Args, "init") > 0
+	isInit := utils.IndexOf(os.Args, "init") > 0 || utils.IndexOf(os.Args, "i") > 0
 	isPull := utils.IndexOf(os.Args, "pull") > 0
 	isRemote := utils.IndexOf(os.Args, "remote") > 0
 	isTesting := utils.IndexOf(os.Args, "-test.v") > 0 //Don't force init when testing
@@ -31,10 +32,10 @@ Before issuing any other commands.`)
 		Flags: &GlobalFlags{},
 	}
 	Root.RegisterCMD(&cmd.Help)
-	Root.RegisterCMD(&Add)
+	Root.RegisterCMD(&Stage)
 	Root.RegisterCMD(&AddRemote)
 	Root.RegisterCMD(&Init)
-	Root.RegisterCMD(&Remove)
+	Root.RegisterCMD(&Unstage)
 	Root.RegisterCMD(&Status)
 	Root.RegisterCMD(&Submit)
 	Root.RegisterCMD(&Upload)

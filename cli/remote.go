@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DataDrake/cli-ng/cmd"
-
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 )
 
 // AddRemote allows users to create aliases for GitHub remotes
@@ -30,9 +30,9 @@ type RemoteArgs struct {
 
 // RemoteFlags handles the specific flags for the add-remote command.
 type RemoteFlags struct {
-	IsAdd   bool `short:"a" long:"add" desc:"Add a new remote alias"`
-	IsRm    bool `short:"d" long:"delete" desc:"Remove a remote alias"`
-	IsRmAll bool `short:"D" long:"delete-all" desc:"Remove a remote alias"`
+	IsAdd   bool `short:"a" long:"add" desc:"Stage a new remote alias"`
+	IsRm    bool `short:"d" long:"delete" desc:"Unstage a remote alias"`
+	IsRmAll bool `short:"D" long:"delete-all" desc:"Unstage all remote aliases"`
 	IsList  bool `short:"l" long:"list" desc:"List your saved aliases"`
 }
 

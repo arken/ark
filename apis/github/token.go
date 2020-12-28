@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/types"
 	"github.com/arkenproject/ait/utils"
-	"github.com/google/go-github/v32/github"
 )
 
 var (

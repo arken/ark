@@ -14,4 +14,3 @@ type OAuthAppPoll struct {
 	Scope       string `json:"scope"`
 	Error       string `json:"error"`
 }
-

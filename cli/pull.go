@@ -10,11 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
 	"github.com/arkenproject/ait/keysets"
 	"github.com/arkenproject/ait/utils"
+
+	"github.com/DataDrake/cli-ng/cmd"
 	files "github.com/ipfs/go-ipfs-files"
 )
 
