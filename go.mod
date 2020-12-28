@@ -5,10 +5,13 @@ go 1.14
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/DataDrake/cli-ng v1.1.0
+	github.com/DataDrake/cuppa v1.1.0
 	github.com/arkenproject/arken v0.0.0-20201126164427-622c3c60adec
 	github.com/go-git/go-git/v5 v5.1.0
 	github.com/google/btree v1.0.0
 	github.com/google/go-github/v32 v32.1.0
+	github.com/hashicorp/go-version v1.2.1 // indirect
+	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/ipfs/go-ipfs v0.7.0
 	github.com/ipfs/go-ipfs-config v0.9.0
 	github.com/ipfs/go-ipfs-files v0.0.8
@@ -18,5 +21,6 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/schollz/progressbar/v3 v3.3.4
 	github.com/stretchr/testify v1.6.1
+	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
