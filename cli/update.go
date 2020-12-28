@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/DataDrake/cli-ng/cmd"
 	"github.com/arkenproject/ait/utils"
@@ -61,12 +62,24 @@ func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
 		}
 		url := "https://github.com/arkenproject/ait/releases/download/v" + res.Current + "/ait-v" + res.Current + "-" + runtime.GOOS + "-" + runtime.GOARCH
 
+		doneChan := make(chan int, 1)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+
+		// Display Spinner on Update.
+		go utils.SpinnerWait(doneChan, "Updating AIT...", &wg)
+
 		resp, err := http.Get(url)
 		utils.CheckError(err)
 
 		defer resp.Body.Close()
 		err = update.Apply(resp.Body, update.Options{})
 		utils.CheckError(err)
+
+		doneChan <- 0
+		wg.Wait()
+
+		fmt.Print("\rUpdating AIT: Done!\n")
 	} else {
 		fmt.Println("Already Up-To-Date!")
 	}
