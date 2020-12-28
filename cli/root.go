@@ -19,8 +19,9 @@ func init() {
 	isInit := utils.IndexOf(os.Args, "init") > 0
 	isPull := utils.IndexOf(os.Args, "pull") > 0
 	isRemote := utils.IndexOf(os.Args, "remote") > 0
+	isUpdate := utils.IndexOf(os.Args, "update") > 0
 	isTesting := utils.IndexOf(os.Args, "-test.v") > 0 //Don't force init when testing
-	if !utils.IsAITRepo() && !isInit && !isTesting && !isPull && !isRemote && !isHelp {
+	if !utils.IsAITRepo() && !isInit && !isTesting && !isPull && !isRemote && !isHelp && !isUpdate {
 		utils.FatalPrintln(`This is not an AIT repository! Please run
 	ait init
 Before issuing any other commands.`)
@@ -39,4 +40,5 @@ Before issuing any other commands.`)
 	Root.RegisterCMD(&Submit)
 	Root.RegisterCMD(&Upload)
 	Root.RegisterCMD(&Pull)
+	Root.RegisterCMD(&Update)
 }

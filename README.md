@@ -24,6 +24,7 @@ You can think of the Arken Import Tool or AIT as a git like upload client for Ar
 | `submit`            | `sm`    | Submit your Keyset to a git keyset repository.                             |
 | `upload`            | `up`    | After Submitting Your Files upload Them to the Arken Cluster.              |
 | `pull`              | `pl`    | Pull one or many files from the Arken Cluster.                             |
+| `update`            | `upd`   | Have AIT update its own binary.                                            |
 
 ### Tutorial
 #### Initializing a KeySet
