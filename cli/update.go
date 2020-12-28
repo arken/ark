@@ -67,5 +67,7 @@ func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
 		defer resp.Body.Close()
 		err = update.Apply(resp.Body, update.Options{})
 		utils.CheckError(err)
+	} else {
+		fmt.Println("Already Up-To-Date!")
 	}
 }
