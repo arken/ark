@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
@@ -14,11 +13,6 @@ func Search(keysetPath, filePath string) (hashes map[string][]string, err error)
 	hashes = make(map[string][]string)
 	filedata := strings.Split(filePath, "/")
 	category := filedata[0]
-
-	filename, err := regexp.Compile(filedata[1])
-	if err != nil {
-		return hashes, err
-	}
 
 	err = filepath.Walk(keysetPath, func(path string, info os.FileInfo, err error) error {
 		if strings.HasSuffix(path, category+".ks") {
@@ -34,7 +28,7 @@ func Search(keysetPath, filePath string) (hashes map[string][]string, err error)
 				// Split data on white space.
 				data := strings.Fields(scanner.Text())
 
-				if filename.MatchString(data[1]) {
+				if matched, _ := filepath.Match(filedata[1], data[1]); matched {
 					if hashes[data[1]] == nil {
 						hashes[data[1]] = []string{}
 					}
