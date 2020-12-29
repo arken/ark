@@ -52,7 +52,13 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 		promptNameEmail()
 	}
 	if !hasWritePerm && !isPR {
+		// Offer the user the option to change to a pull request.
 		isPR = promptDoPullRequest(url)
+		if !isPR {
+			fmt.Println("Exiting Submission and will not continue as pull request...")
+			fmt.Println("Submission aborted.")
+			return
+		}
 	}
 	if isPR {
 		fmt.Println("You chose to submit via pull request.")
@@ -61,6 +67,12 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	display.ShowApplication()
 	overwrite := true
 	app := display.ReadApplication()
+	if !app.IsValid() {
+		fmt.Println("Exiting Submission because of an empty commit message.")
+		fmt.Println("Submission aborted.")
+		return
+	}
+
 	fileExists := aitgh.KeysetExistsInRepo(app.FullPath(), isPR)
 	for fileExists {
 		var resolved bool
@@ -93,9 +105,10 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // a pull request instead of pushing directly to their repo.
 func promptDoPullRequest(url string) bool {
 	fmt.Printf(
-		`You don't appear to have write permissions for the %v.
-Do you want to submit a pull request to the repository instead? This is the 
-only way to continue the submission. (y/[n]) `, url)
+		`You don't appear to have write permissions for 
+%v.
+Do you want to submit a pull request to the repository instead?
+This is the only way to continue the submission. (y/[n]) `, url)
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
@@ -107,8 +120,9 @@ only way to continue the submission. (y/[n]) `, url)
 // the user is trying to submit a keyset that already exists
 func promptOverwriteConflict(path string) (bool, bool) {
 	fmt.Printf(
-		`A file already exists at %v in the repo. Do you want to 
-overwrite it (o), append to it (a), rename yours (r), or abort (any other key)? `, path)
+		`A file already exists at %v in the repo. 
+Do you want to overwrite it (o), append to it (a), rename yours (r), 
+or abort (any other key)?`, path)
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
@@ -143,7 +157,7 @@ func promptNameEmail() {
 // promptSaveToken asks the user if they want to save their token for the next
 // submission.
 func promptSaveToken() {
-	fmt.Print("\nWould you like to save your personal access token for future submissions? (y/[n]) ")
+	fmt.Print("\nWould you like to save your access token for future submissions? (y/[n]) ")
 	reader := bufio.NewReader(os.Stdin)
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
