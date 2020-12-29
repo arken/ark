@@ -67,7 +67,7 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	display.ShowApplication()
 	overwrite := true
 	app := display.ReadApplication()
-	if app.Commit == "" {
+	if !app.IsValid() {
 		fmt.Println("Exiting Submission because of an empty commit message.")
 		fmt.Println("Submission aborted.")
 		return
@@ -105,7 +105,7 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 // a pull request instead of pushing directly to their repo.
 func promptDoPullRequest(url string) bool {
 	fmt.Printf(
-		`You don't appear to have write permissions for the 
+		`You don't appear to have write permissions for 
 %v.
 Do you want to submit a pull request to the repository instead?
 This is the only way to continue the submission. (y/[n]) `, url)
