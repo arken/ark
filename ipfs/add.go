@@ -32,6 +32,7 @@ func Add(path string) (cid string, err error) {
 	output, err := ipfs.Unixfs().Add(ctx, file, func(input *options.UnixfsAddSettings) error {
 		input.Pin = true
 		input.NoCopy = true
+		input.CidVersion = 1
 		return nil
 	})
 	if err != nil {
