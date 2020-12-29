@@ -53,7 +53,17 @@ func createNew(path string) error {
 	}
 	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
 	err = os.Symlink(wd, link)
-	defer os.Remove(link)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "file exists") {
+			os.Remove(link)
+			err = os.Symlink(wd, link)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 
 	contents := types.NewSortedStringSet()
 	utils.FillSet(contents, addedFiles)
@@ -82,7 +92,14 @@ func createNew(path string) error {
 		}
 		return nil
 	})
-	keySetFile.Close()
+	err = os.Remove(link)
+	if err != nil {
+		return err
+	}
+	err = keySetFile.Close()
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -202,7 +219,17 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 	}
 	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
 	err = os.Symlink(wd, link)
-	defer os.Remove(link)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "file exists") {
+			os.Remove(link)
+			err = os.Symlink(wd, link)
+			if err != nil {
+				utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+			}
+		} else {
+			utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+		}
+	}
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -229,4 +256,5 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			}
 		}
 	}
+	os.Remove(link)
 }
