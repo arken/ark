@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/arkenproject/ait/config"
 	"github.com/arkenproject/ait/ipfs"
@@ -52,17 +53,28 @@ func createNew(path string) error {
 	}
 	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
 	err = os.Symlink(wd, link)
-	defer os.Remove(link)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "file exists") {
+			os.Remove(link)
+			err = os.Symlink(wd, link)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 
 	contents := types.NewSortedStringSet()
 	utils.FillSet(contents, addedFiles)
 	addedFiles.Close()
 
 	// For large Datasets display a loading bar.
-	ipfsBar := progressbar.Default(int64(contents.Size()))
+	var ipfsBar *progressbar.ProgressBar
 	barPresent := false
 	if contents.Size() > 30 {
 		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar = progressbar.Default(int64(contents.Size()))
 		ipfsBar.RenderBlank()
 		barPresent = true
 	}
@@ -80,7 +92,14 @@ func createNew(path string) error {
 		}
 		return nil
 	})
-	keySetFile.Close()
+	err = os.Remove(link)
+	if err != nil {
+		return err
+	}
+	err = keySetFile.Close()
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -88,6 +107,13 @@ func createNew(path string) error {
 // already in the keyset file to the keyset files. The keyset file in question
 // should be at path.
 func amendExisting(ksPath string) error {
+	doneChan := make(chan int, 1)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// Display Spinner on amend.
+	go utils.SpinnerWait(doneChan, "Reading Previous Keyset File...", &wg)
+
 	keySetFile, err := os.OpenFile(ksPath, os.O_RDWR, 0644)
 	if err != nil {
 		return err
@@ -106,11 +132,15 @@ func amendExisting(ksPath string) error {
 	fillMapWithCID(ksContents, keySetFile)
 	newFiles := make(map[string]string)
 
+	doneChan <- 0
+	wg.Wait()
+
 	// For large Datasets display a loading bar.
-	namesBar := progressbar.Default(int64(len(newFiles)))
+	var namesBar *progressbar.ProgressBar
 	barPresent := false
-	if len(newFiles) > 30 {
+	if len(addedFilesContents) > 30 {
 		fmt.Println("Reading File Names:")
+		namesBar = progressbar.Default(int64(len(addedFilesContents)))
 		namesBar.RenderBlank()
 		barPresent = true
 	}
@@ -125,12 +155,14 @@ func amendExisting(ksPath string) error {
 		}
 		if barPresent {
 			namesBar.Add(1)
+			namesBar.RenderBlank()
 		}
 	}
 
-	ipfsBar := progressbar.Default(int64(len(newFiles)))
+	var ipfsBar *progressbar.ProgressBar
 	if barPresent {
 		fmt.Println("Adding Files to Embedded IPFS Node:")
+		ipfsBar = progressbar.Default(int64(len(newFiles)))
 		ipfsBar.RenderBlank()
 	}
 
@@ -187,7 +219,17 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 	}
 	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
 	err = os.Symlink(wd, link)
-	defer os.Remove(link)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "file exists") {
+			os.Remove(link)
+			err = os.Symlink(wd, link)
+			if err != nil {
+				utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+			}
+		} else {
+			utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+		}
+	}
 
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
@@ -214,4 +256,5 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			}
 		}
 	}
+	os.Remove(link)
 }

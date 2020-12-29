@@ -82,7 +82,10 @@ func hasWritePermission() bool {
 		cache.ctx, cache.upstream.owner, cache.upstream.name, *cache.user.Login,
 	)
 	if resp != nil && resp.Response.StatusCode != 200 {
-		if resp.Response.StatusCode == 404 || resp.Response.StatusCode == 403 {
+		if resp.Response.StatusCode == 403 {
+			return false
+		}
+		if resp.Response.StatusCode == 404 {
 			utils.FatalPrintln("The repository", cache.upstream.url,
 				"doesn't appear to exist.")
 		} else {
