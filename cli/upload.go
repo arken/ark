@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -53,7 +54,17 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	}
 	link := filepath.Join(filepath.Dir(config.Global.IPFS.Path), "workdir")
 	err = os.Symlink(wd, link)
-	defer os.Remove(link)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "file exists") {
+			os.Remove(link)
+			err = os.Symlink(wd, link)
+			if err != nil {
+				utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+			}
+		} else {
+			utils.FatalWithCleanup(utils.SubmissionCleanup, err.Error())
+		}
+	}
 
 	workers := genNumWorkers()
 
@@ -113,6 +124,8 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	for {
 		if ipfsBar.State().CurrentPercent == float64(1) {
 			close(input)
+			err = os.Remove(link)
+			utils.CheckError(err)
 			return
 		}
 		ipfsBar.Add(0)
