@@ -39,7 +39,8 @@ Arken that indexes, generates, and submits Keyset additions as pull requests.
 
 #### Initializing a KeySet
 
-Go to the location of your data and run.
+Go to the location of your data and run. (If you're running MacOS or Linux you can navigate to the folder containing your data
+in your file browser/finder and by right clicking on the folder open a terminal at that location.)
 
 ```bash
 ait init
@@ -85,3 +86,14 @@ curated [Core Arken Keyset](https://github.com/arkenproject/core-keyset).
 ```bash
 ait submit https://github.com/arkenproject/core-keyset
 ```
+
+#### Uploading Your Data After Your Submission Has Been Accepted
+
+After your submission is accepted you'll receive an email notifying you the Pull Request
+has been merged into the keyset. At this point you can finally run ait upload from the directory with
+your data in it to upload the data to the cluster. 
+```bash
+ait upload
+```
+
+*Note: If you attempt to run `ait upload` before your submission is accepted your data will not begin syncing with the cluster.
