@@ -98,3 +98,11 @@ func promptIsCorrectUser() bool {
 	}
 	return true
 }
+
+func GetUsername() string {
+	if cache.user != nil {
+		return *cache.user.Login
+	} else {
+		return ""
+	}
+}

@@ -102,3 +102,13 @@ func repoExists() bool {
 		cache.ctx, cache.upstream.owner, cache.upstream.name)
 	return resp != nil && resp.Response.StatusCode != 404
 }
+
+func UserHasOpenPR() bool {
+	opts := &github.PullRequestListOptions{
+		Head: *cache.user.Login+":"+getDefaultBranch(),
+	}
+	pulls, _, err := client.PullRequests.List(cache.ctx, cache.upstream.owner,
+		cache.upstream.name, opts)
+	utils.CheckError(err)
+	return len(pulls) > 0
+}

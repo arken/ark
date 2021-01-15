@@ -51,6 +51,12 @@ func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
 	if config.Global.Git.Name == "" || config.Global.Git.Email == "" {
 		promptNameEmail()
 	}
+	if aitgh.UserHasOpenPR() {
+		name := utils.GetRepoName(url)
+		utils.FatalPrintf(`You have an open pull request on %v. 
+Instead of attempting to submit a new one, do a normal submission (not a PR) to
+https://github.com/%v/%v`, url, aitgh.GetUsername(), name)
+	}
 	if !hasWritePerm && !isPR {
 		// Offer the user the option to change to a pull request.
 		isPR = promptDoPullRequest(url)
