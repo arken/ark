@@ -1,8 +1,12 @@
 package types
 
 import (
+	"fmt"
+	"math/rand"
 	"sort"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -49,4 +53,50 @@ func TestSortedStringSet_Delete(t *testing.T) {
 		set.Delete(string(rune(i)))
 	}
 	assert.Equal(t, 0, set.Size())
+}
+
+func BenchmarkSortedStringSet_Add(b *testing.B) {
+	choice := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRTSTUVWXYZ1234567890"
+	set := NewSortedStringSet()
+	start := time.Now()
+	for i := 0; i < 100000; i++ {
+		s := strings.Builder{}
+		for j := 0; j < 70; j++ {
+			s.WriteByte(choice[rand.Int() % len(choice)])
+		}
+		set.Add(s.String())
+	}
+	fmt.Println(time.Since(start).Milliseconds(), "ms to add")
+	start = time.Now()
+	var iterTimes []int64
+	iterStart := time.Now()
+	_ = set.ForEach(func(s string) error {
+		iterTimes = append(iterTimes, time.Since(iterStart).Nanoseconds())
+		iterStart = time.Now()
+		return nil
+	})
+	fmt.Println(time.Since(start).Milliseconds(), "ms to iterate")
+	max, min, sum := int64(0), int64(99999999), int64(0)
+	maxi := 0
+	for i, val := range iterTimes {
+		if val > max {
+			max = val
+			maxi = i
+		}
+		if val < min {
+			min = val
+		}
+		sum += val
+	}
+	avg := 		sum / int64(len(iterTimes))
+		fmt.Printf(
+		"Max: %vns @ %v%% of the way through, min: %vns, sum: %vns.\n",
+		max,
+		(float64(maxi) / float64(len(iterTimes))) * 100,
+		min,
+		avg,
+	)
+	fmt.Printf("max is %vx larger than sum, %vx larger than min\n\n",
+		float64(max)/float64(avg),
+		float64(max)/float64(min))
 }
