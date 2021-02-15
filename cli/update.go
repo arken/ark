@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/DataDrake/cli-ng/cmd"
-	"github.com/arkenproject/ait/utils"
+	"github.com/DataDrake/cli-ng/v2/cmd"
+	"github.com/arken/ait/utils"
 	"github.com/inconshreveable/go-update"
 	"github.com/tcnksm/go-latest"
 )
@@ -19,7 +19,7 @@ var appVersion string
 
 // Update checks for a new version of the AIT program and updates itself
 // if a newer version is found and the user agrees to update.
-var Update = cmd.CMD{
+var Update = cmd.Sub{
 	Name:  "update",
 	Alias: "upd",
 	Short: "Update AIT to the lastest version.",
@@ -38,12 +38,12 @@ type UpdateFlags struct {
 }
 
 // UpdateRun handles the checking and self updating of the AIT program.
-func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
+func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	fmt.Printf("Current Version: %s\n", appVersion)
 
 	flags := c.Flags.(*UpdateFlags)
 	latestVersion := &latest.GithubTag{
-		Owner:      "arkenproject",
+		Owner:      "arken",
 		Repository: "ait",
 	}
 
@@ -60,7 +60,7 @@ func UpdateRun(r *cmd.RootCMD, c *cmd.CMD) {
 				return
 			}
 		}
-		url := "https://github.com/arkenproject/ait/releases/download/v" + res.Current + "/ait-v" + res.Current + "-" + runtime.GOOS + "-" + runtime.GOARCH
+		url := "https://github.com/arken/ait/releases/download/v" + res.Current + "/ait-v" + res.Current + "-" + runtime.GOOS + "-" + runtime.GOARCH
 
 		doneChan := make(chan int, 1)
 		wg := sync.WaitGroup{}

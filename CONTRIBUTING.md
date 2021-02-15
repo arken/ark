@@ -4,7 +4,7 @@ If you're looking for a place to start, go to the issues tab after reading this
 document and help add a new feature or fix a bug. If there aren't any issues
 we're always looking for people to test the commandline tool or find important
 open source data to upload to the
-[Arken Project Core Repository](https://github.com/arkenproject/core-keyset).
+[Arken Project Core Repository](https://github.com/arken/core-keyset).
 
 ## What's a Keyset anyway?
 

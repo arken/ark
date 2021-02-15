@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	aitConf "github.com/arkenproject/ait/config"
+	aitConf "github.com/arken/ait/config"
 
 	config "github.com/ipfs/go-ipfs-config"
 	serialize "github.com/ipfs/go-ipfs-config/serialize"

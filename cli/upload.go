@@ -9,18 +9,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/ipfs"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/ipfs"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	"github.com/schollz/progressbar/v3"
 )
 
 // Upload begins seeding your files to the Arken Cluster once your
 // submission into the Keyset has been merged into the repository.
-var Upload = cmd.CMD{
+var Upload = cmd.Sub{
 	Name:  "upload",
 	Alias: "up",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
@@ -39,7 +39,7 @@ type UploadFlags struct {
 }
 
 // UploadRun handles the uploading and display of the upload command.
-func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
+func UploadRun(r *cmd.Root, c *cmd.Sub) {
 	flags := c.Flags.(*UploadFlags)
 	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)

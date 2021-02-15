@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/utils"
 
 	"github.com/BurntSushi/toml"
 )

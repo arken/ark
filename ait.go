@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/arkenproject/ait/cli"
+	"github.com/arken/ait/cli"
 )
 
 func main() {

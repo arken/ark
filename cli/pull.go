@@ -10,17 +10,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/ipfs"
-	"github.com/arkenproject/ait/keysets"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/ipfs"
+	"github.com/arken/ait/keysets"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	files "github.com/ipfs/go-ipfs-files"
 )
 
 // Pull downloads files from the Arken cluster.
-var Pull = cmd.CMD{
+var Pull = cmd.Sub{
 	Name:  "pull",
 	Alias: "pl",
 	Short: "Pull a file from the Arken Cluster.",
@@ -35,7 +35,7 @@ type PullArgs struct {
 }
 
 // PullRun handles pulling and saving a file from the Arken cluster.
-func PullRun(r *cmd.RootCMD, c *cmd.CMD) {
+func PullRun(r *cmd.Root, c *cmd.Sub) {
 	args := c.Args.(*PullArgs)
 	currentwd, err := os.Getwd()
 	if err != nil {

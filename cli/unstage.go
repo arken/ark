@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // Unstage is the reverse of the stage method. Given a set of file patterns, it
@@ -18,7 +18,7 @@ import (
 // since your shell will probably expand "*" into all non-hidden files (files
 // that don't start with "."). So if you've added hidden files, to remove them
 // use . or the --all flag.
-var Unstage = cmd.CMD{
+var Unstage = cmd.Sub{
 	Name:  "unstage",
 	Alias: "un",
 	Short: "Unstage a file or directory from AIT's tracked files.",
@@ -39,7 +39,7 @@ type UnstageFlags struct {
 }
 
 // UnstageRun executes the remove function.
-func UnstageRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func UnstageRun(_ *cmd.Root, c *cmd.Sub) {
 	args, exts, rmAll := parseUnstageArgs(c)
 	size, _ := utils.GetFileSize(utils.AddedFilesPath)
 	if !utils.FileExists(utils.AddedFilesPath) || size == 0 {
@@ -76,9 +76,9 @@ func UnstageRun(_ *cmd.RootCMD, c *cmd.CMD) {
 }
 
 // parseUnstageArgs simply does some of the sanitization and extraction required to
-// get the desired data structures out of the cmd.CMD object, then returns said
+// get the desired data structures out of the cmd.Sub object, then returns said
 // useful data structures.
-func parseUnstageArgs(c *cmd.CMD) ([]string, *types.BasicStringSet, bool) {
+func parseUnstageArgs(c *cmd.Sub) ([]string, *types.BasicStringSet, bool) {
 	var args []string
 	if c.Args != nil {
 		args = c.Args.(*UnstageArgs).Paths

@@ -8,19 +8,19 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/arkenproject/ait/ipfs"
+	"github.com/arken/ait/ipfs"
 	//vv to differentiate between go-github and our github package
-	aitgh "github.com/arkenproject/ait/apis/github"
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/display"
-	"github.com/arkenproject/ait/keysets"
-	"github.com/arkenproject/ait/utils"
+	aitgh "github.com/arken/ait/apis/github"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/display"
+	"github.com/arken/ait/keysets"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // Submit creates and uploads the keyset definition file.
-var Submit = cmd.CMD{
+var Submit = cmd.Sub{
 	Name:  "submit",
 	Alias: "sm",
 	Short: "Submit your Keyset to a git repository.",
@@ -41,7 +41,7 @@ type SubmitFlags struct {
 
 // SubmitRun authenticates the user through our OAuth app and uses that to
 // upload a keyset file generated locally, or makes a pull request if necessary.
-func SubmitRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func SubmitRun(_ *cmd.Root, c *cmd.Sub) {
 	url, isPR := parseSubmitArgs(c)
 	prettyIPFSInit()
 	hasWritePerm := aitgh.Init(url, isPR)
@@ -175,9 +175,9 @@ Are you sure you want to save it? (y/[n]) `)
 }
 
 // parseSubmitArgs simply does some of the sanitization and extraction required to
-// get the desired data structures out of the cmd.CMD object, then returns said
+// get the desired data structures out of the cmd.Sub object, then returns said
 // useful data structures.
-func parseSubmitArgs(c *cmd.CMD) (string, bool) {
+func parseSubmitArgs(c *cmd.Sub) (string, bool) {
 	args := c.Args.(*SubmitArgs).Args
 	if len(args) < 1 {
 		utils.FatalPrintln("Not enough arguments, expected repository url")

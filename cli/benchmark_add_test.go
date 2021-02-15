@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // This test adds every file in your documents folder and reports how long it
@@ -19,7 +19,7 @@ func BenchmarkBigAdd(b *testing.B) {
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args: &StageArgs{Paths: []string{"."}},
 	}
 	start := time.Now()
@@ -41,7 +41,7 @@ func BenchmarkAddManyDirs(b *testing.B) {
 	for _, fi := range files {
 		fileNames = append(fileNames, fi.Name())
 	}
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args: &StageArgs{Paths: fileNames},
 	}
 	start := time.Now()
@@ -57,7 +57,7 @@ func BenchmarkAddExtensionFlag(b *testing.B) {
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
 	ext := "java,c,json,md,js"
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args:  &StageArgs{Paths: nil},
 		Flags: &StageFlags{Extensions: ext},
 	}
@@ -75,7 +75,7 @@ func BenchmarkAddManyFiles(b *testing.B) {
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args: &StageArgs{Paths: []string{
 			//put the paths to a bunch of individual files in here for testing
 		}},

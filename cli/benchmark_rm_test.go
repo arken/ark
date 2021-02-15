@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // This function tests the performance of a large remove operation by adding
@@ -20,7 +20,7 @@ func BenchmarkBigRm(b *testing.B) {
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args: &StageArgs{Paths: []string{"."}},
 	}
 	StageRun(nil, addArgs)
@@ -29,7 +29,7 @@ func BenchmarkBigRm(b *testing.B) {
 	for _, fi := range files {
 		fileNames = append(fileNames, fi.Name())
 	}
-	rmArgs := &cmd.CMD{
+	rmArgs := &cmd.Sub{
 		Args:  &UnstageArgs{Paths: fileNames},
 		Flags: &UnstageFlags{All: false},
 	}
@@ -46,12 +46,12 @@ func BenchmarkRmExtensions(b *testing.B) {
 	_ = os.Chdir(testRoot)
 	_ = os.RemoveAll(testRoot + "/.ait")
 	InitRun(nil, nil)
-	addArgs := &cmd.CMD{
+	addArgs := &cmd.Sub{
 		Args: &StageArgs{Paths: []string{"."}},
 	}
 	StageRun(nil, addArgs)
 	ext := "java,c,json,md,js"
-	rmArgs := &cmd.CMD{
+	rmArgs := &cmd.Sub{
 		Flags: &UnstageFlags{
 			All:        false,
 			Extensions: ext,

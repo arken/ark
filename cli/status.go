@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // Status prints out what files are currently staged for submission.
-var Status = cmd.CMD{
+var Status = cmd.Sub{
 	Name:  "status",
 	Alias: "s",
 	Short: "View what files are currently staged for submission.",
@@ -24,7 +24,7 @@ type StatusArgs struct {
 }
 
 // StatusRun executes the status function.
-func StatusRun(*cmd.RootCMD, *cmd.CMD) {
+func StatusRun(*cmd.Root, *cmd.Sub) {
 	file, err := os.OpenFile(utils.AddedFilesPath, os.O_RDONLY, 0644)
 	if err == nil {
 		defer file.Close()

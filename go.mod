@@ -1,10 +1,10 @@
-module github.com/arkenproject/ait
+module github.com/arken/ait
 
 go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/DataDrake/cli-ng v1.1.0
+	github.com/DataDrake/cli-ng/v2 v2.0.1
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/btree v1.0.0
 	github.com/google/go-github/v32 v32.1.0

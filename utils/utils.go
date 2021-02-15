@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arkenproject/ait/types"
+	"github.com/arken/ait/types"
 )
 
 // AddedFilesPath is the location of the ait working memory file.

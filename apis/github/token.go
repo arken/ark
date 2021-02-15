@@ -9,9 +9,9 @@ import (
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 )
 
 var (
@@ -142,7 +142,7 @@ func printCode(code string, expiry int) {
 	fmt.Printf(
 		`Go to https://github.com/login/device and enter the following code. You should
 see a request to authorize "AIT GitHub Worker". Please authorize this request, but 
-not if it's from anyone other than AIT GitHub Worker by arkenproject!
+not if it's from anyone other than AIT GitHub Worker by arken!
 =================================================================
                             %v
 =================================================================

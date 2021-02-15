@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/ipfs"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/ipfs"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
 	"github.com/schollz/progressbar/v3"
 )
