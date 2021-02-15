@@ -57,7 +57,7 @@ func Init(online bool) {
 	cfg.Experimental.FilestoreEnabled = true
 	peers := []string{
 		// Arken Bootstrapper node.
-		"/dns4/link.arken.io/tcp/4001/ipfs/QmP8krSfWWHLNL2eah6E1hr6TzoaGMEVRw2Fooy5og1Wpj",
+		"/dns4/link.arken.io/tcp/4001/ipfs/12D3KooWSmosHZtDBbepxWwVgo8HyXSgNCUgs2GGD2qnQPbA3KhD",
 		"/dns4/relay.arken.io/tcp/4001/ipfs/12D3KooWL7hvR7nfQxAWMowgoWXWQwKEkQA8QPZrhKjateRTgcDm",
 	}
 	go connectToPeers(ctx, ipfs, peers)
@@ -236,8 +236,7 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 		Permanent: true,
 		Online:    true,
 		Routing:   libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
-		// Routing: libp2p.DHTClientOption, // This option sets the node to be a client DHT node (only fetching records)
-		Repo: repo,
+		Repo:      repo,
 	}
 
 	node, err = core.NewNode(ctx, nodeOptions)
@@ -298,13 +297,15 @@ func createRepo(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
+	cfg.Datastore.Spec = badgerSpec()
+	cfg.Datastore.StorageMax = "100TB"
 	cfg.Reprovider.Strategy = "roots"
 	cfg.Reprovider.Interval = "1h"
 	cfg.Routing.Type = "dhtserver"
 	cfg.Experimental.FilestoreEnabled = true
 	bootstrapNodes := []string{
 		// Arken Bootstrapper node.
-		"/dns4/link.arken.io/tcp/4001/ipfs/QmP8krSfWWHLNL2eah6E1hr6TzoaGMEVRw2Fooy5og1Wpj",
+		"/dns4/link.arken.io/tcp/4001/ipfs/12D3KooWSmosHZtDBbepxWwVgo8HyXSgNCUgs2GGD2qnQPbA3KhD",
 	}
 	cfg.Bootstrap = bootstrapNodes
 
@@ -315,4 +316,17 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+func badgerSpec() map[string]interface{} {
+	return map[string]interface{}{
+		"type":   "measure",
+		"prefix": "badger.datastore",
+		"child": map[string]interface{}{
+			"type":       "badgerds",
+			"path":       "badgerds",
+			"syncWrites": false,
+			"truncate":   true,
+		},
+	}
 }
