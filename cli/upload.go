@@ -82,19 +82,18 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	fmt.Println()
 	close(doneChan)
 
-	fmt.Println("Adding Files to IPFS Store")
-	addBar := progressbar.Default(int64(contents.Size()))
-	addBar.RenderBlank()
-
 	input := make(chan string, contents.Size())
-	_ = contents.ForEach(func(path string) error {
-		cid, err := ipfs.Add(filepath.Join(link, path), false)
-		utils.CheckError(err)
 
-		addBar.Add(1)
-		input <- cid
-		return nil
-	})
+	go func() {
+		contents.ForEach(func(path string) error {
+			cid, err := ipfs.Add(filepath.Join(link, path), false)
+			utils.CheckError(err)
+
+			input <- cid
+			return nil
+		})
+		close(input)
+	}()
 
 	fmt.Println("Uploading Files to Cluster")
 	ipfsBar := progressbar.Default(int64(contents.Size()))
@@ -105,7 +104,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
 				if flags.Debug {
-					fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+					fmt.Printf("\nFile: %s is backed up %d time(s)\n", cid, replications)
 				}
 				if replications > 2 {
 					bar.Add(1)
@@ -123,7 +122,6 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 
 	for {
 		if ipfsBar.State().CurrentPercent == float64(1) {
-			close(input)
 			err = os.Remove(link)
 			utils.CheckError(err)
 			return
