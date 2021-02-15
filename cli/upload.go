@@ -88,7 +88,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 
 	input := make(chan string, contents.Size())
 	_ = contents.ForEach(func(path string) error {
-		cid, err := ipfs.Add(filepath.Join(link, path))
+		cid, err := ipfs.Add(filepath.Join(link, path), false)
 		utils.CheckError(err)
 
 		addBar.Add(1)

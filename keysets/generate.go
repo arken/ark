@@ -79,19 +79,23 @@ func createNew(path string) error {
 		barPresent = true
 	}
 
+	var output strings.Builder
+	output.Grow(contents.Size())
+
 	err = contents.ForEach(func(filePath string) error {
 		linkPath := filepath.Join(link, filePath)
-		line := getKeySetLineFromPath(linkPath)
-		_, err = keySetFile.WriteString(line + "\n")
-		if err != nil {
-			cleanup(keySetFile)
-			return err
-		}
+		fmt.Fprintf(&output, "%s\n", getKeySetLineFromPath(linkPath))
 		if barPresent {
 			ipfsBar.Add(1)
 		}
 		return nil
 	})
+	_, err = keySetFile.WriteString(output.String())
+	if err != nil {
+		cleanup(keySetFile)
+		os.Remove(link)
+		return err
+	}
 	err = os.Remove(link)
 	if err != nil {
 		return err
@@ -190,7 +194,7 @@ func cleanup(file *os.File) {
 // to a file. No newline at the end.
 func getKeySetLineFromPath(filePath string) string {
 	// Scrub filename for spaces and replace with dashes.
-	cid, err := ipfs.Add(filePath)
+	cid, err := ipfs.Add(filePath, true)
 	utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 	filename := strings.Join(strings.Fields(filepath.Base(filePath)), "-")
 	return getKeySetLine(filename, cid)
@@ -250,7 +254,7 @@ func fillMapWithCID(contents map[string]string, file *os.File) {
 			line := strings.TrimSpace(scanner.Text())
 			if len(line) > 0 {
 				filename := filepath.Base(line)
-				cid, err := ipfs.Add(filepath.Join(link, line))
+				cid, err := ipfs.Add(filepath.Join(link, line), true)
 				utils.CheckErrorWithCleanup(err, utils.SubmissionCleanup)
 				contents[cid] = filename
 			}

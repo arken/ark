@@ -21,7 +21,7 @@ func Pin(hash string) (err error) {
 }
 
 // Add imports a file to IPFS and returns the file identifier to ait.
-func Add(path string) (cid string, err error) {
+func Add(path string, onlyHash bool) (cid string, err error) {
 	file, err := getUnixfsNode(path)
 	if err != nil {
 		if file != nil {
@@ -33,6 +33,7 @@ func Add(path string) (cid string, err error) {
 		input.Pin = true
 		input.NoCopy = true
 		input.CidVersion = 1
+		input.OnlyHash = onlyHash
 		return nil
 	})
 	if err != nil {
