@@ -13,7 +13,7 @@ import (
 // providers hosting a given file
 func FindProvs(hash string, maxPeers int) (replications int, err error) {
 	path := icorepath.New("/ipfs/" + hash)
-	contxt, cancl := context.WithTimeout(ctx, 5*time.Second)
+	contxt, cancl := context.WithTimeout(ctx, 500*time.Millisecond)
 
 	output, err := ipfs.Dht().FindProviders(contxt, path, func(input *options.DhtFindProvidersSettings) error {
 		input.NumProviders = maxPeers + 15
