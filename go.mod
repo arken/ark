@@ -20,5 +20,5 @@ require (
 	github.com/schollz/progressbar/v3 v3.7.4
 	github.com/stretchr/testify v1.6.1
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/oauth2 v0.0.0-20210216194517-16ff1888fd2e
 )
