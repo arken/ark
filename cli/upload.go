@@ -92,7 +92,6 @@ func UploadRun(r *cmd.Root, c *cmd.Sub) {
 			input <- cid
 			return nil
 		})
-		close(input)
 	}()
 
 	fmt.Println("Uploading Files to Cluster")
@@ -122,9 +121,10 @@ func UploadRun(r *cmd.Root, c *cmd.Sub) {
 
 	for {
 		if ipfsBar.State().CurrentPercent == float64(1) {
+			close(input)
 			err = os.Remove(link)
 			utils.CheckError(err)
-			return
+			break
 		}
 		ipfsBar.Add(0)
 		time.Sleep(1000 * time.Millisecond)
