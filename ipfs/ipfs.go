@@ -297,7 +297,6 @@ func createRepo(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
-	cfg.Datastore.Spec = badgerSpec()
 	cfg.Datastore.StorageMax = "100TB"
 	cfg.Reprovider.Strategy = "roots"
 	cfg.Reprovider.Interval = "1h"
@@ -316,17 +315,4 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	}
 
 	return path, nil
-}
-
-func badgerSpec() map[string]interface{} {
-	return map[string]interface{}{
-		"type":   "measure",
-		"prefix": "badger.datastore",
-		"child": map[string]interface{}{
-			"type":       "badgerds",
-			"path":       "badgerds",
-			"syncWrites": false,
-			"truncate":   true,
-		},
-	}
 }
