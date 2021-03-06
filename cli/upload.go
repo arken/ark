@@ -9,18 +9,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/ipfs"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/ipfs"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 	"github.com/schollz/progressbar/v3"
 )
 
 // Upload begins seeding your files to the Arken Cluster once your
 // submission into the Keyset has been merged into the repository.
-var Upload = cmd.CMD{
+var Upload = cmd.Sub{
 	Name:  "upload",
 	Alias: "up",
 	Short: "After Submitting Your Files you can use AIT to Upload Them to the Arken Cluster.",
@@ -39,7 +39,7 @@ type UploadFlags struct {
 }
 
 // UploadRun handles the uploading and display of the upload command.
-func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
+func UploadRun(r *cmd.Root, c *cmd.Sub) {
 	flags := c.Flags.(*UploadFlags)
 	contents := types.NewBasicStringSet()
 	file := utils.BasicFileOpen(utils.AddedFilesPath, os.O_CREATE|os.O_RDONLY, 0644)
@@ -82,19 +82,17 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 	fmt.Println()
 	close(doneChan)
 
-	fmt.Println("Adding Files to IPFS Store")
-	addBar := progressbar.Default(int64(contents.Size()))
-	addBar.RenderBlank()
-
 	input := make(chan string, contents.Size())
-	_ = contents.ForEach(func(path string) error {
-		cid, err := ipfs.Add(filepath.Join(link, path))
-		utils.CheckError(err)
 
-		addBar.Add(1)
-		input <- cid
-		return nil
-	})
+	go func() {
+		contents.ForEach(func(path string) error {
+			cid, err := ipfs.Add(filepath.Join(link, path), false)
+			utils.CheckError(err)
+
+			input <- cid
+			return nil
+		})
+	}()
 
 	fmt.Println("Uploading Files to Cluster")
 	ipfsBar := progressbar.Default(int64(contents.Size()))
@@ -105,7 +103,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			for cid := range input {
 				replications, err := ipfs.FindProvs(cid, 20)
 				if flags.Debug {
-					fmt.Printf("File: %s is backed up %d time(s)\n", cid, replications)
+					fmt.Printf("\nFile: %s is backed up %d time(s)\n", cid, replications)
 				}
 				if replications > 2 {
 					bar.Add(1)
@@ -126,7 +124,7 @@ func UploadRun(r *cmd.RootCMD, c *cmd.CMD) {
 			close(input)
 			err = os.Remove(link)
 			utils.CheckError(err)
-			return
+			break
 		}
 		ipfsBar.Add(0)
 		time.Sleep(1000 * time.Millisecond)

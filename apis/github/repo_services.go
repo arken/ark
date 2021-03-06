@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/utils"
 
 	"github.com/google/go-github/v32/github"
 )

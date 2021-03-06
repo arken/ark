@@ -3,7 +3,7 @@
 The Arken Import Tool allows anyone to index and upload data to an Arken
 cluster.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/arkenproject/ait)](https://goreportcard.com/report/github.com/arkenproject/ait)
+[![Go Report Card](https://goreportcard.com/badge/github.com/arken/ait)](https://goreportcard.com/report/github.com/arken/ait)
 
 ## What is the Arken Import Tool?
 
@@ -81,10 +81,10 @@ ait submit <KEYSET-LOCATION>
 ##### ex.
 
 Submit your data to the official
-curated [Core Arken Keyset](https://github.com/arkenproject/core-keyset).
+curated [Core Arken Keyset](https://github.com/arken/core-keyset).
 
 ```bash
-ait submit https://github.com/arkenproject/core-keyset
+ait submit https://github.com/arken/core-keyset
 ```
 
 #### Uploading Your Data After Your Submission Has Been Accepted

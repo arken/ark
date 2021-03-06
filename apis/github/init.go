@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/utils"
 
 	"github.com/google/go-github/v32/github"
 )

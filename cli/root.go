@@ -3,16 +3,16 @@ package cli
 import (
 	"os"
 
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 //GlobalFlags contains the flags for commands.
 type GlobalFlags struct{}
 
 // Root is the main command.
-var Root *cmd.RootCMD
+var Root *cmd.Root
 
 // init creates the command interface and registers the possible commands.
 func init() {
@@ -27,19 +27,19 @@ func init() {
 	ait init
 Before issuing any other commands.`)
 	}
-	Root = &cmd.RootCMD{
+	Root = &cmd.Root{
 		Name:  "ait",
 		Short: "Arken Import Tool",
 		Flags: &GlobalFlags{},
 	}
-	Root.RegisterCMD(&cmd.Help)
-	Root.RegisterCMD(&Stage)
-	Root.RegisterCMD(&AddRemote)
-	Root.RegisterCMD(&Init)
-	Root.RegisterCMD(&Unstage)
-	Root.RegisterCMD(&Status)
-	Root.RegisterCMD(&Submit)
-	Root.RegisterCMD(&Upload)
-	Root.RegisterCMD(&Pull)
-	Root.RegisterCMD(&Update)
+	cmd.Register(&cmd.Help)
+	cmd.Register(&Stage)
+	cmd.Register(&AddRemote)
+	cmd.Register(&Init)
+	cmd.Register(&Unstage)
+	cmd.Register(&Status)
+	cmd.Register(&Submit)
+	cmd.Register(&Upload)
+	cmd.Register(&Pull)
+	cmd.Register(&Update)
 }

@@ -7,14 +7,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // AddRemote allows users to create aliases for GitHub remotes
-var AddRemote = cmd.CMD{
+var AddRemote = cmd.Sub{
 	Name:  "remote",
 	Alias: "r",
 	Short: "Manage saved remote URLs.",
@@ -42,7 +42,7 @@ const usageEx = `	ait remote --add/-a MyAlias https://github.com/example-user/ex
 	ait remote --list/-l                # See all your saved alias/URL pairs`
 
 // RemoteRun handles managing aliases for GitHub remotes.
-func RemoteRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func RemoteRun(_ *cmd.Root, c *cmd.Sub) {
 	flags := c.Flags.(*RemoteFlags)
 	validateFlags(flags.IsAdd, flags.IsRm, flags.IsList, flags.IsRmAll)
 	// ^ makes sure exactly one flag is present

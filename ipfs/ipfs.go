@@ -7,11 +7,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	aitConf "github.com/arkenproject/ait/config"
+	aitConf "github.com/arken/ait/config"
 
 	config "github.com/ipfs/go-ipfs-config"
 	serialize "github.com/ipfs/go-ipfs-config/serialize"
@@ -221,8 +222,16 @@ func createNode(ctx context.Context, repoPath string) (icore.CoreAPI, error) {
 	repo, err := fsrepo.Open(repoPath)
 	if err != nil {
 		if err == fsrepo.ErrNeedMigration {
-			migrate.DistPath = repoPath
 			err = migrate.RunMigration(fsrepo.RepoVersion)
+			if err != nil {
+				return nil, err
+			}
+			version := strconv.Itoa(fsrepo.RepoVersion)
+			err := ioutil.WriteFile(filepath.Join(repoPath, migrate.VersionFile), []byte(version), 0644)
+			if err != nil {
+				return nil, err
+			}
+			repo, err = fsrepo.Open(repoPath)
 			if err != nil {
 				return nil, err
 			}
@@ -297,7 +306,6 @@ func createRepo(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
-	cfg.Datastore.Spec = badgerSpec()
 	cfg.Datastore.StorageMax = "100TB"
 	cfg.Reprovider.Strategy = "roots"
 	cfg.Reprovider.Interval = "1h"
@@ -316,17 +324,4 @@ func createRepo(ctx context.Context, path string) (string, error) {
 	}
 
 	return path, nil
-}
-
-func badgerSpec() map[string]interface{} {
-	return map[string]interface{}{
-		"type":   "measure",
-		"prefix": "badger.datastore",
-		"child": map[string]interface{}{
-			"type":       "badgerds",
-			"path":       "badgerds",
-			"syncWrites": false,
-			"truncate":   true,
-		},
-	}
 }

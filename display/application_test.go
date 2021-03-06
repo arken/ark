@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arkenproject/ait/types"
+	"github.com/arken/ait/types"
 	"github.com/stretchr/testify/assert"
 )
 

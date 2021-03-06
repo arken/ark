@@ -9,14 +9,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // Stage imports a file or directory to AIT's local staging file.
-var Stage = cmd.CMD{
+var Stage = cmd.Sub{
 	Name:  "stage",
 	Alias: "st",
 	Short: "Stage for later submission.",
@@ -41,7 +41,7 @@ type StageFlags struct {
 // working directory. Along the way, the filenames are put into a set, so the
 // specific order of the filenames in the file is unpredictable, but users should
 // not be directly interacting with files in .ait anyway.
-func StageRun(_ *cmd.RootCMD, c *cmd.CMD) {
+func StageRun(_ *cmd.Root, c *cmd.Sub) {
 	runtime.GOMAXPROCS(512) //TODO: assign this number meaningfully
 	args, exts := parseAddArgs(c)
 	contents := types.NewThreadSafeStringSet()
@@ -151,9 +151,9 @@ func processDirExt(dir string, exts *types.BasicStringSet, contents *types.Threa
 }
 
 // parseAddArgs simply does some of the sanitization and extraction required to
-// get the desired data structures out of the cmd.CMD object, then returns said
+// get the desired data structures out of the cmd.Sub object, then returns said
 // useful data structures.
-func parseAddArgs(c *cmd.CMD) ([]string, *types.BasicStringSet) {
+func parseAddArgs(c *cmd.Sub) ([]string, *types.BasicStringSet) {
 	var args []string
 	if c.Args != nil {
 		args = c.Args.(*StageArgs).Paths

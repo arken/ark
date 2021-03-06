@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	aitgh "github.com/arkenproject/ait/apis/github"
-	"github.com/arkenproject/ait/config"
-	"github.com/arkenproject/ait/types"
-	"github.com/arkenproject/ait/utils"
+	aitgh "github.com/arken/ait/apis/github"
+	"github.com/arken/ait/config"
+	"github.com/arken/ait/types"
+	"github.com/arken/ait/utils"
 )
 
 var application *types.ApplicationContents

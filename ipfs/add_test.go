@@ -12,7 +12,7 @@ func TestAdd(t *testing.T) {
 		t.Error(err)
 	}
 
-	cid, err := Add("test")
+	cid, err := Add("test", true)
 	if err != nil {
 		t.Error(err)
 	}

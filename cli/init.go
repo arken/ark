@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/utils"
 
-	"github.com/DataDrake/cli-ng/cmd"
+	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
 // Init configures AIT's local staging and configuration directory.
-var Init = cmd.CMD{
+var Init = cmd.Sub{
 	Name:  "init",
 	Alias: "i",
 	Short: "Initialize a dataset's local configuration.",
@@ -23,7 +23,7 @@ type InitArgs struct {
 }
 
 // InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
-func InitRun(_ *cmd.RootCMD, _ *cmd.CMD) {
+func InitRun(_ *cmd.Root, _ *cmd.Sub) {
 	info, err := os.Stat(".ait")
 	if os.IsNotExist(err) {
 		err := os.Mkdir(".ait", os.ModePerm)

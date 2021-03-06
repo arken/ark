@@ -17,17 +17,17 @@ func TestPathMatch(t *testing.T) {
 }
 
 func TestGetRepoName(t *testing.T) {
-	assert.Equal(t, "ait", GetRepoName("https://github.com/arkenproject/ait.git"))
-	assert.Equal(t, "ait", GetRepoName("git@github.com:arkenproject/ait.git"))
+	assert.Equal(t, "ait", GetRepoName("https://github.com/arken/ait.git"))
+	assert.Equal(t, "ait", GetRepoName("git@github.com:arken/ait.git"))
 	assert.Equal(t, "", GetRepoName(""))
 	assert.Equal(t, "", GetRepoName("/"))
-	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arkenproject/core-keyset"))
-	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arkenproject/core-keyset.git"))
+	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arken/core-keyset"))
+	assert.Equal(t, "core-keyset", GetRepoName("https://github.com/arken/core-keyset.git"))
 }
 
 func TestGetRepoOwner(t *testing.T) {
-	assert.Equal(t, "arkenproject", GetRepoOwner("https://github.com/arkenproject/ait.git"))
-	assert.Equal(t, "arkenproject", GetRepoOwner("https://github.com/arkenproject/ait"))
+	assert.Equal(t, "arken", GetRepoOwner("https://github.com/arken/ait.git"))
+	assert.Equal(t, "arken", GetRepoOwner("https://github.com/arken/ait"))
 	assert.Equal(t, "google", GetRepoOwner("https://github.com/google/go-github.git"))
 	assert.Equal(t, "go-git", GetRepoOwner("https://github.com/go-git/go-git.git"))
 	assert.Equal(t, "go-git", GetRepoOwner("https://github.com/go-git/go-git"))
@@ -74,11 +74,11 @@ func TestIsInRepo(t *testing.T) {
 }
 
 func TestIsGithubRemote(t *testing.T) {
-	ok, _ := IsGithubRemote("https://github.com/arkenproject/ait.git")
+	ok, _ := IsGithubRemote("https://github.com/arken/ait.git")
 	assert.True(t, ok)
 	_, msg := IsGithubRemote("")
 	fmt.Println(msg)
 	fmt.Println()
-	_, msg = IsGithubRemote("git@github.com:arkenproject/ait.git")
+	_, msg = IsGithubRemote("git@github.com:arken/ait.git")
 	fmt.Println(msg)
 }

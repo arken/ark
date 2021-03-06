@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/arkenproject/ait/utils"
+	"github.com/arken/ait/utils"
 	"github.com/go-git/go-git/v5"
 )
 
