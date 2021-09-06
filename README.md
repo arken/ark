@@ -23,15 +23,16 @@ Ark can also directly download collections of files from the nodes within an Ark
 | Command             |  Alias  | Description                                                                |
 | ------------------- | ------- | -------------------------------------------------------------------------- |
 | `help`              | `?`     | Get help with a specific subcommand.                                       |
-| `stage`             | `st`    | Stage files or directories for submission.                                 |
+| `add`               | `ad`    | Stage a file for set of files for a submission.                            |
+| `alias`             | `a`     | Create a shortcut for a manifest URL.                                      |
+| `config`            | `c`     | Update an one of Ark's Configuration Values.                               |
 | `init`              | `i`     | Initialize a dataset's local configuration.                                |
-| `unstage`           | `un`    | Remove files or directories from Ark's staged files.                       |
-| `remote`            | `r`     | Allows the use of aliases for commonly used URLs.                          |
+| `pull`              | `pl`    | Pull a file from an Arken Cluster.                                         |
+| `remove`            | `rm`    | Remove a file from the internal submission cache.                          |
 | `status`            | `s`     | View what files are currently staged for submission.                       |
-| `submit`            | `sm`    | Submit your manifest to a git manifest repository.                         |
-| `upload`            | `up`    | After Submitting Your Files upload Them to the Arken Cluster.              |
-| `pull`              | `pl`    | Pull one or many files from the Arken Cluster.                             |
-| `update`            | `upd`   | Have AIT update its own binary.                                            |
+| `submit`            | `sb`    | Submit your files to a manifest repository.                                |
+| `update`            | `upd`   | Update Ark to the latest version available.                                |
+| `upload`            | `up`    | Upload files to an Arken cluster after an accepted submission.             |
 
 ### Tutorial
 
@@ -49,7 +50,7 @@ ark init
 Still within the location of your data add specific files or folders.
 
 ```bash
-ark stage <LOCATION>
+ark add <LOCATION>
 ```
 
 ##### ex.
@@ -57,13 +58,13 @@ ark stage <LOCATION>
 Stage the example.csv file into your Arken Submission.
 
 ```bash
-ark stage example.csv
+ark add example.csv
 ```
 
 or to stage everything within the folder containing your data.
 
 ```bash
-ark stage .
+ark add .
 ```
 
 #### Submit Your Data to the manifest
@@ -91,7 +92,7 @@ After your submission is accepted you'll receive an email notifying you the Pull
 has been merged into the manifest. At this point you can finally run ark upload from the directory with
 your data in it to upload the data to the cluster. 
 ```bash
-ark upload
+ark upload https://github.com/arken/core-manifest
 ```
 
 *Note:* If you attempt to run `ark upload` before your submission is accepted your data will not begin syncing with the cluster.

@@ -24,7 +24,7 @@ func init() {
 var Update = cmd.Sub{
 	Name:  "update",
 	Alias: "upd",
-	Short: "Update AIT to the lastest version.",
+	Short: "Update Ark to the latest version available.",
 	Args:  &UpdateArgs{},
 	Flags: &UpdateFlags{},
 	Run:   UpdateRun,
