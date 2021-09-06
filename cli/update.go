@@ -10,12 +10,14 @@ import (
 	"sync"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
-	"github.com/arken/ait/utils"
+	"github.com/arken/ark/config"
 	"github.com/inconshreveable/go-update"
 	"github.com/tcnksm/go-latest"
 )
 
-var appVersion string
+func init() {
+	cmd.Register(&Update)
+}
 
 // Update checks for a new version of the AIT program and updates itself
 // if a newer version is found and the user agrees to update.
@@ -39,15 +41,24 @@ type UpdateFlags struct {
 
 // UpdateRun handles the checking and self updating of the AIT program.
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
-	fmt.Printf("Current Version: %s\n", appVersion)
+	// Setup main application config.
+	rFlags := rootInit(r)
+
+	fmt.Printf("Current Version: %s\n", config.Version)
+	if config.Version == "develop" {
+		fmt.Println("Cannot update a development version of Ark.")
+		os.Exit(1)
+	}
 
 	flags := c.Flags.(*UpdateFlags)
 	latestVersion := &latest.GithubTag{
 		Owner:      "arken",
-		Repository: "ait",
+		Repository: "ark",
 	}
 
-	res, _ := latest.Check(latestVersion, appVersion)
+	res, err := latest.Check(latestVersion, config.Version)
+	checkError(rFlags, err)
+
 	fmt.Printf("Latest Version: %s\n", res.Current)
 
 	if res.Outdated {
@@ -60,26 +71,26 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 				return
 			}
 		}
-		url := "https://github.com/arken/ait/releases/download/v" + res.Current + "/ait-v" + res.Current + "-" + runtime.GOOS + "-" + runtime.GOARCH
+		url := "https://github.com/arken/ark/releases/download/v" + res.Current + "/ark-v" + res.Current + "-" + runtime.GOOS + "-" + runtime.GOARCH
 
 		doneChan := make(chan int, 1)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 
 		// Display Spinner on Update.
-		go utils.SpinnerWait(doneChan, "Updating AIT...", &wg)
+		go spinnerWait(doneChan, "Updating AIT...", &wg)
 
 		resp, err := http.Get(url)
-		utils.CheckError(err)
+		checkError(rFlags, err)
 
 		defer resp.Body.Close()
 		err = update.Apply(resp.Body, update.Options{})
-		utils.CheckError(err)
+		checkError(rFlags, err)
 
 		doneChan <- 0
 		wg.Wait()
 
-		fmt.Print("\rUpdating AIT: Done!\n")
+		fmt.Print("\rUpdating Ark: Done!\n")
 	} else {
 		fmt.Println("Already Up-To-Date!")
 	}

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/arken/ait/utils"
-
 	"github.com/DataDrake/cli-ng/v2/cmd"
 )
 
-// Init configures AIT's local staging and configuration directory.
+func init() {
+	cmd.Register(&Init)
+}
+
+// Init configures Ark's local staging and configuration directory.
 var Init = cmd.Sub{
 	Name:  "init",
 	Alias: "i",
@@ -22,21 +24,38 @@ var Init = cmd.Sub{
 type InitArgs struct {
 }
 
-// InitRun creates a new ait repo simply by creating a folder called .ait in the working dir.
-func InitRun(_ *cmd.Root, _ *cmd.Sub) {
-	info, err := os.Stat(".ait")
+// InitRun creates a new ark repo simply by creating a folder called .ark in the working dir.
+func InitRun(r *cmd.Root, c *cmd.Sub) {
+	// Setup main application config.
+	rFlags := rootInit(r)
+
+	// Check if .ark directory already exists.
+	info, err := os.Stat(".ark")
+
+	// If .ark does not exist create it.
 	if os.IsNotExist(err) {
-		err := os.Mkdir(".ait", os.ModePerm)
-		utils.CheckError(err)
-	} else if info.IsDir() {
-		utils.FatalPrintln("a directory called \".ait\" already exists here, " +
-			"suggesting that this is already an ait repo")
+		err := os.Mkdir(".ark", os.ModePerm)
+		checkError(rFlags, err)
+
+		wd, err := os.Getwd()
+		checkError(rFlags, err)
+		fmt.Printf("New ark repo initiated at %v\n", wd)
+		return
+	}
+
+	// Check that there wasn't another type of error produced.
+	checkError(rFlags, err)
+
+	// If no error was produced it's possible the directory is already an
+	// Ark repository.
+	if info.IsDir() {
+		fmt.Println("a directory called \".ark\" already exists here, " +
+			"suggesting that this is already an ark repo")
 	} else {
-		utils.FatalPrintln("a file called \".ait\" already exists in this " +
+		// If somehow a .ark file exists tell the user about it.
+		fmt.Println("a file called \".ark\" already exists in this " +
 			"this directory and it is not itself a directory. Please move or " +
 			"rename this file")
 	}
-	wd, err := os.Getwd()
-	utils.CheckError(err)
-	fmt.Printf("New ait repo initiated at %v\n", wd)
+	os.Exit(1)
 }

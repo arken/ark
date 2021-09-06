@@ -1,103 +1,123 @@
 package config
 
 import (
-	"io/ioutil"
-	"log"
+	"bytes"
 	"os"
-	"os/user"
 	"path/filepath"
-
-	"github.com/arken/ait/utils"
+	"reflect"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
 
-// Config defines the configuration struct for importing settings from TOML.
-type Config struct {
-	General general
-	Git     git
-	IPFS    ipfs
-}
-
-// general defines the substruct about general application settings.
-type general struct {
-	Version string
-	Editor  string
-}
-
-// git defines git specific config settings.
-type git struct {
-	Name    string
-	Email   string
-	Remotes map[string]string
-	PAT     string
-}
-
-// ipfs defines the IPFS centric ait settings.
-type ipfs struct {
-	Path string
-}
-
 var (
-	// Global is the configuration struct for the application.
+	// Version is the current version of Arken
+	Version string = "develop"
+	// Global is the global application configuration
 	Global Config
-	Path   string
 )
 
-// initialize the app config system. If a config doesn't exist, create one.
-// If the config is out of date read the current config and rebuild with new fields.
-func init() {
-	// Determine the current user to build expected file path.
-	user, err := user.Current()
-	utils.CheckError(err)
-	// Create expected config path.
-	Path = filepath.Join(user.HomeDir, ".ait", "ait.config")
-	readConf(&Global)
-	// If the configuration version has changed update the config to the new
-	// format while keeping the user's preferences.
-	if Global.General.Version != defaultConf().General.Version {
-		reloadConf()
-		readConf(&Global)
-	}
-	ConsolidateEnvVars(&Global)
-
-	err = createSwarmKey()
-	if err != nil {
-		log.Fatal(err)
-	}
+type Config struct {
+	Core     core     `toml:"core"`
+	Manifest manifest `toml:"manifest"`
+	Git      git      `toml:"git"`
 }
 
-// Read the config or create a new one if it doesn't exist.
-func readConf(conf *Config) {
-	_, err := toml.DecodeFile(Path, &conf)
-	if os.IsNotExist(err) {
-		GenConf(defaultConf())
-		genApplication(defaultApplication())
-		readConf(conf)
+type core struct {
+	Editor string `toml:"editor"`
+}
+
+type git struct {
+	Name     string `toml:"name"`
+	Username string `toml:"username"`
+	Email    string `toml:"email"`
+	Token    string `toml:"token"`
+}
+
+type manifest struct {
+	Path    string            `toml:"path"`
+	Aliases map[string]string `toml:"aliases"`
+}
+
+func Init(path string) error {
+	// Generate the default config
+	Global = Config{
+		Core: core{
+			Editor: "nano",
+		},
+		Manifest: manifest{
+			Path:    filepath.Join(filepath.Dir(path), "manifest"),
+			Aliases: make(map[string]string),
+		},
+		Git: git{
+			Name:  "",
+			Email: "",
+			Token: "",
+		},
 	}
+
+	// Setup default alias for core-manifest
+	Global.Manifest.Aliases["core"] = "https://github.com/arken/core-manifest"
+
+	// Read in config from file
+	err := ParseFile(path, &Global)
 	if err != nil && !os.IsNotExist(err) {
-		utils.FatalPrintln(err)
+		return err
 	}
-}
 
-func createSwarmKey() (err error) {
-	keyData := []byte(`/key/swarm/psk/1.0.0/
-/base16/
-793bdb68b7cfd2f49071a299711df51f1c60283a047e4a8756a5c3a3d1ab776f`)
+	// Read in config from environment
+	err = sourceEnv(&Global)
+	if err != nil {
+		return err
+	}
 
-	os.MkdirAll(Global.IPFS.Path, os.ModePerm)
-	err = ioutil.WriteFile(filepath.Join(Global.IPFS.Path, "swarm.key"), keyData, 0644)
+	// Write config file
+	err = WriteFile(path, &Global)
 	return err
 }
 
-// GetRemote takes a string and returns what should be a URL. If the string is
-// a key in Global.Git.Remotes, then its value will be returned. If it itself
-// a url, it will be returned untouched. This is to allow the arbitrary
-// substitution of real remote URLs and remote aliases.
-func GetRemote(remote string) string {
-	url, ok := Global.Git.Remotes[remote]
-	if ok {
-		return url
+// ParseFile decodes the application configuration
+// from the TOML encoded file at the specified path.
+func ParseFile(path string, in *Config) error {
+	_, err := toml.DecodeFile(path, in)
+	return err
+}
+
+func sourceEnv(in *Config) error {
+	numSubStructs := reflect.ValueOf(in).Elem().NumField()
+	// Check for env args matching each of the sub structs.
+	for i := 0; i < numSubStructs; i++ {
+		iter := reflect.ValueOf(in).Elem().Field(i)
+		subStruct := strings.ToUpper(iter.Type().Name())
+		structType := iter.Type()
+		for j := 0; j < iter.NumField(); j++ {
+			fieldVal := iter.Field(j).String()
+			fieldName := structType.Field(j).Name
+			evName := "ARK" + "_" + subStruct + "_" + strings.ToUpper(fieldName)
+			evVal, evExists := os.LookupEnv(evName)
+			if evExists && evVal != fieldVal {
+				iter.FieldByName(fieldName).SetString(evVal)
+			}
+		}
 	}
-	return remote
+	return nil
+}
+
+// WriteFile writes changes to the application configuration back
+// to the TOML encoded file.
+func WriteFile(path string, in *Config) error {
+	buf := new(bytes.Buffer)
+	err := toml.NewEncoder(buf).Encode(in)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path, buf.Bytes(), os.ModePerm)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(path, buf.Bytes(), os.ModePerm)
+	}
+	return err
 }

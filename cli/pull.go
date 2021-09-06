@@ -3,69 +3,88 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/arken/ait/config"
-	"github.com/arken/ait/ipfs"
-	"github.com/arken/ait/keysets"
-	"github.com/arken/ait/utils"
-
 	"github.com/DataDrake/cli-ng/v2/cmd"
+	"github.com/arken/ark/config"
+	"github.com/arken/ark/ipfs"
+	"github.com/arken/ark/manifest"
 	files "github.com/ipfs/go-ipfs-files"
 )
 
-// Pull downloads files from the Arken cluster.
+func init() {
+	cmd.Register(&Pull)
+}
+
+// Pull downloads files from an Arken cluster.
 var Pull = cmd.Sub{
 	Name:  "pull",
 	Alias: "pl",
-	Short: "Pull a file from the Arken Cluster.",
+	Short: "Pull a file from an Arken Cluster.",
 	Args:  &PullArgs{},
 	Run:   PullRun,
 }
 
 // PullArgs handles the specific arguments for the pull command.
 type PullArgs struct {
-	Keyset    string
+	Manifest  string
 	Filepaths []string
 }
 
-// PullRun handles pulling and saving a file from the Arken cluster.
+// PullRun handles pulling and saving a file from an Arken cluster.
 func PullRun(r *cmd.Root, c *cmd.Sub) {
+	// Setup main application config.
+	rFlags := rootInit(r)
+
+	// Parse command arguments.
 	args := c.Args.(*PullArgs)
+
+	// Get current working directory
 	currentwd, err := os.Getwd()
-	if err != nil {
-		utils.FatalPrintln(err.Error())
+	checkError(rFlags, err)
+
+	// Swap out an alias for the corresponding url
+	alias, ok := config.Global.Manifest.Aliases[args.Manifest]
+	if ok {
+		args.Manifest = alias
 	}
 
-	user, err := user.Current()
-	if err != nil {
-		utils.FatalPrintln(err.Error())
-	}
+	// Parse manifest url
+	urlPath, err := url.Parse(args.Manifest)
+	checkError(rFlags, err)
 
-	// Initialize the IPFS subsystem without confirming the node is
-	// reachable from the rest of the cluster.
-	ipfs.Init(false)
+	// Extract manifest name from url
+	manifestName := filepath.Base(urlPath.Path)
 
-	// Convert/Check URL against known alaises.
-	url := config.GetRemote(args.Keyset)
-	repoPath := filepath.Join(user.HomeDir, ".ait", "sources", utils.GetRepoName(url))
+	// Generate internal manifest path from name
+	manifestPath := filepath.Join(config.Global.Manifest.Path, manifestName)
 
-	// Clone/Update the keyset locally
-	_, err = keysets.Clone(url, repoPath)
-	if err != nil {
-		utils.FatalPrintln(err.Error())
-	}
+	// Initialize Manifest
+	manifest, err := manifest.Init(
+		filepath.Join(manifestPath, "manifest"),
+		args.Manifest,
+		manifest.GitOptions{},
+	)
+	checkError(rFlags, err)
 
-	for pathNum := range args.Filepaths {
-		results, err := keysets.Search(repoPath, args.Filepaths[pathNum])
-		if err != nil {
-			utils.FatalPrintln(err.Error())
-		}
+	// Create internal IPFS node for manifest
+	ipfs, err := ipfs.CreateNode(
+		filepath.Join(manifestPath, "ipfs"),
+		ipfs.NodeConfArgs{
+			SwarmKey:       manifest.ClusterKey,
+			BootstrapPeers: manifest.BootstrapPeers,
+		},
+	)
+	checkError(rFlags, err)
+
+	for _, path := range args.Filepaths {
+		results, err := manifest.Search(path)
+		checkError(rFlags, err)
 
 		for filename, cids := range results {
 			i := 0
@@ -81,6 +100,8 @@ func PullRun(r *cmd.Root, c *cmd.Sub) {
 				reader := bufio.NewReader(os.Stdin)
 				for {
 					text, err := reader.ReadString('\n')
+					checkError(rFlags, err)
+
 					if strings.ToLower(text) == "exit" {
 						return
 					}
@@ -96,12 +117,17 @@ func PullRun(r *cmd.Root, c *cmd.Sub) {
 			doneChan := make(chan int, 1)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
+			go spinnerWait(doneChan, "Pulling "+filename+"...", &wg)
 
-			go utils.SpinnerWait(doneChan, "Pulling "+filename+"...", &wg)
-			file, err := ipfs.Pull(cids[i])
+			// Pull file over IPFS
+			file, err := ipfs.Get(cids[i])
+			checkError(rFlags, err)
+
+			// Write IPFS file out to filesystem
 			err = files.WriteTo(file, filepath.Join(currentwd, filename))
 			if err != nil {
-				panic(fmt.Errorf("Could not write out the fetched CID: %s", err))
+				fmt.Printf("Could not write out the fetched CID: %s", err)
+				os.Exit(1)
 			}
 
 			doneChan <- 0
