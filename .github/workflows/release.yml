@@ -10,17 +10,34 @@ jobs:
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/autamus/go
+      options: --entrypoint /bin/bash
     steps:
+      - name: Setup Environment
+        run: |
+          apt-get update 
+          apt-get install -y git wget
+          wget https://github.com/github/hub/releases/download/v2.14.2/hub-linux-amd64-2.14.2.tgz
+          tar -xzvf hub-linux-amd64-2.14.2.tgz
+          ./hub-linux-amd64-2.14.2/install
+          rm /opt/view/bin/git
+
       - name: Checkout code
-        uses: actions/checkout@v2
+        run : |
+          git clone https://github.com/arken/ark
+
       - name: Build project
         run: |
+          cd ark
           chmod a+x .github/workflows/build.sh
           ./.github/workflows/build.sh ${{ secrets.CLIENT_ID }} ${GITHUB_REF##*/}
+
       - name: Create Release
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cd ark
           chmod a+x .github/workflows/release.sh
           ./.github/workflows/release.sh
