@@ -3,7 +3,6 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,7 +71,7 @@ func RemoveRun(r *cmd.Root, c *cmd.Sub) {
 
 		// Walk through a directory and add all children files.
 		if stat.IsDir() {
-			filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+			filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 				if !info.IsDir() {
 					delete(fileCache, path)
 				}
