@@ -1,4 +1,4 @@
-package keysets
+package manifest
 
 import (
 	"bufio"
@@ -7,14 +7,15 @@ import (
 	"strings"
 )
 
-// Search checks for the existance of a file in a keyset and returns
-// its' coorisponding CID hash if found.
-func Search(keysetPath, filePath string) (hashes map[string][]string, err error) {
-	hashes = make(map[string][]string)
-	filedata := strings.Split(filePath, "/")
-	category := filedata[0]
+func (m *Manifest) Search(path string) (map[string][]string, error) {
+	// Create hashes map to hold results
+	hashes := make(map[string][]string)
 
-	err = filepath.Walk(keysetPath, func(path string, info os.FileInfo, err error) error {
+	// Define the file's category to improve search times.
+	category := filepath.Dir(path)
+	base := filepath.Base(path)
+
+	err := filepath.Walk(m.path, func(path string, info os.FileInfo, err error) error {
 		if strings.HasSuffix(path, category+".ks") {
 			file, err := os.Open(path)
 			if err != nil {
@@ -28,7 +29,7 @@ func Search(keysetPath, filePath string) (hashes map[string][]string, err error)
 				// Split data on white space.
 				data := strings.Fields(scanner.Text())
 
-				if matched, _ := filepath.Match(filedata[1], data[1]); matched {
+				if matched, _ := filepath.Match(base, data[1]); matched {
 					if hashes[data[1]] == nil {
 						hashes[data[1]] = []string{}
 					}
@@ -39,6 +40,5 @@ func Search(keysetPath, filePath string) (hashes map[string][]string, err error)
 		}
 		return nil
 	})
-
-	return hashes, nil
+	return hashes, err
 }

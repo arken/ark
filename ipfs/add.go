@@ -3,25 +3,12 @@ package ipfs
 import (
 	"os"
 
-	"github.com/ipfs/interface-go-ipfs-core/options"
-
 	files "github.com/ipfs/go-ipfs-files"
-	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
+	"github.com/ipfs/interface-go-ipfs-core/options"
 )
 
-// Pin a file to local storage.
-func Pin(hash string) (err error) {
-	path := icorepath.New("/ipfs/" + hash)
-
-	err = ipfs.Pin().Add(ctx, path, func(input *options.PinAddSettings) error {
-		input.Recursive = true
-		return nil
-	})
-	return err
-}
-
 // Add imports a file to IPFS and returns the file identifier to ait.
-func Add(path string, onlyHash bool) (cid string, err error) {
+func (n *Node) Add(path string, onlyHash bool) (cid string, err error) {
 	file, err := getUnixfsNode(path)
 	if err != nil {
 		if file != nil {
@@ -29,7 +16,7 @@ func Add(path string, onlyHash bool) (cid string, err error) {
 		}
 		return cid, err
 	}
-	output, err := ipfs.Unixfs().Add(ctx, file, func(input *options.UnixfsAddSettings) error {
+	output, err := n.api.Unixfs().Add(n.ctx, file, func(input *options.UnixfsAddSettings) error {
 		input.Pin = true
 		input.NoCopy = true
 		input.CidVersion = 1
