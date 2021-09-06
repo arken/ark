@@ -229,6 +229,7 @@ func SubmitRun(r *cmd.Root, c *cmd.Sub) {
 		prevPath := filepath.Join(
 			config.Global.Manifest.Path,
 			manifestName,
+			"manifest",
 			app.Category,
 			app.Filename,
 		)
