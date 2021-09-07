@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
@@ -87,6 +88,9 @@ func AddRun(r *cmd.Root, c *cmd.Sub) {
 	for k := range fileCache {
 		keys = append(keys, k)
 	}
+
+	// Sort output cache for readability
+	sort.Strings(keys)
 
 	f, err = os.Create(AddedFilesPath)
 	checkError(rFlags, err)

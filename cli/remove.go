@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/DataDrake/cli-ng/v2/cmd"
@@ -87,6 +88,9 @@ func RemoveRun(r *cmd.Root, c *cmd.Sub) {
 	for k := range fileCache {
 		keys = append(keys, k)
 	}
+
+	// Sort output cache for readability
+	sort.Strings(keys)
 
 	if len(keys) > 0 {
 		f, err = os.Create(AddedFilesPath)
