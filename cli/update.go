@@ -19,7 +19,7 @@ func init() {
 	cmd.Register(&Update)
 }
 
-// Update checks for a new version of the AIT program and updates itself
+// Update checks for a new version of the Ark program and updates itself
 // if a newer version is found and the user agrees to update.
 var Update = cmd.Sub{
 	Name:  "update",
@@ -39,7 +39,7 @@ type UpdateFlags struct {
 	Yes bool `short:"y" long:"yes" desc:"If a newer version is found update without prompting the user."`
 }
 
-// UpdateRun handles the checking and self updating of the AIT program.
+// UpdateRun handles the checking and self updating of the Ark program.
 func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 	// Setup main application config.
 	rFlags := rootInit(r)
@@ -63,7 +63,7 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 
 	if res.Outdated {
 		if !flags.Yes {
-			fmt.Println("Would you like to update AIT to the newest version? ([y]/n)")
+			fmt.Println("Would you like to update Ark to the newest version? ([y]/n)")
 			reader := bufio.NewReader(os.Stdin)
 			input, _ := reader.ReadString('\n')
 			input = strings.ToLower(strings.TrimSpace(input))
@@ -78,7 +78,7 @@ func UpdateRun(r *cmd.Root, c *cmd.Sub) {
 		wg.Add(1)
 
 		// Display Spinner on Update.
-		go spinnerWait(doneChan, "Updating AIT...", &wg)
+		go spinnerWait(doneChan, "Updating Ark...", &wg)
 
 		resp, err := http.Get(url)
 		checkError(rFlags, err)

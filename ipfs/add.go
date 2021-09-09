@@ -7,7 +7,7 @@ import (
 	"github.com/ipfs/interface-go-ipfs-core/options"
 )
 
-// Add imports a file to IPFS and returns the file identifier to ait.
+// Add imports a file to IPFS and returns the file identifier to Ark.
 func (n *Node) Add(path string, onlyHash bool) (cid string, err error) {
 	file, err := getUnixfsNode(path)
 	if err != nil {
